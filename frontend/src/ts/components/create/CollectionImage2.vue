@@ -1,0 +1,34 @@
+
+<template>
+    <div class="image-container">
+        <img v-if="filename" :src="filename" />
+    </div>
+</template>
+  
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { getImage } from '@/ts/api/loader';
+
+const props = defineProps<{ id: string }>()
+
+const filename = ref<string | null>(null)
+
+watch(() => props.id, async (id) => {
+    filename.value = await getImage(id)
+}, { immediate: true })
+
+</script>
+  
+<style scoped lang="scss">
+.image-container {
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+
+    & img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+</style>

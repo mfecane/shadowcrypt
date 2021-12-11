@@ -1,0 +1,26 @@
+@use 'button.scss';
+
+:root {
+  --bg-color: #f0f2f3;
+  --accent-color: #38a9dd;
+  --accent-color-light: #e5e8e9;
+  --color-light: #a3a7a8;
+}
+
+body {
+  font-family: Montserrat;
+  background: var(--bg-color);
+  color: #000;
+  font-size: 16px;
+}
+
+.heading {
+  color: var(--color-light);
+  font-weight: 600;
+  font-size: 24px;
+  margin: 4px 0px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 4px;
+}
+

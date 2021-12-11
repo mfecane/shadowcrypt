@@ -1,0 +1,14 @@
+/node_modules
+
+/dist
+/.vscode
+
+/package-lock.json
+
+.env
+
+# server
+/**/node_modules
+/**/dist
+/server/*.log
+/database/backup

@@ -1,0 +1,27 @@
+{
+	"name": "pinterest-clone",
+	"version": "1.0.0",
+	"description": "-",
+	"main": "index.js",
+	"scripts": {
+		"dev": "vite --host",
+		"build": "vue-tsc --noEmit && vite build",
+		"serve": "cd ./server && firebase emulators:start"
+	},
+	"license": "ISC",
+	"devDependencies": {
+		"@types/lodash": "^4.14.202",
+		"@vitejs/plugin-react": "^4.2.1",
+		"@vitejs/plugin-vue": "^5.0.3",
+		"sass": "^1.70.0",
+		"vite": "^5.0.12"
+	},
+	"dependencies": {
+		"firebase": "^10.8.0",
+		"lodash": "^4.17.21",
+		"pinia": "^2.0.23",
+		"ts-debounce": "^4.0.0",
+		"vue": "^3.2.37",
+		"vue-router": "^4.1.6"
+	}
+}
