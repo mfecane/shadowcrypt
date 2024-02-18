@@ -31,11 +31,10 @@ if (ratio <= 0.5) {
 }
 
 .image-container {
-    padding: 3px;
-    border: 1px solid rgb(202, 208, 209);
-    padding: 4px;
+    padding: 5px;
     border-radius: 3px;
-    box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.1);
+    background-color: var(--bg-color-dark);
+    box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.2);
     min-height: 0;
     position: relative;
 }

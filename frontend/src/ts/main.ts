@@ -6,7 +6,7 @@ import '@/scss/null.scss'
 import '@/scss/style.scss'
 
 import App from '@/ts/components/App.vue'
-import CollectionsList from '@/ts/components/CollectionsList.vue'
+import CollectionsList from '@/ts/components/list/CollectionsList.vue'
 import Collection from '@/ts/components/Collection.vue'
 
 const pinia = createPinia()
