@@ -6,7 +6,7 @@
             <div v-for="collection in filteredList" :key="collection.id" class="item" :class="{
                 'selected': collection.id === collectionId
             }" @click="() => onSelect(collection.id)">
-                {{ collection.name }} {{ collection.id }}
+                {{ collection.name }}
             </div>
         </div>
         <button class="create-button" v-else @click="createCollection">Create</button>

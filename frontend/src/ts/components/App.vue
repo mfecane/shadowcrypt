@@ -1,8 +1,5 @@
 <template >
   <DragWrapper>
-    <div className='container'>
-      <Header></Header>
-    </div>
     <div className='content'>
       <div className='container'>
         <router-view />
@@ -15,7 +12,6 @@
 
 <script lang="ts" setup>
 
-import Header from '@/ts/components/Header.vue'
 import Create from '@/ts/components/create/Create.vue'
 import CreateButton from '@/ts/components/common/CreateButton.vue'
 import DragWrapper from '@/ts/components/drag/DragWrapper.vue'

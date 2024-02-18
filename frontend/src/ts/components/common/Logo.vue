@@ -1,0 +1,28 @@
+<template>
+    <router-link to="/">
+        <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52.92 52.92">
+            <g id="Layer_1-2" data-name="Layer 1">
+                <rect stroke="#231f20" stroke-miterlimit="10" stroke-width="2" x="7.04" y="7.04" width="38.85"
+                    height="38.85" rx="4.85" ry="4.85" transform="translate(26.46 -10.96) rotate(45)" />
+                <g class="letter">
+                    <path stroke-width="0"
+                        d="M35.16,20.47c-.66-1.09-1.61-1.92-2.84-2.51-1.22-.58-2.69-.86-4.38-.86h-7.41c-.44,0-.79.35-.79.79v8.43c0,.44.35.79.79.79h2.81c.44,0,.79-.35.79-.79v-4.66c0-.44.35-.79.79-.79h2.78c1.35,0,2.35.31,3.03.92.66.61,1,1.47,1,2.57s-.34,1.95-1,2.56c-.68.61-1.68.91-3.03.91h-7.17c-.44,0-.79.35-.79.79v7.72c0,.44.35.79.79.79h2.81c.44,0,.79-.35.79-.79v-3.94c0-.44.35-.79.79-.79h3.02c1.69,0,3.16-.29,4.38-.88,1.23-.58,2.18-1.42,2.84-2.5.66-1.09,1-2.37,1-3.87s-.34-2.8-1-3.88Z" />
+                </g>
+            </g>
+        </svg>
+    </router-link>
+</template>
+
+<script setup lang="ts">
+</script>
+
+<style scoped lang="scss">
+svg {
+    width: 48px;
+    height: 48px;
+}
+
+rect {
+    fill: var(--accent-color)
+}
+</style>

@@ -1,26 +1,28 @@
 @use 'button.scss';
 
 :root {
-  --bg-color: #f0f2f3;
-  --accent-color: #38a9dd;
-  --accent-color-light: #e5e8e9;
-  --color-light: #a3a7a8;
+	--bg-color: #323536;
+	--bg-color-dark: #202425;
+	--accent-color: #a2e6ea;
+	--accent-color-light: #e5e8e9;
+	--color-light: #c2c6c7;
+	--color-light2: #8a989b;
+	--color-light3: #ffffff;
 }
 
 body {
-  font-family: Montserrat;
-  background: var(--bg-color);
-  color: #000;
-  font-size: 16px;
+	font-family: Poppins;
+	background: var(--bg-color);
+	color: #000;
+	font-size: 16px;
 }
 
 .heading {
-  color: var(--color-light);
-  font-weight: 600;
-  font-size: 24px;
-  margin: 4px 0px;
-  background: #fff;
-  padding: 6px;
-  border-radius: 4px;
+	color: var(--color-light);
+	font-weight: 600;
+	font-size: 24px;
+	margin: 4px 0px;
+	background: #fff;
+	padding: 6px;
+	border-radius: 4px;
 }
-
