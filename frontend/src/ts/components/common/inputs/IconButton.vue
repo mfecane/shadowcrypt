@@ -1,7 +1,7 @@
 
 <template>
     <button class="icon_button" @click.prevent="$emit('click')">
-        <Icon :type="props.type" :size="2" />
+        <Icon :type="props.type" :size="props.size" />
     </button>
 </template>
   
@@ -13,7 +13,9 @@ const emits = defineEmits<{
     (e: 'click'): void
 }>()
 
-const props = defineProps<{ type: IconType }>()
+const props = withDefaults(defineProps<{ type: IconType, size?: number }>(), {
+    size: 2
+})
 
 </script>
   

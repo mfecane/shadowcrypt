@@ -1,7 +1,15 @@
 <template>
 	<Header />
-	<FirstRow :collections="collectionList.filteredCollection.slice(0, 3)" />
-	<MainGrid :collections="collectionList.filteredCollection.slice(3)" />
+	<template v-if="collectionList.filteredCollection.length">
+		<FirstRow :collections="collectionList.filteredCollection.slice(0, 3)" />
+		<MainGrid :collections="collectionList.filteredCollection.slice(3)" />
+	</template>
+	<div v-if="collectionList.collectionExist && !collectionList.filteredCollection.length" class="no-collections">
+		No collections, satisfying criteria
+	</div>
+	<div v-if="!collectionList.collectionExist" class="no-collections">
+		No collections
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -26,3 +34,12 @@ watch(() => collections2.collections, (value: CollectionWithImages[]) => {
 })
 
 </script>
+
+<style lang="scss" scoped>
+.no-collections {
+	padding-top: 20px;
+	font-size: 20px;
+	font-weight: 500;
+	color: var(--accent-color)
+}
+</style>

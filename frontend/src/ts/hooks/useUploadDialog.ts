@@ -9,8 +9,6 @@ interface State {
 }
 
 interface Actions {
-	setShowCreateModal(value?: boolean): void
-
 	showCreateDialog(): void
 
 	setImageId(id: string | null): void
@@ -29,14 +27,6 @@ export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 	},
 
 	actions: {
-		setShowCreateModal(value) {
-			if (value === undefined) {
-				this.showCreateModal = !this.showCreateModal
-				return
-			}
-			this.showCreateModal = value
-		},
-
 		showCreateDialog() {
 			this.imageId = null
 			this.showCreateModal = true
@@ -47,7 +37,7 @@ export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 		},
 
 		async closeDialog() {
-			this.setShowCreateModal(false)
+			this.showCreateModal = false
 		},
 
 		async discardDialog() {

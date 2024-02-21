@@ -1,7 +1,8 @@
 
 <template>
     <div class="collection-container">
-        <input type="text" v-model="searchPrompt" class="prompt">
+        <label for="collection-selector-prompt">Add to collection</label>
+        <input type="text" id="collection-selector-prompt" v-model="searchPrompt" class="prompt">
         <div v-if="filteredList.length" class="list">
             <div v-for="collection in filteredList" :key="collection.id" class="item" :class="{
                 'selected': collection.id === collectionId
@@ -9,7 +10,7 @@
                 {{ collection.name }}
             </div>
         </div>
-        <button class="create-button" v-else @click="createCollection">Create</button>
+        <button class="btn light create-button" v-else @click="createCollection">Create</button>
     </div>
 </template>
   
@@ -53,8 +54,6 @@ function createCollection() {
 <style scoped lang="scss">
 .create-button {
     margin-top: 20px;
-    padding: 12px;
-    border-radius: 4px;
 }
 
 .collection-container {
@@ -62,6 +61,10 @@ function createCollection() {
     grid-template-columns: 1fr;
     display: flex;
     flex-direction: column;
+
+    & *:not(:last-child) {
+        margin-bottom: 6px;
+    }
 }
 
 .list {
@@ -76,7 +79,7 @@ function createCollection() {
 }
 
 .item {
-    background-color: rgb(216, 220, 219);
+    background-color: var(--color-light);
     padding: 12px;
     border-radius: 4px;
     margin-top: 12px;
@@ -90,9 +93,9 @@ function createCollection() {
     }
 
     &.selected {
-        background-color: rgb(153, 217, 235);
-        font-weight: bold;
-
+        background-color: var(--accent-color-dark);
+        font-weight: 500;
+        color: var(--color-light);
     }
 }
 </style>

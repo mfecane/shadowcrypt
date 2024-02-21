@@ -7,7 +7,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 300ms ease;
+	transition: all 200ms ease;
 	font-weight: 500;
 
 	&:hover {
@@ -22,4 +22,16 @@
 	// &:hover svg path {
 	// 	color: white;
 	// }
+}
+
+.btn.light {
+	background-color: var(--accent-color-dark);
+	color: white;
+	border: 1px solid transparent;
+
+	&:hover {
+		background-color: white;
+		color: var(--accent-color-dark);
+		border: 1px solid var(--accent-color-dark);
+	}
 }

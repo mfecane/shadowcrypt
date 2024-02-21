@@ -15,6 +15,8 @@ interface Actions {
 
 interface Getters {
 	filteredCollection(state: State): CollectionWithImages[]
+
+	collectionExist(state: State): boolean
 }
 
 //@ts-expect-error wtf
@@ -34,6 +36,10 @@ export const useCollectionList = defineStore<typeof ID, State, Getters, Actions>
 				sort: true,
 			})
 			return searcher.search(state.filter.toLocaleLowerCase())
+		},
+
+		collectionExist(state): boolean {
+			return !!state.list.length
 		},
 	},
 })

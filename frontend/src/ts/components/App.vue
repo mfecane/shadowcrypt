@@ -5,9 +5,9 @@
         <router-view />
       </div>
     </div>
-    <Create :show="store.showCreateModal" />
-    <CreateButton @click="() => store.showCreateDialog()" />
+    <CreateButton />
   </DragWrapper>
+  <Create />
 </template>
 
 <script lang="ts" setup>

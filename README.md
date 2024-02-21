@@ -1,7 +1,7 @@
 ## TODO:
 
-- Implement createRoot
--
+- ignore drag from same window
+- accept only drag images
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/

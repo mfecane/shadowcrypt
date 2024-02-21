@@ -2,7 +2,7 @@
 
 import express, { Request, Response } from 'express'
 import cors from 'cors'
-import { fetchAndUpload, uploadImage } from './uploadImage.js'
+import { fetchAndUpload } from './uploadImage.js'
 import { createCollection, getCollections } from './collecitons.js'
 import { createPin, discardTmpFile, getImageUrl, getImages, fetchAndAdd, addFile } from './images.js'
 import fileUpload from 'express-fileupload'
