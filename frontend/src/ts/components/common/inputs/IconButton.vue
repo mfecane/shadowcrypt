@@ -39,4 +39,9 @@ const props = withDefaults(defineProps<{ type: IconType, size?: number }>(), {
 .icon_button:hover :deep(svg path) {
     fill: var(--accent-color-light);
 }
+
+.icon_button:disabled :deep(svg rect),
+.icon_button:disabled :deep(svg path) {
+    fill: var(--color-neutral);
+}
 </style>
