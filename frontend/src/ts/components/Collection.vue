@@ -1,24 +1,23 @@
 <template>
-	<Breadcrumbs :name="collection?.name ?? ''" />
+	<Breadcrumbs :name="collection?.name ?? ''" v-model="size" />
 
-	<div className='image-list' v-if="collection">
+	<div class='image-list' :class="listClass" v-if="collection">
 		<CollectionImage v-for="image of collection.images" :width="image.width ?? 0" :height="image.height ?? 0"
 			:src="image.path" />
 	</div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useCollections2 } from '../hooks/useCollections2';
 import CollectionImage from './CollectionImage.vue';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
 import Breadcrumbs from './Breadcrumbs.vue'
 
 const props = defineProps<{ id: string }>()
 const store = useCollections2()
 const { getById } = storeToRefs(store)
-const router = useRouter()
+const size = ref(2)
 
 onMounted(() => {
 	store.load()
@@ -27,6 +26,15 @@ onMounted(() => {
 // TODO wierd pattern
 const collection = computed(() => getById.value(props.id))
 
+const listClass = computed(() => {
+	switch (size.value) {
+		case 1: return 'columns1';
+		case 2: return 'columns2';
+		case 3: return 'columns3';
+		case 4: return 'columns4';
+	}
+})
+
 </script>
 
 <style lang="scss" scoped>
@@ -34,58 +42,25 @@ const collection = computed(() => getById.value(props.id))
 	width: 100%;
 	gap: 10px;
 	display: grid;
+}
+
+.columns1 {
+	grid-template-columns: repeat(1, 1fr);
+	grid-auto-rows: 600px;
+}
+
+.columns2 {
+	grid-template-columns: repeat(2, 1fr);
+	grid-auto-rows: 400px;
+}
+
+.columns3 {
 	grid-template-columns: repeat(3, 1fr);
-	grid-auto-rows: 120px;
+	grid-auto-rows: 200px;
 }
 
-.image {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-}
-
-.image-container {
-	padding: 3px;
-	padding: 4px;
-	border-radius: 3px;
-	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.1);
-	min-height: 0;
-	position: relative;
-}
-
-.image-container-1 {
-	grid-row-start: span 1;
-}
-
-.image-container-2 {
-	grid-row-start: span 2;
-}
-
-.image-container-3 {
-	grid-row-start: span 3;
-}
-
-.image-container-4 {
-	grid-row-start: span 4;
-}
-
-.breadcrumbs {
-	margin: 20px 0 16px 0;
-	position: sticky;
-	top: 8px;
-	background-color: var(--bg-color-dark);
-	padding: 8px 12px;
-	border-radius: 8px;
-	box-shadow: 2px 2px 8px #00000050, 1px 1px 2px #00000050;
-	z-index: 2;
-	display: flex;
-	align-items: center;
-}
-
-.title {
-	margin-left: 20px;
-	color: var(--color-light);
-	font-weight: 500;
-	font-size: 20px;
+.columns4 {
+	grid-template-columns: repeat(4, 1fr);
+	grid-auto-rows: 100px;
 }
 </style>

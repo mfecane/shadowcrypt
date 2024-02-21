@@ -3,8 +3,8 @@
         <BackButton @click="router.back()" label="Back" />
         <span class="title">{{ props.name }}</span>
         <div class="buttons">
-            <IconButton :type="IconType.roundPlus" />
-            <IconButton :type="IconType.roundMinus" />
+            <IconButton :type="IconType.roundPlus" @click="size--" :disabled="size <= 1" />
+            <IconButton :type="IconType.roundMinus" @click="size++" :disabled="size >= 4" />
         </div>
     </div>
 </template>
@@ -22,6 +22,7 @@ const props = defineProps<{
     name: string
 }>()
 
+const size = defineModel<number>({ default: 3 })
 </script>
 
 <style lang="scss" scoped>
