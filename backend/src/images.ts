@@ -1,14 +1,12 @@
 import { fetchAndUpload, uploadImage } from './uploadImage.js'
 import {
 	Timestamp,
-	addDoc,
 	collection,
 	deleteDoc,
 	doc,
 	getDoc,
 	getDocs,
 	query,
-	serverTimestamp,
 	setDoc,
 	updateDoc,
 	where,
@@ -38,7 +36,11 @@ export async function discardTmpFile(id: string) {
 	}
 	const path = docRef.data().path
 	const imagesRef = ref(storage, path)
-	await deleteObject(imagesRef)
+	try {
+		await deleteObject(imagesRef)
+	} catch {
+		throw 'Could not delete'
+	}
 	await deleteDoc(doc(db, 'images', id))
 }
 

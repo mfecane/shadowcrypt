@@ -1,11 +1,14 @@
 
 <template>
-    <dialog class="create-dialog" ref="dialogRef" @click="onClick"
-        @close.prevent="() => dialogStore.setShowCreateModal(false)">
+    <dialog class="create-dialog" ref="dialogRef" @click="onClick" @close.prevent="() => dialogStore.discardDialog()">
         <form class="container" @submit.prevent="upload">
-            <CollectionSelector v-model="collectionId" />
-            <UploadFile />
-            <button type="submit" class="btn">Create</button>
+            <div class="image">
+                <UploadFile />
+                <button type="submit" class="btn light create-button">Create</button>
+            </div>
+            <div class="collection">
+                <CollectionSelector v-model="collectionId" />
+            </div>
         </form>
     </dialog>
 </template>
@@ -15,14 +18,16 @@
 // TODO clear url upon discard
 
 import { useCollections } from '@/ts/hooks/useCollections';
-import { ref, computed, onMounted, ComputedRef, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import CollectionSelector from '@/ts/components/create/CollectionSelector.vue'
 import { useUploadDialog } from '@/ts/hooks/useUploadDialog';
 import UploadFile from '@/ts/components/create/UploadFile.vue';
 import { createPin } from '@/ts/api/loader'
+import { storeToRefs } from 'pinia';
 
 const collectionsStore = useCollections()
 const dialogStore = useUploadDialog()
+const { showCreateModal } = storeToRefs(dialogStore)
 
 const dialogRef = ref<HTMLDialogElement>()
 
@@ -32,11 +37,11 @@ onMounted(() => {
     collectionsStore.load()
 })
 
-watch(() => dialogStore.showCreateModal, (value) => {
-    if (value) {
-        dialogRef?.value?.showModal()
+watch(showCreateModal, (show) => {
+    if (show) {
+        dialogRef.value?.showModal()
     } else {
-        dialogRef?.value?.close()
+        dialogRef.value?.close()
     }
 }, { immediate: true })
 
@@ -58,28 +63,63 @@ async function upload() {
   
 <style scoped lang="scss">
 .create-dialog {
+    background-color: var(--color-light3);
+    border-radius: 6px;
+
+    padding: 40px;
+
     position: fixed;
+    z-index: 2;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    padding: 0px;
-    border-radius: 6px;
 
+    width: 80vw;
     min-width: 600px;
+    max-width: 1000px;
 
-    &>div {
-        padding: 32px;
+    height: 80vh;
+    max-height: 800px;
+    box-shadow: 4px 4px 10px 0 rgba(0, 0, 0, 0.5);
+
+    &::backdrop {
+        background-color: rgba(0, 0, 0, 0.3);
+        pointer-events: all;
     }
 }
 
 .container {
-    margin: 40px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+
+    &>*:first-child {
+        margin-right: 22px;
+    }
+}
+
+.image {
+    flex: 0 1 50%;
+
+    align-self: stretch;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 
-    &>*:not(:first-child) {
-        margin-top: 8px;
+    & :deep(*:not(:last-child)) {
+        margin-bottom: 6px;
+        flex: 0 1 auto;
     }
+}
+
+.collection {
+    flex: 0 1 50%;
+}
+
+
+.create-button {
+    margin-top: 12px;
+    width: 100%;
 }
 
 input[type=text].add {

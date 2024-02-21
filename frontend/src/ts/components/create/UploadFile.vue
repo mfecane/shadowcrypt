@@ -1,16 +1,16 @@
 
 <template>
-    <div v-if="uploadStore.imageId">
+    <div v-if="uploadStore.imageId" class="image2">
         <CollectionImage2 :id="uploadStore.imageId" />
-        <button @click="discard">Discard</button>
+        <IconButton :type="IconType.cross" class="discard" @click="discard" :size="1.25" />
     </div>
-    <div v-else>
-        <label for="filename"></label>Input file name
+    <template v-else>
+        <label for="filename">Input file name</label>
         <input id="filename" type="text" class="add" v-model.trim="filename" @change="onChangeDebounce" />
         <p>or</p>
         <div class="drag" @drop.prevent="onDrop" @dragenter.prevent="noop" @dragover.prevent="noop"
             @dragleave.prevent="noop">Drag image here</div>
-    </div>
+    </template>
 </template>
   
 <script setup lang="ts">
@@ -20,6 +20,8 @@ import { debounce } from 'lodash';
 import { ref } from 'vue'
 import CollectionImage2 from './CollectionImage2.vue';
 import { useUploadDialog } from '@/ts/hooks/useUploadDialog';
+import IconButton from '../common/inputs/IconButton.vue';
+import { IconType } from '../common/icons/IconType';
 
 const filename = ref('')
 const uploadStore = useUploadDialog()
@@ -66,14 +68,53 @@ async function onDrop(event: DragEvent): Promise<void> {
     border-radius: 4px;
 }
 
+.image2 {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.discard {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+
+    width: 32px;
+    height: 32px;
+
+    background-color: white;
+    border-radius: 16px;
+
+    & :deep(svg rect),
+    & :deep(svg path) {
+        fill: var(--color-delete);
+        transition: fill 200ms ease;
+    }
+}
+
+.inputs {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    & *:not(:last-child) {
+        margin-bottom: 6px;
+    }
+}
+
 .drag {
-    padding: 40px 20px;
+    flex: 1 1 auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 20px;
     text-align: center;
     border-radius: 4px;
     border: 1px dashed black;
-    background-color: rgb(210, 220, 220);
-    font-size: 12px;
+    background-color: rgb(239, 239, 239);
+    font-size: 16px;
     color: rgb(138, 155, 155);
-    font-weight: 700;
+    font-weight: 500;
 }
 </style>

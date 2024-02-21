@@ -72,6 +72,7 @@ function noop() { }
 .drag-wrapper {
     min-height: 100vh;
     position: relative;
+    z-index: 1;
 
     &.lock-children :deep(*) {
         pointer-events: none;

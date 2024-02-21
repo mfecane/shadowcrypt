@@ -21,14 +21,15 @@ watch(() => props.id, async (id) => {
   
 <style scoped lang="scss">
 .image-container {
-    width: 200px;
-    height: 200px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
 
     & img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        border-radius: 4px;
     }
 }
 </style>
