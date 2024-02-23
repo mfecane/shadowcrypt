@@ -24,3 +24,7 @@ export async function getImageDimensions(src: string): Promise<[width: number, h
 		img.src = src
 	})
 }
+
+export function clamp(value: number, min: number, max: number) {
+	return Math.max(min, Math.min(value, max))
+}

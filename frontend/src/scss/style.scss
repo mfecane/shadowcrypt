@@ -1,9 +1,11 @@
 @use 'button.scss';
+@use 'inputs.scss';
+@use 'link.scss';
 
 :root {
-	--bg-color: #323536;
+	--bg-color: #394347;
 	--bg-color-dark: #202425;
-	--accent-color: #8ad7dc;
+	--accent-color: #e46c57;
 	--accent-color-light: #e5e8e9;
 	--accent-color-dark: #004f5d;
 	--color-light: #f1f2f2;
@@ -28,4 +30,10 @@ body {
 	background: #fff;
 	padding: 6px;
 	border-radius: 4px;
+}
+
+.container {
+	max-width: 1280px;
+	margin: auto;
+	padding: 0 20px;
 }

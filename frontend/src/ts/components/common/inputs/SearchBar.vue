@@ -1,7 +1,7 @@
 
 <template>
     <div class="input_container">
-        <input type="text" class='input_text' v-model="model" />
+        <input type="text" class='input_text2' v-model="model" />
         <span class="hint" v-if="!model && props.hint">{{ props.hint }}</span>
         <Transition>
             <div class="clear_icon" v-if="model">
@@ -48,7 +48,7 @@ function clear() {
     box-shadow: inset 0px 4px 8px 0px rgba(45, 47, 52, 0.15), inset 0px 2px 0px 0px rgba(45, 47, 52, 0.05);
 }
 
-.input_text {
+.input_text2 {
     width: 100%;
     background-color: transparent;
     font-size: 18px;

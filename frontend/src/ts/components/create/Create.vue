@@ -17,24 +17,27 @@
 
 // TODO clear url upon discard
 
-import { useCollections } from '@/ts/hooks/useCollections';
-import { ref, onMounted, watch } from 'vue'
+import UploadFile from '@/ts/components/create/UploadFile.vue'
 import CollectionSelector from '@/ts/components/create/CollectionSelector.vue'
-import { useUploadDialog } from '@/ts/hooks/useUploadDialog';
-import UploadFile from '@/ts/components/create/UploadFile.vue';
-import { createPin } from '@/ts/api/loader'
-import { storeToRefs } from 'pinia';
 
-const collectionsStore = useCollections()
+import { ref, onMounted, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+
+import { useUploadDialog } from '@/ts/hooks/useUploadDialog'
+import { createPin } from '@/ts/api/loader'
+import { useCollectionsLocal } from '@/ts/hooks/useCollectionsLocal'
+
 const dialogStore = useUploadDialog()
-const { showCreateModal } = storeToRefs(dialogStore)
+const { showCreateModal, selectedCollection } = storeToRefs(dialogStore)
+
+const { reloadCollections } = useCollectionsLocal()
 
 const dialogRef = ref<HTMLDialogElement>()
 
 const collectionId = ref<string | null>(null)
 
 onMounted(() => {
-    collectionsStore.load()
+    reloadCollections()
 })
 
 watch(showCreateModal, (show) => {
@@ -56,8 +59,13 @@ async function upload() {
         await createPin(dialogStore.imageId, collectionId.value)
         dialogStore.setImageId(null)
         dialogStore.closeDialog()
+        reloadCollections()
     }
 }
+
+watch(selectedCollection, (id) => {
+    collectionId.value = id
+})
 
 </script>
   

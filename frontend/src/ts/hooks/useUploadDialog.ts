@@ -6,6 +6,7 @@ const ID = 'upload_dialog_store'
 interface State {
 	showCreateModal: boolean
 	imageId: string | null
+	selectedCollection: string | null
 }
 
 interface Actions {
@@ -16,12 +17,15 @@ interface Actions {
 	closeDialog(): Promise<void>
 
 	discardDialog(): Promise<void>
+
+	setSelectedCollection(selectedCollection: string): void
 }
 
 export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 	state: (): State => {
 		return {
 			showCreateModal: false,
+			selectedCollection: null,
 			imageId: null,
 		}
 	},
@@ -46,6 +50,10 @@ export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 				this.setImageId(null)
 			}
 			this.closeDialog()
+		},
+
+		setSelectedCollection(selectedCollection) {
+			this.selectedCollection = selectedCollection
 		},
 	},
 

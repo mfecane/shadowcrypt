@@ -1,13 +1,14 @@
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
+import vueClickOutsideElement from 'vue-click-outside-element'
 
 import '@/scss/null.scss'
 import '@/scss/style.scss'
 
 import App from '@/ts/components/App.vue'
 import CollectionsList from '@/ts/components/list/CollectionsList.vue'
-import Collection from '@/ts/components/Collection.vue'
+import Collection from '@/ts/components/collection2/Collection.vue'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -28,4 +29,5 @@ const router = createRouter({
 
 app.use(pinia)
 app.use(router)
+app.use(vueClickOutsideElement)
 app.mount('#app')

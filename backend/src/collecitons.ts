@@ -1,4 +1,4 @@
-import { Timestamp, addDoc, collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { Timestamp, addDoc, collection, doc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
 
 export interface Collection {
@@ -20,4 +20,8 @@ export async function getCollections(): Promise<Collection[]> {
 export async function createCollection(name: string): Promise<string> {
 	const docRef = await addDoc(collection(db, 'collections'), { name: name, updated: Timestamp.now() })
 	return docRef.id
+}
+
+export async function renameCollection(id: string, name: string) {
+	await updateDoc(doc(db, 'collections', id), { name: name })
 }

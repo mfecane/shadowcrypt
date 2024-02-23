@@ -1,13 +1,19 @@
 <template>
-    <IconButton :type="IconType.plus" @click="store.showCreateDialog()" class="create-button" />
+    <IconButton v-if="user?.id" :type="IconType.plus" @click="store.showCreateDialog()" class="create-button" />
 </template>
 
 <script setup lang="ts">
 import IconButton from './inputs/IconButton.vue';
+
+import { storeToRefs } from 'pinia';
+
 import { IconType } from './icons/IconType';
 import { useUploadDialog } from '@/ts/hooks/useUploadDialog';
+import { useAuth } from '@/ts/hooks/useAuth';
 
 const store = useUploadDialog()
+
+const { user } = storeToRefs(useAuth())
 
 </script>
 

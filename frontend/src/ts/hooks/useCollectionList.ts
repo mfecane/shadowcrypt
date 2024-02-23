@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, storeToRefs } from 'pinia'
 import { CollectionWithImages } from '../model/Data'
 import FuzzySearch from 'fuzzy-search'
 
@@ -16,7 +16,13 @@ interface Actions {
 interface Getters {
 	filteredCollection(state: State): CollectionWithImages[]
 
+	pinnedCollections(state: State): CollectionWithImages[]
+
 	collectionExist(state: State): boolean
+
+	firstRow(state: State): CollectionWithImages[]
+
+	secondRow(state: State): CollectionWithImages[]
 }
 
 //@ts-expect-error wtf
@@ -40,6 +46,18 @@ export const useCollectionList = defineStore<typeof ID, State, Getters, Actions>
 
 		collectionExist(state): boolean {
 			return !!state.list.length
+		},
+
+		pinnedCollections(state) {
+			return this.filteredCollection.filter((c) => c.pinned)
+		},
+
+		firstRow(state) {
+			return this.filteredCollection.filter((c) => !c.pinned).slice(0, 3)
+		},
+
+		secondRow(state) {
+			return this.filteredCollection.filter((c) => !c.pinned).slice(3)
 		},
 	},
 })

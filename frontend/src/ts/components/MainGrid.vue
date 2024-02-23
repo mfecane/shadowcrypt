@@ -1,8 +1,10 @@
 <template >
-  <div class="main-grid">
-    <CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
-      :index="index" />
-  </div>
+	<div className='container'>
+		<div class="main-grid">
+			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
+				:index="index" />
+		</div>
+	</div>
 </template>
 
 <script lang="ts" setup>
@@ -14,10 +16,10 @@ const props = defineProps<{ collections: CollectionWithImages[] }>()
 
 <style scoped lang="scss">
 .main-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  grid-auto-rows: 300px;
-  gap: 24px;
-  margin-bottom: 100px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	grid-auto-rows: 300px;
+	gap: 24px;
+	margin-bottom: 100px;
 }
 </style>

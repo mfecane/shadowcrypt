@@ -1,0 +1,16 @@
+a {
+	color: var(--accent-color);
+	cursor: pointer;
+
+	&:hover {
+		color: var(--color-light);
+	}
+}
+
+a.light {
+	color: var(--accent-color-dark);
+
+	&:hover {
+		color: var(--bg-color-dark);
+	}
+}

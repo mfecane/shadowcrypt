@@ -2,6 +2,7 @@ import { FirebaseOptions, initializeApp } from 'firebase/app'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 import { config as envConfig } from 'dotenv'
+import { getAuth } from 'firebase/auth'
 
 envConfig()
 
