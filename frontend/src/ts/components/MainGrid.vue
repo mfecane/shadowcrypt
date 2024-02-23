@@ -1,5 +1,5 @@
 <template >
-	<div className='container'>
+	<div class='container'>
 		<div class="main-grid">
 			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
 				:index="index" />
@@ -18,7 +18,7 @@ const props = defineProps<{ collections: CollectionWithImages[] }>()
 .main-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-	grid-auto-rows: 300px;
+	grid-auto-rows: 220px;
 	gap: 24px;
 	margin-bottom: 100px;
 }

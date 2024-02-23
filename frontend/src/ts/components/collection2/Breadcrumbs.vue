@@ -33,7 +33,6 @@ import { useRouter } from 'vue-router'
 import { Orientation, useCollectionViewer } from '@/ts/hooks/useCollectionViewer'
 import { IconType } from '@/ts/components/common/icons/IconType'
 import { deletePin } from '@/ts/api/pins'
-import { useCollections2 } from '@/ts/hooks/useCollections2'
 import Dialog from '../common/Dialog.vue'
 import { renameCollection } from '@/ts/api/collections'
 
@@ -65,7 +64,6 @@ function deletePin2() {
     const { selected } = collectionViewer
     if (selected) {
         deletePin(selected)
-        useCollections2().load()
         collectionViewer.select()
     }
 }

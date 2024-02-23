@@ -11,10 +11,10 @@ import CollectionGrid from '@/ts/components/collection2/CollectionGrid.vue';
 import { computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia'
 
-import { useCollections2 } from '@/ts/hooks/useCollections2'
 import { useUploadDialog } from '@/ts/hooks/useUploadDialog';
+import { useCollectionsLocal } from '@/ts/hooks/useCollectionsLocal';
 
-const store = useCollections2()
+const { store, reloadCollections } = useCollectionsLocal()
 const { getById } = storeToRefs(store)
 
 const uploadDialog = useUploadDialog()
@@ -22,10 +22,9 @@ const uploadDialog = useUploadDialog()
 const props = defineProps<{ id: string }>()
 
 onMounted(() =>
-    store.load()
+    reloadCollections()
 )
 
-// TODO wierd pattern
 const collection = computed(() => getById.value(props.id))
 
 watch(collection, (collection) => {

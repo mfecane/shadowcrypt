@@ -13,7 +13,13 @@ interface Actions {
 	init(collections: CollectionWithImages[]): void
 }
 
-const useStore = defineStore<typeof ID, State, {}, Actions>(ID, {
+interface Getters {
+	getById: (state: State) => (id: string) => CollectionWithImages | undefined
+}
+
+// TODO ???
+//@ts-expect-error
+const useStore = defineStore<typeof ID, State, Getters, Actions>(ID, {
 	state: (): State => ({ collections: [] }),
 
 	actions: {
@@ -22,7 +28,13 @@ const useStore = defineStore<typeof ID, State, {}, Actions>(ID, {
 		},
 	},
 
-	getters: {},
+	getters: {
+		getById(state) {
+			return (id) => {
+				return state.collections.find((collection) => collection.id === id)
+			}
+		},
+	},
 })
 
 export function useCollectionsLocal() {
