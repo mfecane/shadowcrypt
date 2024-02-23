@@ -2,6 +2,7 @@ import { Timestamp, addDoc, collection, getDocs, query, where } from 'firebase/f
 import { db, storage, STORAGE_URL } from '@/ts/firebase'
 import { Collection, CollectionImage, CollectionWithImages } from '@/ts/model/Data'
 import { getDownloadURL, ref } from 'firebase/storage'
+import { getImageDimensions } from '../utils/utils'
 
 async function getCollections(userId: string): Promise<Collection[]> {
 	const q = query(collection(db, 'collections'), where('user', '==', userId))
@@ -22,20 +23,23 @@ export async function getCollectionsWithImages(userId: string): Promise<Collecti
 		const q = query(collection(db, 'images'), where('collectionId', '==', c.id))
 		const s = await getDocs(q)
 		const coll = c as CollectionWithImages
-		coll.images = s.docs.map((i) => i.data() as CollectionImage)
-		await resolvePaths(coll.images)
+		coll.images = s.docs.map((i) => ({ ...i.data(), id: i.id } as CollectionImage))
+		for (let i = 0; i < coll.images.length; ++i) {
+			await resolveImage(coll.images[i])
+		}
 		collections2.push(coll)
 	}
 	return collections2
 }
 
-async function resolvePaths(images: CollectionImage[]): Promise<void> {
-	for (let i = 0; i < images.length; ++i) {
-		const p = images[i].path
-		if (p) {
-			images[i].path = (await resolvePath(p)) as string
-		}
+async function resolveImage(image: CollectionImage) {
+	const p = image.path
+	if (p) {
+		image.path = (await resolvePath(p)) as string
 	}
+	const [width, height] = await getImageDimensions(image.path)
+	image.width = width
+	image.height = height
 }
 
 async function resolvePath(path: string): Promise<string | null> {

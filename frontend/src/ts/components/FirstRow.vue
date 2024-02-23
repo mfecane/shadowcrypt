@@ -1,8 +1,8 @@
 <template>
-	<div className='container'>
-		<div className='upper-grid'>
+	<div class='container'>
+		<div class='upper-grid'>
 			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
-				:index="index" />
+				:index="index" :big="index === 0" />
 		</div>
 	</div>
 </template>

@@ -28,8 +28,8 @@ export function grid(columns: number, orientation: Orientation, scale: number, x
 export function gridElement(orientation: Orientation, aspect: number) {
 	switch (orientation) {
 		case Orientation.vertical:
-			return { gridRowStart: `span ${Math.floor(10 * aspect)}` }
+			return { gridRowStart: `span ${Math.round(10 * aspect)}` }
 		case Orientation.horizontal:
-			return { gridColumnStart: `span ${Math.floor((10 * 1) / aspect)}` }
+			return { gridColumnStart: `span ${Math.round((10 * 1) / aspect)}` }
 	}
 }

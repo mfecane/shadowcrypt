@@ -1,8 +1,18 @@
+## ARCH
+
+Terminology
+
+collections -> boards -> images
+
 ## TODO:
 
 - ignore drag from same window
 - capture dragging event
 - accept only drag images
+- develop interactions for touchpads and touch screens
+- button navigation
+- state machine for interactions
+- handle paste image data
 - deploy
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
@@ -33,4 +43,4 @@ docker compose up -d --build
 
 docker compose exec frontend sh
 
-sudo tar -cvf fireabse-backup.001.tar.gz -C ./database/backup .
+sudo tar -cvf fireabse-backup.003.tar.gz -C ./database/backup .

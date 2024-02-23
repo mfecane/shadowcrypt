@@ -8,12 +8,11 @@
 				<Icon v-if="props.collection.pinned" :type="IconType.pin" :size="2" />
 			</div>
 			<div class="item__wrapper">
-				<div v-if="displayImages.length" class="item__grid" :class="itemGridStyles">
-					<div v-for="(image, index) in displayImages" :class="getClassnameForImage(index)" key={index}>
+				<div v-if="displayImages.length" class="item__grid" :class="props.big ? 'big' : 'small'">
+					<div v-for="(image, index) in displayImages" key={index}>
 						<img v-if="image.path" :src="image.path" class='item__image' />
 						<span v-else></span>
 					</div>
-
 				</div>
 				<div v-else class="empty">Nothing</div>
 				<CollectionOptions class="collection-options" />
@@ -31,61 +30,17 @@ import { CollectionWithImages } from '../model/Data';
 import CollectionOptions from './list/CollectionOptions.vue';
 import { IconType } from './common/icons/IconType';
 
-const props = defineProps<{ index: number, collection: CollectionWithImages }>()
-
-
-let displayImagesCount: number
-const itemGridStyles: string[] = []
+const props = withDefaults(
+	defineProps<{ big?: boolean, collection: CollectionWithImages }>(),
+	{ big: false }
+)
 
 const displayImages = computed(() => {
 	if (!props.collection.images.length) {
 		return []
 	}
-	let arr = props.collection.images.slice(0, displayImagesCount)
-	if (arr.length < displayImagesCount) {
-		arr = arr.concat(
-			new Array(displayImagesCount - arr.length).fill({
-				src: undefined,
-			})
-		)
-	}
-	return arr
+	return props.collection.images.slice(0, 5)
 })
-
-switch (props.index) {
-	case 0:
-		displayImagesCount = 5
-		itemGridStyles.push('item--grid-5x')
-		// itemStyles += ' ' + style['item--grid-5x']
-		break
-	case 1:
-		displayImagesCount = 3
-		break
-	case 2:
-	default:
-		displayImagesCount = 3
-		break
-}
-
-const getClassnameForImage = (index: number): string[] => {
-
-	const imageGridStyles: string[] = ['item__image-container']
-
-	if (displayImagesCount === 5 && index === 0) {
-		imageGridStyles.push('item-5-images__image--span-h-v')
-	}
-
-	if (displayImagesCount === 5 && index === 2) {
-		imageGridStyles.push('item-5-images__image--span-v')
-	}
-
-	if (displayImagesCount === 3 && index === 0) {
-		imageGridStyles.push('item-3-images__image-first')
-	}
-
-	return imageGridStyles
-}
-
 
 </script>
 
@@ -136,7 +91,7 @@ const getClassnameForImage = (index: number): string[] => {
 }
 
 .item__wrapper {
-	flex: 0 1 auto;
+	flex: 1 1 auto;
 	min-width: 0;
 	min-height: 0;
 	background: var(--bg-color-dark);
@@ -146,33 +101,47 @@ const getClassnameForImage = (index: number): string[] => {
 	box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.1), 1px 1px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
-
 .item__grid {
 	height: 100%;
 	flex: 0 1 auto;
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	grid-template-rows: 1fr 1fr;
 	gap: 1px;
 	transition: 200ms ease-out all;
-}
 
-.item__grid.item--grid-5x {
-	grid-template-columns: repeat(2, 2fr) 3fr;
-	grid-template-rows: 3fr 1fr 2fr;
-}
+	div {
+		overflow: hidden;
+	}
 
-.item-5-images__image--span-h-v {
-	grid-column-start: span 2;
-	grid-row-start: span 2;
-}
+	&.big {
+		grid-template-columns: repeat(2, 2fr) 3fr;
+		grid-template-rows: 3fr 1fr 2fr;
 
-.item-5-images__image--span-v {
-	grid-row-start: span 2;
-}
+		&>*:first-child {
+			grid-column-start: span 2;
+			grid-row-start: span 2;
+		}
 
-.item-3-images__image-first {
-	grid-column-start: span 2;
+		&>*:nth-child(3) {
+			grid-row-start: span 2;
+		}
+
+		&>*:nth-child(n + 6) {
+			display: none;
+		}
+	}
+
+	&.small {
+		grid-template-columns: 3fr 2fr;
+		grid-template-rows: 1fr 1fr;
+
+		&>*:first-child {
+			grid-row-start: span 2;
+		}
+
+		&>*:nth-child(n + 4) {
+			display: none;
+		}
+	}
 }
 
 .upper-grid .item__name {

@@ -1,6 +1,6 @@
 <template >
 	<DragWrapper>
-		<div className='content'>
+		<div class='content'>
 			<router-view />
 		</div>
 		<CreateButton />

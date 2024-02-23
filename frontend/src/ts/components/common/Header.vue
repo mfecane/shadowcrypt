@@ -20,7 +20,7 @@ import User from '@/ts/components/auth/User.vue';
 import Logo from '@/ts/components/common/Logo.vue'
 import SearchBar from '@/ts/components/common/inputs/SearchBar.vue'
 
-import { ref, watchEffect } from 'vue';
+import { onUnmounted, ref, watchEffect } from 'vue';
 import { storeToRefs } from 'pinia';
 
 import { useCollectionList } from '@/ts/hooks/useCollectionList';
@@ -29,19 +29,23 @@ const { filter } = storeToRefs(useCollectionList())
 
 const header = ref<HTMLDivElement>()
 
-watchEffect(() => {
+function scrollHander() {
 	const el = header.value!
-
-	const scrollHander = () => {
-		const scroll = document.documentElement.scrollTop
-		if (scroll > 10) {
-			el.classList.toggle('darkbg', true)
-		} else {
-			el.classList.toggle('darkbg', false)
-		}
+	const scroll = document.documentElement.scrollTop
+	if (scroll > 10) {
+		el.classList.toggle('darkbg', true)
+	} else {
+		el.classList.toggle('darkbg', false)
 	}
+}
 
+const clearWatch = watchEffect(() => {
 	window.addEventListener('scroll', scrollHander)
+})
+
+onUnmounted(() => {
+	clearWatch()
+	window.removeEventListener('scroll', scrollHander)
 })
 
 </script>
@@ -64,7 +68,8 @@ watchEffect(() => {
 
 .header-content2 {
 	width: 100%;
-	padding: 16px 0;
+	padding-top: 16px;
+	padding-bottom: 16px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

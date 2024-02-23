@@ -1,0 +1,8 @@
+{
+	"name": "sapic",
+	"version": "0.0.0.0.0.0.0.0.0.1",
+	"scripts": {
+		"backup": "sudo tar -cvf fireabse-backup.003.tar.gz -C ./database/backup ."
+	},
+	"license": "ISC"
+}

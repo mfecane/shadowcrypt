@@ -1,5 +1,5 @@
 {
-	"name": "pinterest-clone",
+	"name": "sapic-frontend",
 	"version": "1.0.0",
 	"description": "-",
 	"main": "index.js",
@@ -19,6 +19,7 @@
 		"vite": "^5.0.12"
 	},
 	"dependencies": {
+		"@tweenjs/tween.js": "^23.1.1",
 		"firebase": "^10.8.0",
 		"fuzzy-search": "^3.2.1",
 		"lodash": "^4.17.21",

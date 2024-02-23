@@ -19,9 +19,9 @@ const { user } = storeToRefs(useAuth())
 
 <style scoped lang="scss">
 .create-button {
-    right: max((calc((100% - 1280px)/ 2)), 20px);
+    right: 30px;
     position: fixed;
-    bottom: 20px;
+    bottom: 30px;
     width: 60px;
     height: 60px;
     border-radius: 50%;

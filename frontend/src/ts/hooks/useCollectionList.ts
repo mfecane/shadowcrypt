@@ -36,28 +36,41 @@ export const useCollectionList = defineStore<typeof ID, State, Getters, Actions>
 	},
 
 	getters: {
-		filteredCollection(state) {
-			const searcher = new FuzzySearch(state.list, ['name'], {
-				caseSensitive: false,
-				sort: true,
-			})
-			return searcher.search(state.filter.toLocaleLowerCase())
-		},
-
 		collectionExist(state): boolean {
 			return !!state.list.length
 		},
 
 		pinnedCollections(state) {
-			return this.filteredCollection.filter((c) => c.pinned)
+			if (state.filter) {
+				return []
+			}
+			return state.list.filter((c) => c.pinned)
 		},
 
 		firstRow(state) {
-			return this.filteredCollection.filter((c) => !c.pinned).slice(0, 3)
+			if (state.filter) {
+				return []
+			}
+			return state.list.filter((c) => !c.pinned).slice(0, 3)
 		},
 
 		secondRow(state) {
-			return this.filteredCollection.filter((c) => !c.pinned).slice(3)
+			if (state.filter) {
+				return []
+			}
+			return state.list.filter((c) => !c.pinned).slice(3)
+		},
+
+		filteredCollection(state) {
+			if (!state.filter) {
+				return []
+			}
+
+			const searcher = new FuzzySearch(state.list, ['name'], {
+				caseSensitive: false,
+				sort: true,
+			})
+			return searcher.search(state.filter.toLocaleLowerCase())
 		},
 	},
 })
