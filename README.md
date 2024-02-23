@@ -1,7 +1,9 @@
 ## TODO:
 
 - ignore drag from same window
+- capture dragging event
 - accept only drag images
+- deploy
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/
@@ -30,3 +32,5 @@ docker run -p 9099:9099 -p 4001:4001 -p 8083:8083 -p 9199:9199 pin-db
 docker compose up -d --build
 
 docker compose exec frontend sh
+
+sudo tar -cvf fireabse-backup.001.tar.gz -C ./database/backup .

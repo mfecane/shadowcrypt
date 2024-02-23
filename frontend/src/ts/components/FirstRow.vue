@@ -1,8 +1,10 @@
 <template>
-  <div className='upper-grid'>
-    <CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
-      :index="index" />
-  </div>
+	<div className='container'>
+		<div className='upper-grid'>
+			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
+				:index="index" />
+		</div>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -14,10 +16,10 @@ const props = defineProps<{ collections: CollectionWithImages[] }>()
 
 <style scoped lang="scss">
 .upper-grid {
-  display: grid;
-  grid-template-columns: 3fr 2fr 2fr;
-  grid-template-rows: 380px;
-  gap: 32px;
-  margin: 16px 0px 32px 0;
+	display: grid;
+	grid-template-columns: 3fr 2fr 2fr;
+	grid-template-rows: 380px;
+	gap: 32px;
+	margin: 16px 0px 32px 0;
 }
 </style>

@@ -5,12 +5,17 @@
 			<div class='item__header-container'>
 				<div class='item__name'>{{ props.collection.name }}</div>
 				<div class='item__count'>{{ props.collection.images.length }} items</div>
+				<Icon v-if="props.collection.pinned" :type="IconType.pin" :size="2" />
 			</div>
-			<div class="item__grid" :class="itemGridStyles">
-				<div v-for="(image, index) in displayImages" :class="getClassnameForImage(index)" key={index}>
-					<img :src="image.path" class='item__image' v-if="image.path" />
-					<span v-else></span>
+			<div class="item__wrapper">
+				<div v-if="displayImages.length" class="item__grid" :class="itemGridStyles">
+					<div v-for="(image, index) in displayImages" :class="getClassnameForImage(index)" key={index}>
+						<img v-if="image.path" :src="image.path" class='item__image' />
+						<span v-else></span>
+					</div>
+
 				</div>
+				<div v-else class="empty">Nothing</div>
 				<CollectionOptions class="collection-options" />
 			</div>
 		</div>
@@ -18,14 +23,34 @@
 </template>
 
 <script setup lang="ts">
+
+import Icon from './common/icons/Icon.vue';
+
+import { computed } from 'vue';
 import { CollectionWithImages } from '../model/Data';
 import CollectionOptions from './list/CollectionOptions.vue';
+import { IconType } from './common/icons/IconType';
 
 const props = defineProps<{ index: number, collection: CollectionWithImages }>()
 
 
 let displayImagesCount: number
 const itemGridStyles: string[] = []
+
+const displayImages = computed(() => {
+	if (!props.collection.images.length) {
+		return []
+	}
+	let arr = props.collection.images.slice(0, displayImagesCount)
+	if (arr.length < displayImagesCount) {
+		arr = arr.concat(
+			new Array(displayImagesCount - arr.length).fill({
+				src: undefined,
+			})
+		)
+	}
+	return arr
+})
 
 switch (props.index) {
 	case 0:
@@ -40,16 +65,6 @@ switch (props.index) {
 	default:
 		displayImagesCount = 3
 		break
-}
-
-let displayImages = props.collection.images.slice(0, displayImagesCount)
-
-if (displayImages.length < displayImagesCount) {
-	displayImages = displayImages.concat(
-		new Array(displayImagesCount - displayImages.length).fill({
-			src: undefined,
-		})
-	)
 }
 
 const getClassnameForImage = (index: number): string[] => {
@@ -88,6 +103,16 @@ const getClassnameForImage = (index: number): string[] => {
 	display: flex;
 	flex-direction: column;
 	grid-template-columns: auto 32px;
+	position: relative;
+}
+
+.item__header-container :deep(svg) {
+	position: absolute;
+	right: 0;
+
+	path {
+		fill: var(--color-light3);
+	}
 }
 
 .item__header-data {
@@ -100,31 +125,36 @@ const getClassnameForImage = (index: number): string[] => {
 	font-size: 16px;
 	font-weight: 600;
 	color: var(--color-light);
-	margin-bottom: 6px;
+	margin-bottom: 8px;
 }
 
 .item__count {
-	font-size: 10px;
+	font-size: 12px;
 	font-weight: 500;
 	color: var(--accent-color);
 	margin-bottom: 8px;
 }
 
-
-.item__grid {
+.item__wrapper {
+	flex: 0 1 auto;
 	min-width: 0;
 	min-height: 0;
 	background: var(--bg-color-dark);
+	position: relative;
+	padding: 5px;
+	border-radius: 4px;
+	box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.1), 1px 1px 2px 0px rgba(0, 0, 0, 0.1);
+}
+
+
+.item__grid {
+	height: 100%;
 	flex: 0 1 auto;
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
 	grid-template-rows: 1fr 1fr;
 	gap: 1px;
-	padding: 5px;
-	border-radius: 4px;
-	box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.1), 1px 1px 2px 0px rgba(0, 0, 0, 0.1);
 	transition: 200ms ease-out all;
-	position: relative;
 }
 
 .item__grid.item--grid-5x {
@@ -173,5 +203,13 @@ const getClassnameForImage = (index: number): string[] => {
 .item:hover .collection-options {
 	opacity: 1;
 	pointer-events: all;
+}
+
+.empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 160px;
+	color: var(--color-light);
 }
 </style>

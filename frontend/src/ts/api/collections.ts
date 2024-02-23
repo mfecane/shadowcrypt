@@ -25,3 +25,12 @@ export async function getCollections() {
 	const collections = (await response.json()) as Collection[]
 	return collections.map((collection) => ({ ...collection, images: [] })) as CollectionWithImages[]
 }
+
+export async function renameCollection(collectionId: string, newName: string) {
+	const formData = new FormData()
+	formData.set('name', newName)
+	const response = await fetch(`${HOST}/collection/${collectionId}`, { method: 'PATCH', body: formData })
+	if (!response.ok) {
+		throw new Error('Failed to change name of the collection')
+	}
+}

@@ -1,6 +1,7 @@
 export interface Collection {
 	id: string
 	name: string
+	pinned: boolean
 }
 
 export interface CollectionWithImages extends Collection {

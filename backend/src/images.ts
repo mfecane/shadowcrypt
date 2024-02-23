@@ -44,7 +44,7 @@ export async function discardTmpFile(id: string) {
 	await deleteDoc(doc(db, 'images', id))
 }
 
-export async function getImageUrl(id: string): Promise<string> {
+export async function getImageUrl(id: string): Promise<string | null> {
 	const docRef = await getDoc(doc(db, 'images', id))
 	if (!docRef.exists()) {
 		throw 'file does not exist'
@@ -52,9 +52,14 @@ export async function getImageUrl(id: string): Promise<string> {
 	return resolvePath(docRef.data().path)
 }
 
-async function resolvePath(path: string): Promise<string> {
+async function resolvePath(path: string): Promise<string | null> {
 	const imagesRef = ref(storage, path)
-	let downloadUrl = await getDownloadURL(imagesRef)
+	let downloadUrl = ''
+	try {
+		downloadUrl = await getDownloadURL(imagesRef)
+	} catch (error) {
+		return null
+	}
 	downloadUrl = downloadUrl.replace(/http\:\/\/database\:9199\//, STORAGE_URL)
 	return downloadUrl
 }
@@ -84,6 +89,13 @@ export async function getImages(collectionId: string): Promise<CollectionImage[]
 
 async function resolvePaths(images: CollectionImage[]): Promise<void> {
 	for (let i = 0; i < images.length; ++i) {
-		images[i].path = await resolvePath(images[i].path)
+		const p = images[i].path
+		if (p) {
+			images[i].path = await resolvePath(p)
+		}
 	}
+}
+
+export async function deletePin(id: string) {
+	await deleteDoc(doc(db, 'images', id))
 }

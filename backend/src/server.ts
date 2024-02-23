@@ -3,8 +3,8 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { fetchAndUpload } from './uploadImage.js'
-import { createCollection, getCollections } from './collecitons.js'
-import { createPin, discardTmpFile, getImageUrl, getImages, fetchAndAdd, addFile } from './images.js'
+import { createCollection, getCollections, renameCollection } from './collecitons.js'
+import { createPin, discardTmpFile, getImageUrl, getImages, fetchAndAdd, addFile, deletePin } from './images.js'
 import fileUpload from 'express-fileupload'
 import { CLIENT_URL } from './globals.js'
 import { Endpoints } from './endpoints.js'
@@ -121,6 +121,25 @@ app.get('/get-images', async (req: Request, res: Response) => {
 		return panic(res)
 	}
 	const res2 = await getImages(collectionId)
+	return res.send(res2)
+})
+
+app.delete('/pin/:id', async (req: Request, res: Response) => {
+	const { id } = req.params
+	if (!isString(id)) {
+		return panic(res)
+	}
+	const res2 = await deletePin(id)
+	return res.send(res2)
+})
+
+app.patch('/collection/:id', async (req: Request, res: Response) => {
+	const { id } = req.params
+	const { name } = req.body
+	if (!isString(id) || !isString(name)) {
+		return panic(res)
+	}
+	const res2 = await renameCollection(id, name)
 	return res.send(res2)
 })
 

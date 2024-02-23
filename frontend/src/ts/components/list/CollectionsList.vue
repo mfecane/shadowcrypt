@@ -1,36 +1,49 @@
 <template>
 	<Header />
-	<template v-if="collectionList.filteredCollection.length">
-		<FirstRow :collections="collectionList.filteredCollection.slice(0, 3)" />
-		<MainGrid :collections="collectionList.filteredCollection.slice(3)" />
+
+	<template v-if="filteredCollection.length">
+		<PinnedColletions />
+		<FirstRow :collections="firstRow" />
+		<MainGrid :collections="secondRow" />
 	</template>
-	<div v-if="collectionList.collectionExist && !collectionList.filteredCollection.length" class="no-collections">
-		No collections, satisfying criteria
+
+	<div v-if="collectionExist && !filteredCollection.length" class="no-collections">
+		<div class="container">
+			No collections, satisfying criteria
+		</div>
 	</div>
-	<div v-if="!collectionList.collectionExist" class="no-collections">
-		No collections
+	<div v-if="!collectionExist" class="no-collections">
+		<div class="container">
+			No collections</div>
 	</div>
 </template>
 
 <script setup lang="ts">
+
 import FirstRow from '@/ts/components/FirstRow.vue'
 import MainGrid from '@/ts/components/MainGrid.vue'
 import Header from '@/ts/components/common/Header.vue'
+import PinnedColletions from '@/ts/components/list/PinnedColletions.vue';
 
-import { useCollections2 } from '@/ts/hooks/useCollections2';
 import { onMounted, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+
 import { useCollectionList } from '@/ts/hooks/useCollectionList';
+import { useCollectionsLocal } from '@/ts/hooks/useCollectionsLocal';
 import { CollectionWithImages } from '@/ts/model/Data';
 
-const collections2 = useCollections2()
-const collectionList = useCollectionList()
+const collectionListStore = useCollectionList()
+const { filteredCollection, firstRow, secondRow, collectionExist } = storeToRefs(collectionListStore)
 
-onMounted(() => {
-	collections2.load()
+const { store: collectionsLocalStore, reloadCollections } = useCollectionsLocal()
+const { collections } = storeToRefs(collectionsLocalStore)
+
+watch(collections, (value: CollectionWithImages[]) => {
+	collectionListStore.init(value)
 })
 
-watch(() => collections2.collections, (value: CollectionWithImages[]) => {
-	collectionList.init(value)
+onMounted(() => {
+	reloadCollections()
 })
 
 </script>

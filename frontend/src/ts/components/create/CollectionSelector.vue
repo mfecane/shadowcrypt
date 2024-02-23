@@ -3,20 +3,35 @@
     <div class="collection-container">
         <label for="collection-selector-prompt">Add to collection</label>
         <input type="text" id="collection-selector-prompt" v-model="searchPrompt" class="prompt">
+
+        <button class="btn light create-button" v-if="canCreateCollection" @click="createCollection">Create</button>
+
         <div v-if="filteredList.length" class="list">
-            <div v-for="collection in filteredList" :key="collection.id" class="item" :class="{
-                'selected': collection.id === collectionId
-            }" @click="() => onSelect(collection.id)">
-                {{ collection.name }}
+
+            <div v-if="selected" :key="selected.id" class="item selected">
+                {{ selected.name }}
+            </div>
+            <div class="filteredlist">
+                <div v-for="collection in filteredListWitoutSelected" :key="collection.id" class="item" :class="{
+                    'selected': collection.id === collectionId
+                }" @click="() => onSelect(collection.id)">
+                    {{ collection.name }}
+                </div>
             </div>
         </div>
-        <button class="btn light create-button" v-else @click="createCollection">Create</button>
     </div>
 </template>
   
 <script setup lang="ts">
-import { useCollections } from '@/ts/hooks/useCollections';
-import { ref, computed } from 'vue'
+
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue'
+import FuzzySearch from 'fuzzy-search';
+
+import { useCollectionsLocal } from '@/ts/hooks/useCollectionsLocal';
+import { Collection } from '@/ts/model/Data';
+import { createCollection as createCollectionApi } from '@/ts/api2/collections';
+import { useAuth } from '@/ts/hooks/useAuth';
 
 /**
  * TODO
@@ -24,30 +39,77 @@ import { ref, computed } from 'vue'
  * clear search button
  */
 
-const collections = useCollections()
+const { store: localCollectinsStore, reloadCollections } = useCollectionsLocal()
 
-const searchPrompt = defineModel<string>('')
-// const selected = ref<string>('')
+const { collections } = storeToRefs(localCollectinsStore)
+
+const { user } = storeToRefs(useAuth())
+
+const searchPrompt = ref('')
+
 const collectionId = defineModel<string | null>({ default: null })
 
 const filteredList = computed(() => {
     const value: string | undefined = searchPrompt.value
+    let filtered: Collection[] = []
     if (value) {
-        return collections.collections.filter(it => it.name.includes(value))
+        const searcher = new FuzzySearch(collections.value, ['name'], {
+            caseSensitive: false,
+            sort: true,
+        })
+        return searcher.search(value.toLocaleLowerCase())
+    } else {
+        return collections.value
     }
-    return collections.collections
+})
+
+const filteredListWitoutSelected = computed(() => {
+    return filteredList.value.filter(c => c.id !== collectionId.value)
+})
+
+const selected = computed<Collection | null>(() => {
+    if (!collectionId.value) {
+        return null
+    }
+    const found = collections.value.find(c => c.id === collectionId.value)
+    if (!found) {
+        throw 'Internal error'
+    }
+    return found
 })
 
 function onSelect(name: string) {
     collectionId.value = name
+    searchPrompt.value = ''
 }
 
 function createCollection() {
     const value: string | undefined = searchPrompt.value
     if (value) {
-        collections.createCollection(value)
+        searchPrompt.value = ''
+        createCollectionApi(value, user.value!.id)
+        reloadCollections()
     }
 }
+
+function strEqual(str1: string, str2: string) {
+    return str1.trim().toLowerCase() === str2.trim().toLowerCase()
+}
+
+const canCreateCollection = computed(() => {
+    return searchPrompt.value && !strEqual(searchPrompt.value, selected.value?.name ?? '')
+})
+
+watch(searchPrompt, (value) => {
+    if (filteredList.value.length === 1) {
+        collectionId.value = filteredList.value[0].id
+    } else {
+        const found = filteredList.value.find(el => strEqual(value, el.name))
+        if (found) {
+            collectionId.value = found.id
+        }
+    }
+})
 
 </script>
   
@@ -61,6 +123,8 @@ function createCollection() {
     grid-template-columns: 1fr;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    max-height: 100%;
 
     & *:not(:last-child) {
         margin-bottom: 6px;
@@ -70,6 +134,8 @@ function createCollection() {
 .list {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .prompt {
@@ -82,10 +148,10 @@ function createCollection() {
     background-color: var(--color-light);
     padding: 12px;
     border-radius: 4px;
-    margin-top: 12px;
+    margin-bottom: 16px;
 
-    &:first-of-type {
-        margin-top: 20px;
+    &:last-of-type {
+        margin-bottom: 0px;
     }
 
     &:hover {
@@ -93,9 +159,15 @@ function createCollection() {
     }
 
     &.selected {
+        margin-top: 20px;
         background-color: var(--accent-color-dark);
         font-weight: 500;
         color: var(--color-light);
     }
+}
+
+.filteredlist {
+    overflow-y: scroll;
+    padding-right: 4px;
 }
 </style>

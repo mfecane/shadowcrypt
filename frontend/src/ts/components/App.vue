@@ -1,31 +1,36 @@
 <template >
-  <DragWrapper>
-    <div className='content'>
-      <div className='container'>
-        <router-view />
-      </div>
-    </div>
-    <CreateButton />
-  </DragWrapper>
-  <Create />
+	<DragWrapper>
+		<div className='content'>
+			<router-view />
+		</div>
+		<CreateButton />
+	</DragWrapper>
+	<Create />
+	<Auth />
 </template>
 
 <script lang="ts" setup>
 
+import Auth from '@/ts/components/auth/Auth.vue'
 import Create from '@/ts/components/create/Create.vue'
 import CreateButton from '@/ts/components/common/CreateButton.vue'
 import DragWrapper from '@/ts/components/drag/DragWrapper.vue'
 
-import { useUploadDialog } from '@/ts/hooks/useUploadDialog'
+import { watch } from 'vue'
+import { storeToRefs } from 'pinia'
 
-const store = useUploadDialog()
+import { useAuthWatcher } from '../hooks/useAuth'
+import { useAuth } from '@/ts/hooks/useAuth'
+import { useCollectionsLocal } from '../hooks/useCollectionsLocal'
+
+useAuthWatcher()
+
+const { user } = storeToRefs(useAuth())
+
+const { reloadCollections } = useCollectionsLocal()
+
+watch(user, () => reloadCollections())
 
 </script>
 
-<style scoped lang="scss">
-.container {
-  max-width: 1280px;
-  margin: auto;
-  padding: 0 20px;
-}
-</style>
+<style scoped lang="scss"></style>

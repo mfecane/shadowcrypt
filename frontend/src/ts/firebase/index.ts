@@ -1,4 +1,5 @@
 import { FirebaseOptions, initializeApp } from 'firebase/app'
+import { browserSessionPersistence, connectAuthEmulator, getAuth, setPersistence } from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 
@@ -15,7 +16,13 @@ const app = initializeApp(config)
 export const db = getFirestore(app)
 export const storage = getStorage(app)
 
+export const auth = getAuth(app)
+setPersistence(auth, browserSessionPersistence)
+
 if (location.hostname === 'localhost') {
-	connectFirestoreEmulator(db, 'localhost', 8080)
+	connectFirestoreEmulator(db, 'localhost', 8083)
 	connectStorageEmulator(storage, 'localhost', 9199)
+	connectAuthEmulator(auth, 'http://localhost:9099')
 }
+
+export const STORAGE_URL = 'http://localhost:9199/'
