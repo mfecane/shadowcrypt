@@ -1,6 +1,6 @@
 <template>
     <button class="btn back-button" @click.prevent="$emit('click')">
-        <Icon :type="IconType.back" color="black" :size="0.8" />
+        <Icon :type="IconType.back" :size="0.8" />
         <span>{{ props.label }}</span>
     </button>
 </template>

@@ -1,7 +1,10 @@
+import { Timestamp } from 'firebase/firestore'
+
 export interface Collection {
 	id: string
 	name: string
 	pinned: boolean
+	updated?: Timestamp
 }
 
 export interface CollectionWithImages extends Collection {
@@ -14,4 +17,6 @@ export interface CollectionImage {
 	collectionId: string
 	width?: number
 	height?: number
+	tmp?: boolean
+	created?: Timestamp
 }

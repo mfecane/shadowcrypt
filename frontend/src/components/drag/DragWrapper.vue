@@ -13,7 +13,7 @@
   
 <script setup lang="ts">
 import { useUploadDialog } from '@/hooks/useUploadDialog';
-import { uploadFile } from '@/api/loader';
+import { uploadFile } from '@/api/images';
 import { ref } from 'vue'
 
 const dragging = ref<boolean>(false)

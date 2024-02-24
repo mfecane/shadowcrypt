@@ -12,3 +12,8 @@
 /**/dist
 /server/*.log
 /database/backup
+
+/database/functions/pinpc*.json
+/database/functions/lib
+
+/secret

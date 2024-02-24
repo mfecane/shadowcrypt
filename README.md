@@ -7,7 +7,6 @@ collections -> boards -> images
 ## TODO:
 
 - accept only drag images
-- upload images with function
 - develop interactions for touchpads and touch screens
 - button navigation
 - state machine for interactions

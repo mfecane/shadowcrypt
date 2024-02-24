@@ -30,7 +30,7 @@ import FuzzySearch from 'fuzzy-search';
 
 import { useCollectionsLocal } from '@/hooks/useCollectionsLocal';
 import { Collection } from '@/model/Data';
-import { createCollection as createCollectionApi } from '@/api2/collections';
+import { createCollection as createCollectionApi } from '@/api/collections';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
@@ -171,3 +171,4 @@ watch(searchPrompt, (value) => {
     padding-right: 4px;
 }
 </style>
+@/api/collections

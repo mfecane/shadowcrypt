@@ -7,7 +7,7 @@
   
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { getImage } from '@/api/loader';
+import { getImage } from '@/api/images';
 
 const props = defineProps<{ id: string }>()
 

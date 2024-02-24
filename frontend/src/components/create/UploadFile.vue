@@ -15,20 +15,23 @@
   
 <script setup lang="ts">
 
-import { tryLoadImage, discardLoadImage, uploadFile } from '@/api/loader';
-import { debounce } from 'lodash';
+import IconButton from '@/components/common/inputs/IconButton.vue'
+
+import { debounce } from 'lodash'
 import { ref } from 'vue'
-import CollectionImage2 from './CollectionImage2.vue';
-import { useUploadDialog } from '@/hooks/useUploadDialog';
-import IconButton from '../common/inputs/IconButton.vue';
-import { IconType } from '../common/icons/IconType';
+
+import CollectionImage2 from './CollectionImage2.vue'
+import { useUploadDialog } from '@/hooks/useUploadDialog'
+import { IconType } from '../common/icons/IconType'
+import { discardLoadImage, createImageFromUrl, uploadFile } from '@/api/images'
 
 const filename = ref('')
 const uploadStore = useUploadDialog()
 
 async function onChange() {
     try {
-        uploadStore.setImageId(await tryLoadImage(filename.value))
+        // TODOOO OPTIMIZE!!!
+        uploadStore.setImageId(await createImageFromUrl(filename.value))
     } catch (error) {
         console.log('uploading image failed')
     }

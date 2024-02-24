@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCollectionsWithImages } from '../api2/collections'
+import { getCollectionsWithImages } from '../api/collections'
 import { CollectionWithImages } from '../model/Data'
 import { useAuth } from './useAuth'
 

@@ -9,21 +9,13 @@ services:
     ports:
       - 4001:4001
       - 4400:4400
+      - 4500:4500
+      - 4501:4501
       - 8083:8083
       - 9099:9099
       - 9150:9150
       - 9199:9199
-
-  backend:
-    build: ./backend
-    volumes:
-      - type: bind
-        source: ./backend
-        target: /app
-    depends_on:
-      - database
-    ports:
-      - 3000:3000
+      - 9299:9299
 
   frontend:
     build: ./frontend
@@ -33,6 +25,5 @@ services:
         target: /app
     depends_on:
       - database
-      - backend
     ports:
       - 5173:5173

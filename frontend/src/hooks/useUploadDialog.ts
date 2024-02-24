@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { discardLoadImage } from '../api/loader'
+import { discardLoadImage } from '@/api/images'
 
 const ID = 'upload_dialog_store'
 
