@@ -1,14 +1,10 @@
 import { StyleValue } from 'vue'
 import { Orientation } from './useCollectionViewer'
 
-export function grid(columns: number, orientation: Orientation, scale: number, x: number, y: number): StyleValue {
-	let style = {
-		transform: `translate(${x}px, ${y}px) scale(${scale})`,
-	}
+export function grid(columns: number, orientation: Orientation): StyleValue {
 	switch (orientation) {
 		case Orientation.vertical: {
 			return {
-				...style,
 				gridTemplateColumns: `repeat(${columns}, 400px)`,
 				gridAutoRows: '40px',
 				gridAutoFlow: 'row',
@@ -16,7 +12,6 @@ export function grid(columns: number, orientation: Orientation, scale: number, x
 		}
 		case Orientation.horizontal: {
 			return {
-				...style,
 				gridTemplateRows: `repeat(${columns}, 400px)`,
 				gridAutoColumns: '40px',
 				gridAutoFlow: 'column',

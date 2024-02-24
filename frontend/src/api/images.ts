@@ -1,6 +1,7 @@
 import { STORAGE_URL, db, storage } from '@/firebase'
 import { uploadImage } from '@/firebase/functions'
 import { Collection, CollectionImage } from '@/model/Data'
+import { makeid } from '@/utils/utils'
 import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 
@@ -11,11 +12,30 @@ export async function createImageFromUrl(imageUrl: string): Promise<string> {
 	return createImageRecord(result.data.path)
 }
 
+export async function uploadBlob(blob: Blob, imageType: string): Promise<string> {
+	const filename = generateFilename(imageType)
+	const path = `${FOLDER}/${filename}`
+	const imagesRef = ref(storage, path)
+	await uploadBytes(imagesRef, blob)
+	return createImageRecord(path)
+}
+
+function generateFilename(imageType: string): string {
+	const filename = makeid(32)
+	switch (imageType) {
+		case 'image/png':
+			return `${filename}.png`
+		case 'image/jpeg':
+			return `${filename}.jpg`
+		default:
+			throw new Error(`Image type ${imageType} is not supported`)
+	}
+}
+
 export async function uploadFile(file: File): Promise<string> {
-	const buffer = Buffer.from(await file.arrayBuffer())
 	const path = `${FOLDER}/${file.name}`
 	const imagesRef = ref(storage, path)
-	await uploadBytes(imagesRef, buffer)
+	await uploadBytes(imagesRef, await file.arrayBuffer())
 	return createImageRecord(path)
 }
 

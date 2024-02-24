@@ -6,11 +6,11 @@ collections -> boards -> images
 
 ## TODO:
 
-- accept only drag images
 - develop interactions for touchpads and touch screens
 - button navigation
 - state machine for interactions
-- handle paste image data
+- user settings
+- forgot password
 - deploy
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images

@@ -22,8 +22,10 @@ import { storeToRefs } from 'pinia'
 import { useAuthWatcher } from '../hooks/useAuth'
 import { useAuth } from '@/hooks/useAuth'
 import { useCollectionsLocal } from '../hooks/useCollectionsLocal'
+import { usePaste } from '@/hooks/usePaste'
 
 useAuthWatcher()
+usePaste()
 
 const { user } = storeToRefs(useAuth())
 

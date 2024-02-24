@@ -28,3 +28,15 @@ export async function getImageDimensions(src: string): Promise<[width: number, h
 export function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(value, max))
 }
+
+export function makeid(length: number): string {
+	let result = ''
+	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+	const charactersLength = characters.length
+	let counter = 0
+	while (counter < length) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength))
+		counter += 1
+	}
+	return result
+}
