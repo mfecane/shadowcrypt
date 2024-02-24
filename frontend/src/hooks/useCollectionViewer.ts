@@ -10,16 +10,19 @@ export const enum Orientation {
 interface State {
 	orientation: Orientation
 	selected: string | null
+	resetScale: number
 }
 
 interface Actions {
 	changeOrientation(): void
 
 	select(id?: string): void
+
+	resetScale2(): void
 }
 
 export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID, {
-	state: (): State => ({ orientation: Orientation.vertical, selected: null }),
+	state: (): State => ({ orientation: Orientation.vertical, selected: null, resetScale: 0 }),
 
 	actions: {
 		changeOrientation() {
@@ -32,6 +35,10 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 				return
 			}
 			this.selected = null
+		},
+
+		resetScale2() {
+			this.resetScale++
 		},
 	},
 

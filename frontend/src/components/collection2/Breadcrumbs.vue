@@ -9,7 +9,7 @@
             <div class="separator"></div>
             <IconButton :type="IconType.pencil" @click="renameRef.showModal()" />
             <IconButton :type="iconType" @click="() => collectionViewer.changeOrientation()" />
-            <IconButton :type="IconType.fill" />
+            <IconButton :type="IconType.fill" @click="collectionViewer.resetScale2" />
         </div>
         <Confirmation @ok="deletePin2" ref="confirmationRef" />
         <Dialog @ok="renameCollection2()" ref="renameRef">

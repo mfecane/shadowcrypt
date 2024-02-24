@@ -12,12 +12,13 @@
 import CollectionImage from '@/components/collection2/CollectionImage.vue'
 
 //TODO tween is overkill here
-import { StyleValue, computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { StyleValue, computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { CollectionWithImages } from '@/model/Data'
 import { grid } from '@/hooks/grid'
 import { useCollectionViewer } from '@/hooks/useCollectionViewer'
-import { Navigator } from '@/Navigator'
+import { Navigator } from '@/viewer/Navigator'
+import { storeToRefs } from 'pinia'
 
 const props = defineProps<{ collection: CollectionWithImages }>()
 
@@ -25,11 +26,14 @@ const container = ref<HTMLDivElement>()
 
 const imageList = ref<HTMLDivElement>()
 
+const navigator = ref<Navigator | null>(null)
+
 const collectionViewer = useCollectionViewer()
+const { resetScale, orientation } = storeToRefs(collectionViewer)
 
 const style = computed<StyleValue>(() => {
     const columns = Math.ceil(Math.sqrt(props.collection.images.length))
-    return grid(columns, collectionViewer.orientation)
+    return grid(columns, orientation.value)
 })
 
 function onClick(e: MouseEvent) {
@@ -37,13 +41,14 @@ function onClick(e: MouseEvent) {
     collectionViewer.select()
 }
 
-let navigator: Navigator
+// TODO oh boi, this is very hacky!
+watch([resetScale, navigator], () => navigator.value?.scaleToFit(), { immediate: true })
 
 onMounted(() => {
-    navigator = new Navigator(container.value!, imageList.value!)
+    navigator.value = new Navigator(container.value!, imageList.value!)
 })
 
-onBeforeUnmount(() => navigator.destroy())
+onBeforeUnmount(() => navigator.value?.destroy())
 
 </script>
 
