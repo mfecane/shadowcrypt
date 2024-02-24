@@ -6,9 +6,8 @@ collections -> boards -> images
 
 ## TODO:
 
-- ignore drag from same window
-- capture dragging event
 - accept only drag images
+- upload images with function
 - develop interactions for touchpads and touch screens
 - button navigation
 - state machine for interactions
@@ -43,4 +42,4 @@ docker compose up -d --build
 
 docker compose exec frontend sh
 
-sudo tar -cvf fireabse-backup.003.tar.gz -C ./database/backup .
+sudo tar -cvf fireabse-backup.001.tar.gz -C ./database/backup .
