@@ -1,3 +1,5 @@
+Functions do not work!!
+
 ## ARCH
 
 Terminology
@@ -6,14 +8,13 @@ collections -> boards -> images
 
 ## TODO:
 
+- deploy
+- develop landing page
+- forgot password
+- user settings
 - reset navigator on change orientation
 - develop interactions for touchpads and touch screens
-- button navigation
-- state machine for interactions
-- user settings
-- forgot password
 - animate keyboard interaction
-- deploy
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/

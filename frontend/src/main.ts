@@ -9,12 +9,22 @@ import '@/scss/style.scss'
 import App from '@/components/App.vue'
 import CollectionsList from '@/components/list/CollectionsList.vue'
 import Collection from '@/components/collection2/Collection.vue'
+import Home from './components/routes/Home.vue'
+import Landing from './components/landing/Landing.vue'
 
 const pinia = createPinia()
 const app = createApp(App)
 
 const routes = [
-	{ path: '/', component: CollectionsList },
+	{ path: '/', component: Home },
+	{
+		path: '/landing',
+		component: Landing,
+	},
+	{
+		path: '/list',
+		component: CollectionsList,
+	},
 	{
 		path: '/collections/:id',
 		component: Collection,

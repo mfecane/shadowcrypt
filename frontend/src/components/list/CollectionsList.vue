@@ -29,16 +29,25 @@ import Header from '@/components/common/Header.vue'
 
 import { onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
 import { useCollectionList } from '@/hooks/useCollectionList';
 import { useCollectionsLocal } from '@/hooks/useCollectionsLocal';
 import { CollectionWithImages } from '@/model/Data';
+import { useAuth } from '@/hooks/useAuth';
 
 const collectionListStore = useCollectionList()
 const { filteredCollection, pinnedCollections, firstRow, secondRow, collectionExist, filter } = storeToRefs(collectionListStore)
 
 const { store: collectionsLocalStore, reloadCollections } = useCollectionsLocal()
 const { collections } = storeToRefs(collectionsLocalStore)
+
+const router = useRouter()
+const user = useAuth()
+
+if (!user.user) {
+	router.push('/landing')
+}
 
 watch(collections, (value: CollectionWithImages[]) => {
 	collectionListStore.init(value)

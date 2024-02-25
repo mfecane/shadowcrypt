@@ -1,12 +1,14 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if true;
+    match /images/{image} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && isMfecane(request.auth.uid) && request.resource.contentType == 'image/jpeg';
     }
   }
+}
+
+function isMfecane(userId) {
+  return userId == 'HCTUurg7HRYCLPxg6tnfzwEDQep1' || userId == 'fLD7Q6UUbb8qI1oyReMIzYXtawvO';
 }

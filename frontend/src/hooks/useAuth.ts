@@ -35,7 +35,7 @@ interface Actions {
 	showForgotDialig(): void
 	closeDialog(): void
 	setError(arr: string): void
-	setUser(user?: User): void
+	setUser(user?: User | null): void
 }
 
 export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
@@ -80,9 +80,12 @@ export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
 })
 
 export async function useAuthWatcher() {
+	const authStore = useAuth()
 	onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
 		if (user) {
 			setUser(user)
+		} else {
+			authStore.setUser(null)
 		}
 		return user
 	})
@@ -105,13 +108,17 @@ export async function register(userLogin: string, password: string, confirmation
 
 async function setUser(user: FirebaseUser) {
 	const authStore = useAuth()
-	const s = await getDoc(doc(db, 'users', user.uid))
-	const userData = s.data() as { name: string }
-	authStore.setUser({
-		id: user.uid,
-		email: user.email ?? '',
-		...userData,
-	})
+	try {
+		const s = await getDoc(doc(db, 'users', user.uid))
+		const userData = s.data()
+		authStore.setUser({
+			id: user.uid,
+			email: user.email ?? '',
+			...userData,
+		})
+	} catch (error) {
+		console.error("Can't read user", error)
+	}
 }
 
 export async function login(userLogin: string, password: string) {

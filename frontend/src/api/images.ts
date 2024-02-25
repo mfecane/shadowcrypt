@@ -7,6 +7,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage
 
 const FOLDER = 'images'
 
+// won't work for free
 export async function createImageFromUrl(imageUrl: string): Promise<string> {
 	const result = await uploadImage({ url: imageUrl })
 	return createImageRecord(result.data.path)
@@ -16,7 +17,9 @@ export async function uploadBlob(blob: Blob, imageType: string): Promise<string>
 	const filename = generateFilename(imageType)
 	const path = `${FOLDER}/${filename}`
 	const imagesRef = ref(storage, path)
-	await uploadBytes(imagesRef, blob)
+	await uploadBytes(imagesRef, blob, {
+		contentType: imageType,
+	})
 	return createImageRecord(path)
 }
 
@@ -35,7 +38,9 @@ function generateFilename(imageType: string): string {
 export async function uploadFile(file: File): Promise<string> {
 	const path = `${FOLDER}/${file.name}`
 	const imagesRef = ref(storage, path)
-	await uploadBytes(imagesRef, await file.arrayBuffer())
+	await uploadBytes(imagesRef, await file.arrayBuffer(), {
+		contentType: file.type,
+	})
 	return createImageRecord(path)
 }
 

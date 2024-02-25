@@ -19,8 +19,7 @@ import DragWrapper from '@/components/drag/DragWrapper.vue'
 import { watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import { useAuthWatcher } from '../hooks/useAuth'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, useAuthWatcher } from '@/hooks/useAuth'
 import { useCollectionsLocal } from '../hooks/useCollectionsLocal'
 import { usePaste } from '@/hooks/usePaste'
 

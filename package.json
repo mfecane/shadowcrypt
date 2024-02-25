@@ -1,8 +1,10 @@
 {
 	"name": "sapic",
-	"version": "0.0.0.0.0.0.0.0.0.1",
+	"version": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1",
 	"scripts": {
-		"backup": "sudo tar -cvf fireabse-backup.003.tar.gz -C ./database/backup ."
+		"backup": "sudo tar -cvf fireabse-backup.003.tar.gz -C ./database/backup .",
+		"deploy": "npm --prefix frontend run build && firebase deploy",
+		"deploy:functions": "cd database && firebase deploy --only functions"
 	},
 	"license": "ISC"
 }

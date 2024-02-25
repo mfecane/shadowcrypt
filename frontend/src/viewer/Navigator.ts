@@ -1,22 +1,26 @@
-import { Tween, update } from '@tweenjs/tween.js'
+import { Tween, update as updateTween } from '@tweenjs/tween.js'
 import { clamp } from '../utils/utils'
 
 type Vector2 = { x: number; y: number }
 
-export class Navigator {
+interface NavigatorState {
+	onPointerDown(event: PointerEvent): void
+	onPointerMove(event: PointerEvent): void
+	onPointerUp(event: PointerEvent): void
+	onWheel(event: WheelEvent): void
+	enterState(): void
+	exitState(): void
+	setScale(value: number): void
+}
+
+class MouseInteractionState implements NavigatorState {
 	private static readonly MIDDLE_MOUSE_BUTTON = 1
-	private static readonly TOP_GUTTER = 60
-	private static readonly STEP = 100
-
-	private position: Vector2 = { x: 0, y: 0 }
-
-	private scale: number = 1
-
-	private virtualScale: number = 1
 
 	private isDragging: boolean = false
 
 	private startDrag: Vector2 = { x: 0, y: 0 }
+
+	private virtualScale: number = 1
 
 	private tweenTarget = { scale: 1 }
 
@@ -24,14 +28,121 @@ export class Navigator {
 
 	private animationId: number = -1
 
+	public constructor(private readonly navigator: Navigator) {}
+
+	public enterState() {
+		this.animate()
+	}
+
+	public exitState() {
+		this.tween.stop()
+		cancelAnimationFrame(this.animationId)
+	}
+
+	public onPointerDown(event: PointerEvent): void {
+		if (this.isMiddleMouseOrPointer(event)) {
+			this.isDragging = true
+			this.startDrag = { x: event.clientX, y: event.clientY }
+			this.navigator.container.setPointerCapture(event.pointerId)
+		}
+	}
+
+	public onPointerMove(event: PointerEvent): void {
+		if (this.isDragging) {
+			this.navigator.position.x += event.clientX - this.startDrag.x
+			this.navigator.position.y += event.clientY - this.startDrag.y
+			this.startDrag = { x: event.clientX, y: event.clientY }
+		}
+	}
+
+	public onPointerUp(event: PointerEvent): void {
+		if (this.isDragging) {
+			this.isDragging = false
+			this.navigator.container.releasePointerCapture(event.pointerId)
+		}
+	}
+
+	public onWheel(e: WheelEvent) {
+		this.virtualScale += 1 - 2 ** (e.deltaY * 0.005)
+		this.virtualScale = clamp(this.virtualScale, 0.25, 4.0)
+		this.setScaleToPointWithTransition(e)
+	}
+
+	private setScaleToPointWithTransition(e: WheelEvent) {
+		this.tween.stop()
+		this.tween = new Tween<{ scale: number }>(this.tweenTarget)
+			.to({ scale: this.virtualScale }, 200)
+			.onUpdate(() => this.setScaleToPoint(this.tweenTarget.scale, e))
+			.start()
+	}
+
+	public setScale(scale: number) {
+		this.tweenTarget.scale = scale
+		this.virtualScale = scale
+	}
+
+	private animate() {
+		this.animationId = requestAnimationFrame(() => {
+			updateTween()
+			this.animate()
+		})
+	}
+
+	private isMiddleMouseOrPointer(event: PointerEvent): boolean {
+		return event.pointerType === 'mouse' && event.button === MouseInteractionState.MIDDLE_MOUSE_BUTTON
+	}
+
+	private setScaleToPoint(scale: number, e: WheelEvent) {
+		const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY })
+		this.scaleFromPoint(scale, mousePos)
+	}
+
+	private clientPosToTranslatedPos({ x, y }: Vector2) {
+		return {
+			x: x - this.navigator.position.x,
+			y: y - this.navigator.position.y,
+		}
+	}
+
+	private scaleFromPoint(newScale: number, focalPt: Vector2) {
+		const scaleRatio = newScale / (this.navigator.scale != 0 ? this.navigator.scale : 1)
+		const focalPtDelta = {
+			x: this.coordChange(focalPt.x, scaleRatio),
+			y: this.coordChange(focalPt.y, scaleRatio),
+		}
+		this.navigator.position = {
+			x: this.navigator.position.x - focalPtDelta.x,
+			y: this.navigator.position.y - focalPtDelta.y,
+		}
+		this.navigator.scale = newScale
+	}
+
+	private coordChange(coordinate: number, scaleRatio: number) {
+		return scaleRatio * coordinate - coordinate
+	}
+}
+
+export class Navigator {
+	private static readonly MIDDLE_MOUSE_BUTTON = 1
+	private static readonly TOP_GUTTER = 60
+	private static readonly STEP = 100
+
+	public position: Vector2 = { x: 0, y: 0 }
+
+	public scale: number = 1
+
 	private defaultWidth: number
 
 	private defaultHeight: number
 
-	public constructor(private readonly container: HTMLDivElement, private readonly element: HTMLDivElement) {
+	private state: NavigatorState | null = null
+
+	private animationId: number = -1
+
+	public constructor(public readonly container: HTMLDivElement, private readonly element: HTMLDivElement) {
 		this.container.addEventListener('pointerdown', (event) => this.onPointerDown(event))
 		this.container.addEventListener('pointermove', (event) => this.onPointerMove(event))
-		this.container.addEventListener('pointerup', (event) => this.onPonterUp(event))
+		this.container.addEventListener('pointerup', (event) => this.onPointerUp(event))
 		this.container.addEventListener('wheel', (event) => this.onWheel(event))
 		window.addEventListener('keydown', (event) => this.onKeyPress(event))
 
@@ -39,12 +150,14 @@ export class Navigator {
 		this.defaultWidth = box.width
 		this.defaultHeight = box.height
 
+		this.switchState(new MouseInteractionState(this))
+
 		this.animate()
 	}
 
 	public destroy() {
-		this.tween.stop()
 		cancelAnimationFrame(this.animationId)
+		this.state?.exitState()
 	}
 
 	public scaleToFit() {
@@ -68,56 +181,36 @@ export class Navigator {
 			x: (containerWidth - newWidth) / 2,
 			y: (containerHeight - newHeight) / 2 + Navigator.TOP_GUTTER,
 		}
+
 		this.setScale(newScale)
+	}
+
+	public switchState(state: NavigatorState) {
+		this.state?.exitState()
+		this.state = state
+		this.state.enterState()
 	}
 
 	private setScale(scale: number) {
 		this.scale = scale
-		this.tweenTarget.scale = scale
-		this.virtualScale = scale
-	}
-
-	private animate() {
-		this.animationId = requestAnimationFrame(() => {
-			update()
-			this.update()
-			this.animate()
-		})
-	}
-
-	private isMiddleMouseOrPointer(event: PointerEvent): boolean {
-		if (event.pointerType === 'mouse') {
-			return event.button === Navigator.MIDDLE_MOUSE_BUTTON
-		} else if (event.pointerType === 'touch') {
-			return true
-		}
-		return false
+		this.state?.setScale(scale)
 	}
 
 	private onPointerDown(event: PointerEvent): void {
-		if (this.isMiddleMouseOrPointer(event)) {
-			this.isDragging = true
-			this.startDrag = { x: event.clientX, y: event.clientY }
-			this.container.setPointerCapture(event.pointerId)
-		}
+		this.state?.onPointerDown(event)
 	}
 
 	private onPointerMove(event: PointerEvent): void {
-		if (this.isDragging) {
-			this.position.x += event.clientX - this.startDrag.x
-			this.position.y += event.clientY - this.startDrag.y
-			this.startDrag = { x: event.clientX, y: event.clientY }
-		}
+		this.state?.onPointerMove(event)
 	}
 
-	private onPonterUp(event: PointerEvent): void {
-		if (this.isDragging) {
-			this.isDragging = false
-			this.container.releasePointerCapture(event.pointerId)
-		}
+	private onPointerUp(event: PointerEvent): void {
+		this.state?.onPointerUp(event)
 	}
 
-	private tou() {}
+	private onWheel(e: WheelEvent) {
+		this.state?.onWheel(e)
+	}
 
 	private onKeyPress(event: KeyboardEvent) {
 		const code = event.code
@@ -141,50 +234,14 @@ export class Navigator {
 		}
 	}
 
-	private onWheel(e: WheelEvent) {
-		this.virtualScale += 1 - 2 ** (e.deltaY * 0.005)
-		this.virtualScale = clamp(this.virtualScale, 0.25, 4.0)
-		this.setScaleToPointWithTransition(e)
+	private animate() {
+		this.animationId = requestAnimationFrame(() => {
+			this.update()
+			this.animate()
+		})
 	}
 
-	private setScaleToPointWithTransition(e: WheelEvent) {
-		this.tween.stop()
-		this.tween = new Tween<{ scale: number }>(this.tweenTarget)
-			.to({ scale: this.virtualScale }, 200)
-			.onUpdate(() => this.setScaleToPoint(this.tweenTarget.scale, e))
-			.start()
-	}
-
-	private update() {
+	public update() {
 		this.element.style.transform = `translate(${this.position.x}px, ${this.position.y}px) scale(${this.scale})`
-	}
-
-	private setScaleToPoint(scale: number, e: WheelEvent) {
-		const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY })
-		this.scaleFromPoint(scale, mousePos)
-	}
-
-	private clientPosToTranslatedPos({ x, y }: Vector2) {
-		return {
-			x: x - this.position.x,
-			y: y - this.position.y,
-		}
-	}
-
-	private scaleFromPoint(newScale: number, focalPt: Vector2) {
-		const scaleRatio = newScale / (this.scale != 0 ? this.scale : 1)
-		const focalPtDelta = {
-			x: this.coordChange(focalPt.x, scaleRatio),
-			y: this.coordChange(focalPt.y, scaleRatio),
-		}
-		this.position = {
-			x: this.position.x - focalPtDelta.x,
-			y: this.position.y - focalPtDelta.y,
-		}
-		this.scale = newScale
-	}
-
-	private coordChange(coordinate: number, scaleRatio: number) {
-		return scaleRatio * coordinate - coordinate
 	}
 }
