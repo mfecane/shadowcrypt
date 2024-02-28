@@ -1,9 +1,10 @@
 import { Tween, update as updateTween } from '@tweenjs/tween.js'
 import { clamp } from '../utils/utils'
+import { TouchInteractionState } from './PinchNav'
 
 type Vector2 = { x: number; y: number }
 
-interface NavigatorState {
+export interface NavigatorState {
 	onPointerDown(event: PointerEvent): void
 	onPointerMove(event: PointerEvent): void
 	onPointerUp(event: PointerEvent): void
@@ -40,6 +41,9 @@ class MouseInteractionState implements NavigatorState {
 	}
 
 	public onPointerDown(event: PointerEvent): void {
+		event.preventDefault()
+		event.stopPropagation()
+
 		if (this.isMiddleMouseOrPointer(event)) {
 			this.isDragging = true
 			this.startDrag = { x: event.clientX, y: event.clientY }
@@ -48,6 +52,9 @@ class MouseInteractionState implements NavigatorState {
 	}
 
 	public onPointerMove(event: PointerEvent): void {
+		event.preventDefault()
+		event.stopPropagation()
+
 		if (this.isDragging) {
 			this.navigator.position.x += event.clientX - this.startDrag.x
 			this.navigator.position.y += event.clientY - this.startDrag.y
@@ -56,6 +63,9 @@ class MouseInteractionState implements NavigatorState {
 	}
 
 	public onPointerUp(event: PointerEvent): void {
+		event.preventDefault()
+		event.stopPropagation()
+
 		if (this.isDragging) {
 			this.isDragging = false
 			this.navigator.container.releasePointerCapture(event.pointerId)
@@ -191,12 +201,31 @@ export class Navigator {
 		this.state.enterState()
 	}
 
+	public detectInteractionState(event: PointerEvent): void {
+		if (this.isTouch(event)) {
+			if (this.state instanceof TouchInteractionState) {
+				return
+			}
+			this.switchState(new TouchInteractionState(this))
+		} else {
+			if (this.state instanceof MouseInteractionState) {
+				return
+			}
+			this.switchState(new MouseInteractionState(this))
+		}
+	}
+
+	private isTouch(event: PointerEvent): boolean {
+		return event.pointerType === 'touch'
+	}
+
 	private setScale(scale: number) {
 		this.scale = scale
 		this.state?.setScale(scale)
 	}
 
 	private onPointerDown(event: PointerEvent): void {
+		this.detectInteractionState(event)
 		this.state?.onPointerDown(event)
 	}
 
