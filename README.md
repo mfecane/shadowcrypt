@@ -8,13 +8,13 @@ collections -> boards -> images
 
 ## TODO:
 
-- deploy
-- develop landing page
 - forgot password
 - user settings
 - reset navigator on change orientation
-- develop interactions for touchpads and touch screens
 - animate keyboard interaction
+- redesign
+- double tap/click to enlarge image
+- interactions hint
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/

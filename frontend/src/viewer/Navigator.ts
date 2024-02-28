@@ -1,8 +1,6 @@
 import { Tween, update as updateTween } from '@tweenjs/tween.js'
-import { clamp } from '../utils/utils'
+import { Vector2, clamp } from '../utils/utils'
 import { TouchInteractionState } from './PinchNav'
-
-type Vector2 = { x: number; y: number }
 
 export interface NavigatorState {
 	onPointerDown(event: PointerEvent): void
@@ -41,9 +39,6 @@ class MouseInteractionState implements NavigatorState {
 	}
 
 	public onPointerDown(event: PointerEvent): void {
-		event.preventDefault()
-		event.stopPropagation()
-
 		if (this.isMiddleMouseOrPointer(event)) {
 			this.isDragging = true
 			this.startDrag = { x: event.clientX, y: event.clientY }
@@ -52,9 +47,6 @@ class MouseInteractionState implements NavigatorState {
 	}
 
 	public onPointerMove(event: PointerEvent): void {
-		event.preventDefault()
-		event.stopPropagation()
-
 		if (this.isDragging) {
 			this.navigator.position.x += event.clientX - this.startDrag.x
 			this.navigator.position.y += event.clientY - this.startDrag.y
@@ -63,9 +55,6 @@ class MouseInteractionState implements NavigatorState {
 	}
 
 	public onPointerUp(event: PointerEvent): void {
-		event.preventDefault()
-		event.stopPropagation()
-
 		if (this.isDragging) {
 			this.isDragging = false
 			this.navigator.container.releasePointerCapture(event.pointerId)
@@ -153,7 +142,13 @@ export class Navigator {
 		this.container.addEventListener('pointerdown', (event) => this.onPointerDown(event))
 		this.container.addEventListener('pointermove', (event) => this.onPointerMove(event))
 		this.container.addEventListener('pointerup', (event) => this.onPointerUp(event))
+
 		this.container.addEventListener('wheel', (event) => this.onWheel(event))
+
+		this.container.addEventListener('touchstart', (event) => this.onTouchStart(event))
+		this.container.addEventListener('touchmove', (event) => this.onTouchMove(event))
+		this.container.addEventListener('touchend', (event) => this.onTouchEnd(event))
+
 		window.addEventListener('keydown', (event) => this.onKeyPress(event))
 
 		const box = this.element.getBoundingClientRect()
@@ -225,16 +220,40 @@ export class Navigator {
 	}
 
 	private onPointerDown(event: PointerEvent): void {
+		event.preventDefault()
+		event.stopPropagation()
+
 		this.detectInteractionState(event)
 		this.state?.onPointerDown(event)
 	}
 
 	private onPointerMove(event: PointerEvent): void {
+		event.preventDefault()
+		event.stopPropagation()
+
 		this.state?.onPointerMove(event)
 	}
 
 	private onPointerUp(event: PointerEvent): void {
+		event.preventDefault()
+		event.stopPropagation()
+
 		this.state?.onPointerUp(event)
+	}
+
+	private onTouchStart(event: TouchEvent) {
+		event.preventDefault()
+		event.stopPropagation()
+	}
+
+	private onTouchMove(event: TouchEvent) {
+		event.preventDefault()
+		event.stopPropagation()
+	}
+
+	private onTouchEnd(event: TouchEvent) {
+		event.preventDefault()
+		event.stopPropagation()
 	}
 
 	private onWheel(e: WheelEvent) {

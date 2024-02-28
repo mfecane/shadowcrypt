@@ -40,3 +40,5 @@ export function makeid(length: number): string {
 	}
 	return result
 }
+
+export type Vector2 = { x: number; y: number }
