@@ -1,24 +1,26 @@
 <template>
-	<Header />
+	<template v-if="user">
+		<Header></Header>
 
-	<MainGrid v-if="filteredCollection.length" :collections="filteredCollection" />
+		<MainGrid v-if="filteredCollection.length" :collections="filteredCollection" />
 
-	<div v-if="filter && !filteredCollection.length" class="no-collections">
-		<div class="container">
-			No collections, satisfying criteria
+		<div v-if="filter && !filteredCollection.length" class="no-collections">
+			<div class="container">
+				No collections, satisfying criteria
+			</div>
 		</div>
-	</div>
 
-	<div v-if="pinnedCollections.length" class="pinned-bg">
-		<FirstRow :collections="pinnedCollections" />
-	</div>
-	<FirstRow v-if="firstRow.length" :collections="firstRow" />
-	<MainGrid v-if="secondRow.length" :collections="secondRow" />
+		<div v-if="pinnedCollections.length" class="pinned-bg">
+			<FirstRow :collections="pinnedCollections" />
+		</div>
+		<FirstRow v-if="firstRow.length" :collections="firstRow" />
+		<MainGrid v-if="secondRow.length" :collections="secondRow" />
 
-	<div v-if="!collectionExist" class="no-collections">
-		<div class="container">
-			No collections</div>
-	</div>
+		<div v-if="!collectionExist" class="no-collections">
+			<div class="container">
+				No collections</div>
+		</div>
+	</template>
 </template>
 
 <script setup lang="ts">
@@ -43,9 +45,9 @@ const { store: collectionsLocalStore, reloadCollections } = useCollectionsLocal(
 const { collections } = storeToRefs(collectionsLocalStore)
 
 const router = useRouter()
-const user = useAuth()
+const { user } = storeToRefs(useAuth())
 
-if (!user.user) {
+if (!user) {
 	router.push('/landing')
 }
 
@@ -71,6 +73,6 @@ onMounted(() => {
 .pinned-bg {
 	position: relative;
 	padding: 6px 0;
-	background-color: var(--bg-color-dark);
+	background-color: var(--color-darkish);
 }
 </style>

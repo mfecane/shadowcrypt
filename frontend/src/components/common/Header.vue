@@ -1,13 +1,11 @@
 
 
 <template>
-	<div class='header-content' ref="header">
-		<div class='container header-content2'>
-			<div class="logo-and-search">
-				<Logo />
-				<div class="header-content__search">
-					<SearchBar hint="Search your pins" v-model="filter" />
-				</div>
+	<div class='container header-content' ref="header">
+		<div class=' header-content2'>
+			<Logo />
+			<div class="header-content__search">
+				<SearchBar hint="Search your collections" v-model="filter" />
 			</div>
 			<User />
 		</div>
@@ -54,11 +52,9 @@ onUnmounted(() => {
 .header-content {
 	position: sticky;
 	top: 0;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	transition: background-color 100ms ease;
 	z-index: 1;
+
 
 	&.darkbg {
 		background-color: var(--bg-color-dark);
@@ -67,14 +63,14 @@ onUnmounted(() => {
 }
 
 .header-content2 {
-	width: 100%;
-	padding-top: 16px;
-	padding-bottom: 16px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-}
 
+	width: 100%;
+	padding-top: 16px;
+	padding-bottom: 16px;
+}
 
 .logo-and-search {
 	flex: 1 0 auto;

@@ -84,8 +84,7 @@ function onDragStart(event: DragEvent) {
 	font-size: 18px;
 	font-weight: 500;
 	color: var(--color-light);
-	margin-bottom: 8px;
-
+	padding-left: 2px;
 
 	&.big {
 		font-size: 20px;
@@ -97,19 +96,20 @@ function onDragStart(event: DragEvent) {
 .item__count {
 	font-size: 12px;
 	font-weight: 500;
-	color: var(--accent-color);
-	margin-bottom: 8px;
+	color: var(--accent-color-alt);
+	margin-bottom: 2px;
+	padding-left: 2px;
 }
 
 .item__wrapper {
 	flex: 1 1 auto;
 	min-width: 0;
 	min-height: 0;
-	background: var(--bg-color-dark);
+	background: var(--color-darker);
 	position: relative;
 	padding: 5px;
 	border-radius: 4px;
-	box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.1), 1px 1px 2px 0px rgba(0, 0, 0, 0.1);
+	box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.3);
 }
 
 .item__grid {

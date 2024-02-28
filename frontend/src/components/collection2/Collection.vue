@@ -1,11 +1,11 @@
 <template>
-    <Breadcrumbs :id="props.id" :name="collection?.name ?? ''" />
+    <CollectionMenu :id="props.id" :name="collection?.name ?? ''" />
     <CollectionGrid v-if="collection" :collection="collection" />
 </template>
 
 <script setup lang="ts">
 
-import Breadcrumbs from '@/components/collection2/Breadcrumbs.vue'
+import CollectionMenu from '@/components/collection2/CollectionMenu.vue'
 import CollectionGrid from '@/components/collection2/CollectionGrid.vue';
 
 import { computed, onMounted, watch } from 'vue';

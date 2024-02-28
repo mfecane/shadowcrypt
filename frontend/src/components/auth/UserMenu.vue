@@ -17,8 +17,10 @@
 
 import { logout, useAuth } from '@/hooks/useAuth';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
 const auth = useAuth()
+const router = useRouter()
 
 const { user } = storeToRefs(auth)
 
@@ -26,9 +28,10 @@ const emits = defineEmits<{
     (e: 'onClose'): void
 }>()
 
-function onLogoutClick() {
+async function onLogoutClick() {
     emits('onClose')
-    logout()
+    await logout()
+    router.push('/landing')
 }
 
 </script>
@@ -38,14 +41,15 @@ function onLogoutClick() {
     position: absolute;
     top: 68px;
     right: 0;
-    background-color: var(--color-light3);
+    background-color: var(--accent-color);
     display: none;
     flex-direction: column;
     z-index: 3;
-    border-radius: 4px;
+    border-radius: 12px;
     padding: 22px 28px;
     min-width: 200px;
-    color: var(--bg-color);
+    color: var(--color-dark);
+    box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.3);
 
     &.visible {
         display: flex;

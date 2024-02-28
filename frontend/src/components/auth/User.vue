@@ -1,15 +1,11 @@
 
 <template>
-    <div v-if="auth.user" class="user" v-click-outside-element="closeOptions">
+    <div class="user" v-click-outside-element="closeOptions">
         <a href="#" @click.prevent="showMenu = true">
             <img :src="gravatar" alt="" />
             <Icon :type="IconType.back" :size="1.2" />
         </a>
         <UserMenu v-if="showMenu" @onClose="showMenu = false" />
-    </div>
-    <div class="user2" v-else>
-        <button class="btn" @click="auth.showLoginDialog">Login</button>
-        <button class="btn" @click="auth.showRegisterDialog">Register</button>
     </div>
 </template>
   
@@ -50,7 +46,6 @@ function closeOptions() {
 
     &>* {
         margin-left: 8px;
-
     }
 }
 
@@ -59,18 +54,17 @@ function closeOptions() {
 
     a {
         display: flex;
-        border-radius: 12px;
-        background-color: black;
-        height: 56px;
+        border-radius: 999px;
+        background-color: var(--accent-color);
+        height: 46px;
         align-items: center;
-        padding: 4px;
+        padding: 5px;
 
         img {
-            width: 48px;
-            height: 48px;
+            width: 38px;
+            height: 38px;
             object-fit: cover;
-            border-radius: 10px;
-            border: 2px solid var(--color-light);
+            border-radius: 999px;
         }
 
         :deep(svg) {
@@ -78,13 +72,13 @@ function closeOptions() {
             margin: 8px 8px 8px 12px;
 
             path {
-                fill: var(--color-light2)
+                fill: var(--color-dark)
             }
         }
 
         &:hover :deep(svg) {
             path {
-                fill: var(--accent-color)
+                fill: black
             }
         }
     }

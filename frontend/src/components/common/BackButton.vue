@@ -20,12 +20,7 @@ const props = defineProps<{ label: string }>()
 </script>
 
 <style scoped lang="scss">
-.back-button {
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-    min-width: 120px;
-}
+.back-button {}
 
 .back-button *:first-child {
     margin-right: 4px;

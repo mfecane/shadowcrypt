@@ -78,12 +78,12 @@ async function renameCollection2() {
 .breadcrumbs {
     position: fixed;
     top: 12px;
-    left: 12px;
-    right: 12px;
-    background-color: var(--bg-color-dark);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--color-darker);
     padding: 8px 12px;
-    border-radius: 8px;
-    box-shadow: 2px 2px 8px #00000050, 1px 1px 2px #00000050;
+    border-radius: 999px;
+    box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
     z-index: 2;
     display: flex;
     align-items: center;

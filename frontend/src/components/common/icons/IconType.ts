@@ -9,4 +9,6 @@ export enum IconType {
 	pin = 'pin',
 	pencil = 'pencil',
 	back = 'back',
+	google = 'google',
+	dots = 'dots',
 }

@@ -1,15 +1,14 @@
 <template>
     <router-link to="/">
-        <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52.92 52.92">
-            <g id="Layer_1-2" data-name="Layer 1">
-                <rect stroke="#231f20" stroke-miterlimit="10" stroke-width="2" x="7.04" y="7.04" width="38.85"
-                    height="38.85" rx="4.85" ry="4.85" transform="translate(26.46 -10.96) rotate(45)" />
-                <g class="letter">
-                    <path stroke-width="0"
-                        d="M35.16,20.47c-.66-1.09-1.61-1.92-2.84-2.51-1.22-.58-2.69-.86-4.38-.86h-7.41c-.44,0-.79.35-.79.79v8.43c0,.44.35.79.79.79h2.81c.44,0,.79-.35.79-.79v-4.66c0-.44.35-.79.79-.79h2.78c1.35,0,2.35.31,3.03.92.66.61,1,1.47,1,2.57s-.34,1.95-1,2.56c-.68.61-1.68.91-3.03.91h-7.17c-.44,0-.79.35-.79.79v7.72c0,.44.35.79.79.79h2.81c.44,0,.79-.35.79-.79v-3.94c0-.44.35-.79.79-.79h3.02c1.69,0,3.16-.29,4.38-.88,1.23-.58,2.18-1.42,2.84-2.5.66-1.09,1-2.37,1-3.87s-.34-2.8-1-3.88Z" />
-                </g>
-            </g>
-        </svg>
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 81.3 85.88">
+                <path
+                    d="M40,22.94c-10.22.34-18.18,9.07-18.18,19.3v28.56c0,3.28,2.66,5.95,5.95,5.95h25.75c3.28,0,5.95-2.66,5.95-5.95v-29.05c0-10.61-8.78-19.17-19.47-18.81Z" />
+                <path
+                    d="M43.16.08c-11.34-.68-22.13,3.21-30.37,10.97C4.66,18.7,0,29.49,0,40.65v39.23c0,3.31,2.69,6,6,6s6-2.69,6-6v-39.23c0-7.98,3.2-15.39,9.02-20.86,5.81-5.47,13.42-8.22,21.42-7.73,14.56.88,26.86,14.26,26.86,29.22v38.6c0,3.31,2.69,6,6,6s6-2.69,6-6v-38.6C81.3,19.83,64.19,1.35,43.16.08Z" />
+            </svg>
+            <span>SHADOWCRYPT</span>
+        </div>
     </router-link>
 </template>
 
@@ -17,12 +16,29 @@
 </script>
 
 <style scoped lang="scss">
-svg {
-    width: 48px;
-    height: 48px;
+.logo {
+    display: flex;
 }
 
-rect {
+.logo span {
+    margin-left: 2px;
+    letter-spacing: -1.4px;
+    font-size: 34px;
+    font-weight: bold;
+    transform: translateY(1px);
+
+    @media (max-width: 1000px) {
+        display: none;
+    }
+}
+
+
+.logo svg {
+    width: 42px;
+    height: 42px;
+}
+
+.logo svg path {
     fill: var(--accent-color)
 }
 </style>

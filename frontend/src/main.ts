@@ -11,6 +11,9 @@ import CollectionsList from '@/components/list/CollectionsList.vue'
 import Collection from '@/components/collection2/Collection.vue'
 import Home from './components/routes/Home.vue'
 import Landing from './components/landing/Landing.vue'
+import SignupPage from './components/landing/SignupPage.vue'
+import SigninPage from './components/landing/SigninPage.vue'
+import ForgotPage from './components/landing/ForgotPage.vue'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -24,6 +27,18 @@ const routes = [
 	{
 		path: '/list',
 		component: CollectionsList,
+	},
+	{
+		path: '/signup',
+		component: SignupPage,
+	},
+	{
+		path: '/signin',
+		component: SigninPage,
+	},
+	{
+		path: '/forgot',
+		component: ForgotPage,
 	},
 	{
 		path: '/collections/:id',

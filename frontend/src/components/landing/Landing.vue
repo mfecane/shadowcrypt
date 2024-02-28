@@ -1,20 +1,5 @@
 <template>
-    <Header2 />
-    <div class="hero">
-        <div class="container">
-            <div class="plaque">
-                <h1>Fuel Your Artistic Vision</h1>
-                <h2>Seamlessly collect and store reference images</h2>
-                <p>
-                    Brought to you by the legendary mastermind of frontend development
-                    <a href="https://mfecane.github.io " class="href">mfecane</a>
-                    himself
-                </p>
-                <button class="btn">Start building your library</button>
-            </div>
-
-        </div>
-    </div>
+    <Hero />
     <div class="container descr">
         <p>
             ArtRefCollect is a specialized platform designed to cater to the needs of artists by providing a user-friendly
@@ -95,10 +80,10 @@
 
 import { useRouter } from 'vue-router';
 
-import Header2 from '@/components/common/Header2.vue'
 import { useAuth } from '@/hooks/useAuth';
 import { storeToRefs } from 'pinia';
 import { watch } from 'vue';
+import Hero from './Hero.vue';
 
 const router = useRouter()
 const { user } = storeToRefs(useAuth())
@@ -112,71 +97,6 @@ watch(user, (user) => {
 </script>
   
 <style scoped lang="scss">
-.hero {
-    height: 500px;
-    min-height: 35vw;
-    position: relative;
-
-    &:before {
-
-        content: "";
-        position: absolute;
-        z-index: -1;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: center 45% / cover url(/assets/images/pussy.jpg) no-repeat;
-        transform: scaleX(-1);
-    }
-
-    .container {
-        height: 100%;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        align-items: flex-start;
-    }
-}
-
-
-.plaque {
-    border-radius: 10px;
-    padding: 40px 50px;
-    backdrop-filter: blur(10px) brightness(50%);
-    margin-bottom: 2rem;
-    max-width: 540px;
-
-    p {
-        color: var(--color-light);
-        margin-bottom: 2rem;
-    }
-
-
-    h1 {
-        font-size: 3rem;
-        font-weight: 500;
-        color: var(--accent-color);
-        margin-bottom: 0.5rem;
-        line-height: 3rem;
-    }
-
-    h2 {
-        font-size: 2rem;
-        font-weight: 500;
-        color: var(--color-light);
-        margin-bottom: 2rem;
-    }
-}
-
-
-.plaque button {
-    padding-left: 3rem;
-    padding-right: 3rem;
-}
-
 .descr {
     color: var(--color-light);
     padding-top: 60px;

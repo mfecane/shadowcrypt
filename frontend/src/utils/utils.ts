@@ -42,3 +42,7 @@ export function makeid(length: number): string {
 }
 
 export type Vector2 = { x: number; y: number }
+
+export async function sleep(timeout: number = 200) {
+	await new Promise((resolve) => setTimeout(resolve, timeout))
+}

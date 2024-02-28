@@ -48,13 +48,15 @@ function clear() {
 }
 
 .input_container {
-    border: 1px solid #92b1d2;
+    margin: 0 10px;
+    border: 1px solid var(--accent-color);
     display: flex;
     align-items: center;
     position: relative;
-    padding: 7px 12px;
+    padding: 8px 18px;
+    min-height: 46px;
     background-color: white;
-    border-radius: 4px;
+    border-radius: 999px;
     box-shadow: inset 0px 4px 8px 0px rgba(45, 47, 52, 0.15), inset 0px 2px 0px 0px rgba(45, 47, 52, 0.05);
 }
 

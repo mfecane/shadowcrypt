@@ -51,6 +51,6 @@ function onClick(e: MouseEvent) {
     position: absolute;
     width: 64px;
     height: 64px;
-    background: top left / cover url(images/select.svg) no-repeat;
+    background: top left / cover url(/assets/images/svg/select.svg) no-repeat;
 }
 </style>

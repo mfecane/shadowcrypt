@@ -2,27 +2,38 @@
 	background-color: var(--accent-color);
 	padding: 4px 8px;
 	font-size: 14px;
-	border-radius: 4px;
-	border: 2px solid var(--bg-color-dark);
+	border-radius: 999px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	transition: all 200ms ease;
 	font-weight: 500;
 	min-width: 100px;
+	color: black;
 
 	&:hover {
 		background-color: white;
 	}
 
-	// svg path {
-	// 	color: black;
-	// 	transition: all 300ms ease;
-	// }
+	&.input {
+		min-height: 3rem;
+		width: 100%;
+		font-size: 1.2rem;
+	}
+}
 
-	// &:hover svg path {
-	// 	color: white;
-	// }
+.btn,
+a.btn {
+	color: black;
+}
+
+.btn:hover,
+a.btn:hover {
+	color: black;
+}
+
+.btn[disabled] {
+	color: #8a8a8a;
 }
 
 .btn.light {
