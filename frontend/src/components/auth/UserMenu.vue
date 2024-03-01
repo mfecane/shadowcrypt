@@ -7,7 +7,7 @@
                 <a href="#" class="light" @click.prevent="">Settings</a>
             </li>
             <li>
-                <button class="btn logout0button light" @click="onLogoutClick">LogOut</button>
+                <button class="btn black" @click="onLogoutClick">Log Out</button>
             </li>
         </ul>
     </div>

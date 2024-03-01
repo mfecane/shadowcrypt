@@ -11,4 +11,5 @@ export enum IconType {
 	back = 'back',
 	google = 'google',
 	dots = 'dots',
+	person = 'person',
 }

@@ -17,6 +17,7 @@ import { grid } from '@/hooks/grid'
 import { useCollectionViewer } from '@/hooks/useCollectionViewer'
 import { Navigator } from '@/viewer/Navigator'
 import { storeToRefs } from 'pinia'
+import Loader from '../common/Loader.vue'
 
 const { images, loading } = storeToRefs(useCollectionViewer())
 

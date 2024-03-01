@@ -3,7 +3,7 @@
 <template>
 	<div class='container header-content' ref="header">
 		<div class='header-content2'>
-			<Logo />
+			<Logo auto-hide />
 			<div class="header-content__search">
 				<SearchBar hint="Search your collections" v-model="filter" />
 			</div>
@@ -90,7 +90,7 @@ onUnmounted(() => {
 }
 
 .header-content__search {
-	flex: 1 0 400px;
+	flex: 1 0 300px;
 	max-width: 600px;
 }
 

@@ -1,6 +1,6 @@
 <template>
     <router-link to="/">
-        <div class="logo">
+        <div class="logo" :class="{ [props.size]: true, 'hide': props.autoHide }">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 81.3 85.88">
                 <path
                     d="M40,22.94c-10.22.34-18.18,9.07-18.18,19.3v28.56c0,3.28,2.66,5.95,5.95,5.95h25.75c3.28,0,5.95-2.66,5.95-5.95v-29.05c0-10.61-8.78-19.17-19.47-18.81Z" />
@@ -13,6 +13,9 @@
 </template>
 
 <script setup lang="ts">
+
+const props = withDefaults(defineProps<{ size: 'small' | 'medium' | 'large', autoHide: boolean }>(), { size: 'medium', autoHide: false })
+
 </script>
 
 <style scoped lang="scss">
@@ -26,7 +29,9 @@
     font-size: 34px;
     font-weight: bold;
     transform: translateY(1px);
+}
 
+.logo.hide span {
     @media (max-width: 1000px) {
         display: none;
     }
@@ -40,5 +45,18 @@
 
 .logo svg path {
     fill: var(--accent-color)
+}
+
+.small {
+    svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    span {
+        margin-left: 1px;
+        letter-spacing: -1.0px;
+        font-size: 18px;
+    }
 }
 </style>

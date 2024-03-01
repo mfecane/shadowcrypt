@@ -1,6 +1,6 @@
 .btn {
 	background-color: var(--accent-color);
-	padding: 4px 8px;
+	padding: 8px 16px;
 	font-size: 14px;
 	border-radius: 999px;
 	display: flex;
@@ -8,7 +8,7 @@
 	justify-content: center;
 	transition: all 200ms ease;
 	font-weight: 500;
-	min-width: 100px;
+	min-width: 110px;
 	color: black;
 
 	&:hover {
@@ -56,4 +56,17 @@ a.btn:hover {
 
 .btn.alt:hover {
 	color: white;
+}
+
+.btn.black {
+	background-color: var(--color-dark);
+	color: var(--accent-color);
+}
+
+.btn.black:hover {
+	color: white;
+}
+
+.btn.black .icon path {
+	fill: var(--accent-color);
 }

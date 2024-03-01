@@ -1,5 +1,6 @@
 <template>
     <div class="register-container">
+        <Logo size="small" />
         <h1>
             <slot name="header"></slot>
         </h1>
@@ -11,10 +12,13 @@
 </template>
   
 <script setup lang="ts">
+import Logo from '../common/Logo.vue';
+
 </script>
   
 <style scoped lang="scss">
 h1 {
+    margin-top: 18px;
     font-size: 3rem;
     margin-bottom: 18px;
 }
@@ -29,7 +33,7 @@ h1 {
 }
 
 .have-account {
-    margin-top: 20px;
+    margin-top: 42px;
     display: flex;
     align-self: center;
     align-items: center;

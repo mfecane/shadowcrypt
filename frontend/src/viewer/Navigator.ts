@@ -224,8 +224,7 @@ export class Navigator {
 	}
 
 	private onPointerDown(event: PointerEvent): void {
-		event.preventDefault()
-		event.stopPropagation()
+		// event.preventDefault()
 
 		this.detectInteractionState(event)
 		this.state?.onPointerDown(event)
@@ -233,31 +232,26 @@ export class Navigator {
 
 	private onPointerMove(event: PointerEvent): void {
 		event.preventDefault()
-		event.stopPropagation()
 
 		this.state?.onPointerMove(event)
 	}
 
 	private onPointerUp(event: PointerEvent): void {
 		event.preventDefault()
-		event.stopPropagation()
 
 		this.state?.onPointerUp(event)
 	}
 
 	private onTouchStart(event: TouchEvent) {
 		event.preventDefault()
-		event.stopPropagation()
 	}
 
 	private onTouchMove(event: TouchEvent) {
 		event.preventDefault()
-		event.stopPropagation()
 	}
 
 	private onTouchEnd(event: TouchEvent) {
 		event.preventDefault()
-		event.stopPropagation()
 	}
 
 	private onWheel(e: WheelEvent) {

@@ -48,7 +48,7 @@ function clear() {
 }
 
 .input_container {
-    margin: 0 10px;
+    margin: 0 16px;
     border: 1px solid var(--accent-color);
     display: flex;
     align-items: center;

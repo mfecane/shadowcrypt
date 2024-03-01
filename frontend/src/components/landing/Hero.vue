@@ -3,8 +3,8 @@
         <div class="container">
             <div class="logo-wrapper">
                 <Logo class="hero-logo" />
-                <router-link class="btn alt signin-button" to="/signin">Sign In
-                    <Icon :type="IconType.back" />
+                <router-link class="btn black signin-button" to="/signin"><span>Sign In</span>
+                    <Icon :type="IconType.person" :size="1.0" />
                 </router-link>
             </div>
             <h1>Fuel Your Artistic Vision</h1>
@@ -96,15 +96,11 @@ watch(user, (user) => {
 }
 
 .signin-button {
-    padding: 6px 12px;
+    padding: 12px 20px;
+    border: 1px solid var(--accent-color);
 
-    & :deep(.icon) {
-        transform: rotate(180deg);
-        margin-left: 0.5rem;
-    }
-
-    & :deep(.icon path) {
-        fill: var(--accent-color);
+    :deep(*:not(:first-child)) {
+        margin-left: 6px;
     }
 }
 
