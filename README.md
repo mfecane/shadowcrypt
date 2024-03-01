@@ -8,7 +8,7 @@ collections -> boards -> images
 
 ## TODO:
 
-- optimize/simplify model
+- add loaders
 - hammer.js
 - double tap/click to enlarge image
 - forgot password

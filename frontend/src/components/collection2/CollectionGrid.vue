@@ -1,8 +1,8 @@
 <template>
     <div class="colection-container" ref="container" @click.prevent="onClick">
         <div :style="style" class='image-list' ref="imageList">
-            <CollectionImage v-for="image of props.collection.images" :id="image.id" :width="image.width ?? 0"
-                :height="image.height ?? 0" :src="image.path" />
+            <CollectionImage v-for="image of images" :id="image.id" :width="image.width ?? 0" :height="image.height ?? 0"
+                :src="image.path" :key="image.id" />
         </div>
     </div>
 </template>
@@ -11,16 +11,14 @@
 
 import CollectionImage from '@/components/collection2/CollectionImage.vue'
 
-//TODO tween is overkill here
 import { StyleValue, computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-import { CollectionWithImages } from '@/model/Data'
 import { grid } from '@/hooks/grid'
 import { useCollectionViewer } from '@/hooks/useCollectionViewer'
 import { Navigator } from '@/viewer/Navigator'
 import { storeToRefs } from 'pinia'
 
-const props = defineProps<{ collection: CollectionWithImages }>()
+const { images, loading } = storeToRefs(useCollectionViewer())
 
 const container = ref<HTMLDivElement>()
 
@@ -32,7 +30,7 @@ const collectionViewer = useCollectionViewer()
 const { resetScale, orientation } = storeToRefs(collectionViewer)
 
 const style = computed<StyleValue>(() => {
-    const columns = Math.ceil(Math.sqrt(props.collection.images.length))
+    const columns = Math.ceil(Math.sqrt(images.value.length))
     return grid(columns, orientation.value)
 })
 
@@ -41,11 +39,13 @@ function onClick(e: MouseEvent) {
     collectionViewer.select()
 }
 
-// TODO oh boi, this is very hacky!
-watch([resetScale, navigator], () => navigator.value?.scaleToFit(), { immediate: true })
+watch([resetScale], () => {
+    navigator.value?.scaleToFit()
+})
 
 onMounted(() => {
     navigator.value = new Navigator(container.value!, imageList.value!)
+    navigator.value?.scaleToFit()
 })
 
 onBeforeUnmount(() => navigator.value?.destroy())

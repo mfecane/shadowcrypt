@@ -1,6 +1,6 @@
 <template>
-    <CollectionMenu :id="props.id" :name="collection?.name ?? ''" />
-    <CollectionGrid v-if="collection" :collection="collection" />
+    <CollectionMenu :id="props.id" :name="name ?? ''" />
+    <CollectionGrid v-if="images.length" />
 </template>
 
 <script setup lang="ts">
@@ -8,29 +8,21 @@
 import CollectionMenu from '@/components/collection2/CollectionMenu.vue'
 import CollectionGrid from '@/components/collection2/CollectionGrid.vue';
 
-import { computed, onMounted, watch } from 'vue';
-import { storeToRefs } from 'pinia'
+import { onMounted } from 'vue';
 
 import { useUploadDialog } from '@/hooks/useUploadDialog';
-import { useCollectionsLocal } from '@/hooks/useCollectionsLocal';
-
-const { store, reloadCollections } = useCollectionsLocal()
-const { getById } = storeToRefs(store)
+import { fetch, useCollectionViewer } from '@/hooks/useCollectionViewer';
+import { storeToRefs } from 'pinia';
 
 const uploadDialog = useUploadDialog()
 
 const props = defineProps<{ id: string }>()
 
-onMounted(() =>
-    reloadCollections()
-)
+const { name, images } = storeToRefs(useCollectionViewer())
 
-const collection = computed(() => getById.value(props.id))
-
-watch(collection, (collection) => {
-    if (collection) {
-        uploadDialog.setSelectedCollection(collection.id)
-    }
+onMounted(() => {
+    fetch(props.id)
+    uploadDialog.setSelectedCollection(props.id)
 })
 
 </script>

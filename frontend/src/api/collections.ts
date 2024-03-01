@@ -1,8 +1,7 @@
-import { Timestamp, addDoc, collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore'
+import { Timestamp, addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { CollectionImage, CollectionWithImages } from '@/model/Data'
-import { getImageDimensions } from '../utils/utils'
-import { resolvePath } from './images'
+import { resolveImage } from './images'
 // import './utils/migrate1'
 
 export interface CollectionData {
@@ -34,16 +33,9 @@ export async function getCollections(userId: string): Promise<CollectionWithImag
 	return result
 }
 
-async function resolveImage(collectionId: string, src: string): Promise<CollectionImage> {
-	const path = (await resolvePath(src)) as string
-	const [width, height] = await getImageDimensions(path)
-	return {
-		id: src,
-		path: path,
-		collectionId,
-		width,
-		height,
-	}
+export async function getCollection(collectionId: string): Promise<CollectionData> {
+	const dd = await getDoc(doc(db, 'collections', collectionId))
+	return dd.data() as CollectionData
 }
 
 export async function createCollection(name: string, userId: string) {

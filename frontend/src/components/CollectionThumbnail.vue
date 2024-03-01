@@ -9,7 +9,7 @@
 			</div>
 			<div class="item__wrapper">
 				<div v-if="displayImages.length" class="item__grid" :class="props.big ? 'big' : 'small'">
-					<div v-for="(image, index) in displayImages" key={index}>
+					<div v-for="(image, index) in displayImages" key={image.id}>
 						<img v-if="image.path" :src="image.path" class='item__image' @dragstart.prevent="onDragStart" />
 						<span v-else></span>
 					</div>

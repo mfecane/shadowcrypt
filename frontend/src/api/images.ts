@@ -1,7 +1,7 @@
 import { STORAGE_URL, db, storage } from '@/firebase'
 import { uploadImage } from '@/firebase/functions'
-import { Collection, CollectionImage } from '@/model/Data'
-import { makeid } from '@/utils/utils'
+import { CollectionImage } from '@/model/Data'
+import { getImageDimensions, makeid } from '@/utils/utils'
 import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { CollectionData } from './collections'
@@ -109,4 +109,16 @@ export async function resolvePath(path: string): Promise<string | null> {
 	}
 	downloadUrl = downloadUrl.replace(/http\:\/\/database\:9199\//, STORAGE_URL)
 	return downloadUrl
+}
+
+export async function resolveImage(collectionId: string, src: string): Promise<CollectionImage> {
+	const path = (await resolvePath(src)) as string
+	const [width, height] = await getImageDimensions(path)
+	return {
+		id: src,
+		path: path,
+		collectionId,
+		width,
+		height,
+	}
 }

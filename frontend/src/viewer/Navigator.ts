@@ -139,6 +139,10 @@ export class Navigator {
 	private animationId: number = -1
 
 	public constructor(public readonly container: HTMLDivElement, private readonly element: HTMLDivElement) {
+		if (!this.container) {
+			debugger
+		}
+
 		this.container.addEventListener('pointerdown', (event) => this.onPointerDown(event))
 		this.container.addEventListener('pointermove', (event) => this.onPointerMove(event))
 		this.container.addEventListener('pointerup', (event) => this.onPointerUp(event))
