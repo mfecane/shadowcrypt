@@ -4,13 +4,16 @@ import { Collection, CollectionImage } from '@/model/Data'
 import { makeid } from '@/utils/utils'
 import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { CollectionData } from './collections'
 
 const FOLDER = 'images'
 
-// won't work for free
+// won't work for free 😭
 export async function createImageFromUrl(imageUrl: string): Promise<string> {
-	const result = await uploadImage({ url: imageUrl })
-	return createImageRecord(result.data.path)
+	const {
+		data: { path },
+	} = await uploadImage({ url: imageUrl })
+	return createTmpImageRecord(path)
 }
 
 export async function uploadBlob(blob: Blob, imageType: string): Promise<string> {
@@ -20,7 +23,7 @@ export async function uploadBlob(blob: Blob, imageType: string): Promise<string>
 	await uploadBytes(imagesRef, blob, {
 		contentType: imageType,
 	})
-	return createImageRecord(path)
+	return createTmpImageRecord(path)
 }
 
 function generateFilename(imageType: string): string {
@@ -41,15 +44,42 @@ export async function uploadFile(file: File): Promise<string> {
 	await uploadBytes(imagesRef, await file.arrayBuffer(), {
 		contentType: file.type,
 	})
-	return createImageRecord(path)
+	return createTmpImageRecord(path)
 }
 
-async function createImageRecord(path: string): Promise<string> {
-	const docRef = await addDoc(collection(db, 'images'), { path: path, tmp: true })
-	return docRef.id
+async function createTmpImageRecord(path: string): Promise<string> {
+	const { id } = await addDoc(collection(db, 'tmp_images'), { path: path })
+	return id
 }
 
-export async function discardLoadImage(id: string): Promise<void> {
+export async function getTmpImage(tmpImageId: string) {
+	const { path } = (await getDoc(doc(db, 'tmp_images', tmpImageId))).data() as { path: string }
+	return path
+}
+
+export async function assignTmpImageToCollection(collectionId: string, tmpImageId: string): Promise<void> {
+	const path = await getTmpImage(tmpImageId)
+
+	const r = doc(db, 'collections', collectionId)
+	const cd = await getDoc(r)
+	const cdd = cd.data() as CollectionData
+	const images = [...(cdd.images ?? []), path]
+
+	await updateDoc(doc(db, 'collections', collectionId), {
+		images,
+		updated: Timestamp.now(),
+	})
+
+	// discard tmp image record
+	await deleteDoc(doc(db, 'tmp_images', tmpImageId))
+}
+
+export async function getTmpImageSource(tmpImageId: string) {
+	const path = await getTmpImage(tmpImageId)
+	return resolvePath(path)
+}
+
+export async function discardTmpImage(id: string): Promise<void> {
 	const docRef = await getDoc(doc(db, 'images', id))
 	if (!docRef.exists()) {
 		throw 'File does not exist'
@@ -61,29 +91,12 @@ export async function discardLoadImage(id: string): Promise<void> {
 	} catch {
 		throw 'Could not delete'
 	}
-	await deleteDoc(doc(db, 'images', id))
-}
-
-export async function createImage(imageId: string, collectionId: string): Promise<void> {
-	const update: Partial<CollectionImage> = { collectionId, tmp: false, created: Timestamp.now() }
-	await updateDoc(doc(db, 'images', imageId), update)
-	const update2: Partial<Collection> = { updated: Timestamp.now() }
-	// TODO BUG?
-	// neither is working (((
-	await setDoc(doc(db, 'collections', collectionId), update2, { merge: true })
-	// await updateDoc(doc(db, 'collections', collectionId), update2)
+	// discard tmp image record
+	await deleteDoc(doc(db, 'tmp_images', id))
 }
 
 export async function deleteImage(id: string): Promise<void> {
-	await deleteDoc(doc(db, 'images', id))
-}
-
-export async function getImage(id: string): Promise<string | null> {
-	const docRef = await getDoc(doc(db, 'images', id))
-	if (!docRef.exists()) {
-		throw 'file does not exist'
-	}
-	return resolvePath(docRef.data().path)
+	throw new Error('Looks like some moron forgot to implement this shit')
 }
 
 export async function resolvePath(path: string): Promise<string | null> {

@@ -9,6 +9,7 @@ collections -> boards -> images
 ## TODO:
 
 - optimize/simplify model
+- hammer.js
 - double tap/click to enlarge image
 - forgot password
 - user settings
@@ -16,6 +17,8 @@ collections -> boards -> images
 - animate keyboard interaction
 - interactions hint
 - help
+- Ctrl P fuzzy search menu with filters
+- multiselect
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/
@@ -46,3 +49,4 @@ docker compose up -d --build
 docker compose exec frontend sh
 
 sudo tar -cvf fireabse-backup.001.tar.gz -C ./database/backup .
+sudo tar -xvf fireabse-backup.002.tar.gz -C ./database/backup

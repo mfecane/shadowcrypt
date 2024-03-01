@@ -1,10 +1,15 @@
 <template>
     <div class="hero">
         <div class="container">
-            <Logo class="hero-logo" />
+            <div class="logo-wrapper">
+                <Logo class="hero-logo" />
+                <router-link class="btn alt signin-button" to="/signin">Sign In
+                    <Icon :type="IconType.back" />
+                </router-link>
+            </div>
             <h1>Fuel Your Artistic Vision</h1>
             <h2>Seamlessly collect and store reference images</h2>
-            <router-link class="btn call-to-action" to="/signup">
+            <router-link class="btn alt call-to-action" to="/signup">
                 Start building your library
                 <Icon :type="IconType.back" />
             </router-link>
@@ -51,9 +56,16 @@ watch(user, (user) => {
     }
 }
 
+.logo-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-self: stretch;
+    align-items: center;
+}
+
 .hero .container {
     height: 100%;
-    padding-top: 60px;
+    padding-top: 20px;
     padding-bottom: 50px;
     display: flex;
     flex-direction: column;
@@ -66,29 +78,25 @@ watch(user, (user) => {
 }
 
 .hero h1 {
-    font-size: 3rem;
+    margin-top: auto;
+    font-size: 4rem;
     font-weight: 500;
     color: var(--accent-color);
     margin-bottom: 0.5rem;
-    line-height: 3.5rem;
+    line-height: 4.5rem;
     max-width: 500px;
 }
 
 .hero h2 {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 500;
     color: var(--color-light);
     margin-bottom: 2.5rem;
     max-width: 500px;
 }
 
-.hero .btn {
-    padding: 8px 32px;
-}
-
-.call-to-action {
-    font-size: 1.2rem;
-    display: flex;
+.signin-button {
+    padding: 6px 12px;
 
     & :deep(.icon) {
         transform: rotate(180deg);
@@ -96,7 +104,22 @@ watch(user, (user) => {
     }
 
     & :deep(.icon path) {
-        fill: var(--color-dark);
+        fill: var(--accent-color);
+    }
+}
+
+.call-to-action {
+    font-size: 1.2rem;
+    display: flex;
+    padding: 10px 32px;
+
+    & :deep(.icon) {
+        transform: rotate(180deg);
+        margin-left: 0.5rem;
+    }
+
+    & :deep(.icon path) {
+        fill: var(--accent-color);
     }
 }
 </style>

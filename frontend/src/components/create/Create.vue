@@ -24,7 +24,7 @@ import { ref, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useUploadDialog } from '@/hooks/useUploadDialog'
-import { createImage } from '@/api/images'
+import { assignTmpImageToCollection } from '@/api/images'
 import { useCollectionsLocal } from '@/hooks/useCollectionsLocal'
 
 const dialogStore = useUploadDialog()
@@ -56,7 +56,7 @@ function onClick(event: MouseEvent) {
 
 async function upload() {
     if (dialogStore.imageId && collectionId.value) {
-        await createImage(dialogStore.imageId, collectionId.value)
+        await assignTmpImageToCollection(collectionId.value, dialogStore.imageId)
         dialogStore.setImageId(null)
         dialogStore.closeDialog()
         reloadCollections()

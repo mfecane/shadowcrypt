@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCollectionsWithImages } from '../api/collections'
+import { getCollections } from '../api/collections'
 import { CollectionWithImages } from '../model/Data'
 import { useAuth } from './useAuth'
 
@@ -45,7 +45,7 @@ export function useCollectionsLocal() {
 	async function reloadCollections() {
 		const id = auth.user?.id
 		if (id) {
-			store.init(await getCollectionsWithImages(id))
+			store.init(await getCollections(id))
 		} else {
 			store.init([])
 		}

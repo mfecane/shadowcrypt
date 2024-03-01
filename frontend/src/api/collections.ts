@@ -1,49 +1,58 @@
 import { Timestamp, addDoc, collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { Collection, CollectionImage, CollectionWithImages } from '@/model/Data'
+import { CollectionImage, CollectionWithImages } from '@/model/Data'
 import { getImageDimensions } from '../utils/utils'
 import { resolvePath } from './images'
+// import './utils/migrate1'
 
-async function getCollections(userId: string): Promise<Collection[]> {
-	const q = query(collection(db, 'collections'), where('user', '==', userId))
-	const s = await getDocs(q)
-	const d2: Collection[] = []
-	s.forEach((d) => {
-		let data = d.data() as Collection
-		data = { ...data, id: d.id }
-		d2.push(data)
-	})
-	return d2
+export interface CollectionData {
+	name: string
+	pinned: boolean
+	updated: Timestamp
+	images?: string[]
 }
 
-export async function getCollectionsWithImages(userId: string): Promise<CollectionWithImages[]> {
-	const collections = await getCollections(userId)
-	const collections2: CollectionWithImages[] = []
-	for (const c of collections) {
-		const q = query(collection(db, 'images'), where('collectionId', '==', c.id))
-		const s = await getDocs(q)
-		const coll = c as CollectionWithImages
-		coll.images = s.docs.map((i) => ({ ...i.data(), id: i.id } as CollectionImage))
-		for (let i = 0; i < coll.images.length; ++i) {
-			await resolveImage(coll.images[i])
+export async function getCollections(userId: string): Promise<CollectionWithImages[]> {
+	const collectionsQuery = query(collection(db, 'collections'), where('user', '==', userId))
+	const result: CollectionWithImages[] = []
+	for (let document of (await getDocs(collectionsQuery)).docs) {
+		const images: CollectionImage[] = []
+		const data = document.data() as CollectionData
+		const id = document.id
+		for (let src of data.images ?? []) {
+			images.push(await resolveImage(document.id, src))
 		}
-		collections2.push(coll)
+		const collectionData = {
+			id,
+			name: data.name,
+			pinned: data.pinned,
+			updated: data.updated,
+			images,
+		} as CollectionWithImages
+		result.push(collectionData)
 	}
-	return collections2
+	return result
 }
 
-async function resolveImage(image: CollectionImage) {
-	const p = image.path
-	if (p) {
-		image.path = (await resolvePath(p)) as string
+async function resolveImage(collectionId: string, src: string): Promise<CollectionImage> {
+	const path = (await resolvePath(src)) as string
+	const [width, height] = await getImageDimensions(path)
+	return {
+		id: src,
+		path: path,
+		collectionId,
+		width,
+		height,
 	}
-	const [width, height] = await getImageDimensions(image.path)
-	image.width = width
-	image.height = height
 }
 
 export async function createCollection(name: string, userId: string) {
-	const docRef = await addDoc(collection(db, 'collections'), { name: name, user: userId, updated: Timestamp.now() })
+	const docRef = await addDoc(collection(db, 'collections'), {
+		name: name,
+		user: userId,
+		updated: Timestamp.now(),
+		images: [],
+	})
 	return docRef.id
 }
 

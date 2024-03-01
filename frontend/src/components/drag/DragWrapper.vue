@@ -12,9 +12,10 @@
 </template>
   
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+
 import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { uploadFile } from '@/api/images';
-import { ref } from 'vue'
 
 const dragging = ref<boolean>(false)
 const store = useUploadDialog()
@@ -66,7 +67,7 @@ async function onDrop(event: DragEvent) {
         store.showCreateDialog()
         store.setImageId(fileId)
     } catch (error) {
-        console.log('uploading image failed')
+        console.log('uploading image failed', error)
     }
     dragging.value = false
 }

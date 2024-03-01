@@ -7,14 +7,14 @@
   
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { getImage } from '@/api/images';
+import { getTmpImageSource } from '@/api/images';
 
 const props = defineProps<{ id: string }>()
 
 const filename = ref<string | null>(null)
 
 watch(() => props.id, async (id) => {
-    filename.value = await getImage(id)
+    filename.value = await getTmpImageSource(id)
 }, { immediate: true })
 
 </script>

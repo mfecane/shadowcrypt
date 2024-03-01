@@ -7,6 +7,7 @@
 	</DragWrapper>
 	<Create />
 	<Auth />
+	<Quickfind />
 </template>
 
 <script lang="ts" setup>
@@ -16,12 +17,19 @@ import Create from '@/components/create/Create.vue'
 import CreateButton from '@/components/common/CreateButton.vue'
 import DragWrapper from '@/components/drag/DragWrapper.vue'
 
-import { watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useAuth, useAuthWatcher } from '@/hooks/useAuth'
 import { useCollectionsLocal } from '../hooks/useCollectionsLocal'
 import { usePaste } from '@/hooks/usePaste'
+import { setupEvent } from '@/hooks/interaction/useQuickfind'
+import Quickfind from './quickfind/Quickfind.vue'
+
+
+onMounted(() => {
+	setupEvent()
+})
 
 useAuthWatcher()
 usePaste()

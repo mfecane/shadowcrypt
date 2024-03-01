@@ -4,7 +4,7 @@
         <RegisterForm />
         <div class="have-account">
             <span>Already have an account?</span>
-            <router-link class="btn" to="/signin">Sign in</router-link>
+            <router-link class="btn alt" to="/signin">Sign in</router-link>
         </div>
     </div>
 </template>

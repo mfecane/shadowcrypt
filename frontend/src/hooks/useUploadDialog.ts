@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { discardLoadImage } from '@/api/images'
+import { discardTmpImage } from '@/api/images'
 
 const ID = 'upload_dialog_store'
 
@@ -46,7 +46,7 @@ export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 
 		async discardDialog() {
 			if (this.imageId) {
-				await discardLoadImage(this.imageId)
+				await discardTmpImage(this.imageId)
 				this.setImageId(null)
 			}
 			this.closeDialog()

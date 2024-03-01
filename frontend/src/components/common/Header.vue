@@ -2,7 +2,7 @@
 
 <template>
 	<div class='container header-content' ref="header">
-		<div class=' header-content2'>
+		<div class='header-content2'>
 			<Logo />
 			<div class="header-content__search">
 				<SearchBar hint="Search your collections" v-model="filter" />

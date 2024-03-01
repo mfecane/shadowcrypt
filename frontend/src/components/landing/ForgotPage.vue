@@ -4,7 +4,7 @@
         <ForgotForm v-slot:default />
         <template v-slot:haveAccount>
             <span>Changed your mind? Try to sign in instead.</span>
-            <router-link class="btn" to="/signin">Sign in</router-link>
+            <router-link class="btn alt" to="/signin">Sign in</router-link>
         </template>
     </AuthPage>
 </template>

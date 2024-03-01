@@ -7,12 +7,12 @@ service cloud.firestore {
 			allow create: if request.auth != null;
 		}
 		
-		match /collections/{collection} {
-			allow read: if request.auth.uid == resource.data.user;
+		match /collections/{collectionId} {
+			allow read: if request.auth != null && request.auth.uid == resource.data.user;
 			allow write: if isMfecane(request.auth.uid);
 		}
 		
-		match /images/{image} {
+		match /tmp_images/{imageId} {
 			allow write: if isMfecane(request.auth.uid);
 			allow read: if request.auth != null;
 		}

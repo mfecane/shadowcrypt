@@ -47,3 +47,13 @@ a.btn:hover {
 		border: 1px solid var(--accent-color-dark);
 	}
 }
+
+.btn.alt {
+	background-color: transparent;
+	border: 1px solid var(--accent-color);
+	color: var(--accent-color);
+}
+
+.btn.alt:hover {
+	color: white;
+}

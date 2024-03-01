@@ -23,7 +23,7 @@ import { ref } from 'vue'
 import CollectionImage2 from './CollectionImage2.vue'
 import { useUploadDialog } from '@/hooks/useUploadDialog'
 import { IconType } from '../common/icons/IconType'
-import { discardLoadImage, createImageFromUrl, uploadFile } from '@/api/images'
+import { discardTmpImage, createImageFromUrl, uploadFile } from '@/api/images'
 
 const filename = ref('')
 const uploadStore = useUploadDialog()
@@ -42,7 +42,7 @@ const onChangeDebounce = debounce(onChange, 500)
 
 async function discard() {
     if (uploadStore.imageId) {
-        await discardLoadImage(uploadStore.imageId)
+        await discardTmpImage(uploadStore.imageId)
         uploadStore.setImageId(null)
     }
 }
