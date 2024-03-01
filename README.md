@@ -8,11 +8,9 @@ collections -> boards -> images
 
 ## TODO:
 
-- add loaders
-- hammer.js
-- double tap/click to enlarge image
 - forgot password
 - user settings
+- login with gluglu
 - reset navigator on change orientation
 - animate keyboard interaction
 - interactions hint

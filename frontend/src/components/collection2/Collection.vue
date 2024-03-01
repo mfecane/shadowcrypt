@@ -1,6 +1,6 @@
 <template>
+    <Fullscreen />
     <CollectionMenu :id="props.id" :name="name ?? ''" />
-
     <CollectionGrid v-if="images.length" />
     <Loader v-else size="large" class="grid-loader" caption />
 </template>
@@ -10,6 +10,7 @@
 import CollectionMenu from '@/components/collection2/CollectionMenu.vue'
 import CollectionGrid from '@/components/collection2/CollectionGrid.vue';
 import Loader from '../common/Loader.vue';
+import Fullscreen from './Fullscreen.vue';
 
 import { onMounted } from 'vue';
 

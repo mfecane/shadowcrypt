@@ -18,6 +18,7 @@ interface State {
 	selected: string | null
 	resetScale: number
 	loading: boolean
+	fullScreen: string | null
 }
 
 interface Actions {
@@ -30,6 +31,10 @@ interface Actions {
 	resetScale2(): void
 
 	setImages(list: CollectionImage[]): void
+
+	openFullscreen(id: string): void
+
+	closeFullscreen(): void
 }
 
 export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID, {
@@ -41,6 +46,7 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 		selected: null,
 		resetScale: 0,
 		loading: true,
+		fullScreen: null,
 	}),
 
 	actions: {
@@ -68,6 +74,14 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 
 		setImages(list) {
 			this.images = [...list]
+		},
+
+		openFullscreen(id: string) {
+			this.fullScreen = id
+		},
+
+		closeFullscreen() {
+			this.fullScreen = null
 		},
 	},
 

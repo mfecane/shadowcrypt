@@ -2,28 +2,49 @@
     <div class="image-container" :class="{
         'selected': props.id === collectionViewer.selected
     }" :style="style" @click="onClick">
-        <img :src="props.src" class='image' />
+        <img :src="props.src" class='image' ref="image" />
     </div>
 </template>
 
-
 <script setup lang="ts">
+
+import { StyleValue, computed, onMounted, onUnmounted, ref } from 'vue';
 
 import { gridElement } from '@/hooks/grid';
 import { useCollectionViewer } from '@/hooks/useCollectionViewer';
-import { StyleValue, computed } from 'vue';
+import { ImageHandler } from '@/viewer/ImageHandler';
 
 const props = defineProps<{ id: string, width: number, height: number, src: string }>()
+
+const image = ref<HTMLImageElement>()
 
 const collectionViewer = useCollectionViewer()
 
 let style = computed<StyleValue>(() =>
     gridElement(collectionViewer.orientation, props.height / props.width))
 
-function onClick(e: MouseEvent) {
-    e.stopPropagation()
+function onClick() {
     collectionViewer.select(props.id)
 }
+
+function onDoubleClick() {
+    collectionViewer.openFullscreen(props.id)
+}
+
+let imageHandler: ImageHandler
+
+onMounted(() => {
+    imageHandler = new ImageHandler(image.value)
+    imageHandler.addEventListener('click', onClick)
+    imageHandler.addEventListener('doubleclick', onDoubleClick)
+})
+
+onUnmounted(() => {
+    imageHandler.removeEventListener('click', onClick)
+    imageHandler.removeEventListener('doubleclick', onDoubleClick)
+    //@ts-expect-error
+    imageHandler = undefined
+})
 
 </script>
   

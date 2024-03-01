@@ -149,9 +149,9 @@ export class Navigator {
 
 		this.container.addEventListener('wheel', (event) => this.onWheel(event))
 
-		this.container.addEventListener('touchstart', (event) => this.onTouchStart(event))
+		// this.container.addEventListener('touchstart', (event) => this.onTouchStart(event))
 		this.container.addEventListener('touchmove', (event) => this.onTouchMove(event))
-		this.container.addEventListener('touchend', (event) => this.onTouchEnd(event))
+		// this.container.addEventListener('touchend', (event) => this.onTouchEnd(event))
 
 		window.addEventListener('keydown', (event) => this.onKeyPress(event))
 
@@ -242,17 +242,17 @@ export class Navigator {
 		this.state?.onPointerUp(event)
 	}
 
-	private onTouchStart(event: TouchEvent) {
-		event.preventDefault()
-	}
+	// private onTouchStart(event: TouchEvent) {
+	// 	event.preventDefault()
+	// }
 
 	private onTouchMove(event: TouchEvent) {
 		event.preventDefault()
 	}
 
-	private onTouchEnd(event: TouchEvent) {
-		event.preventDefault()
-	}
+	// private onTouchEnd(event: TouchEvent) {
+	// 	event.preventDefault()
+	// }
 
 	private onWheel(e: WheelEvent) {
 		this.state?.onWheel(e)
