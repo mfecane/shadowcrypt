@@ -6,7 +6,7 @@
             Sign in with google
         </button>
         <h2 class="or">OR</h2>
-        <span v-if="auth.error" class="error">{{ auth.error }}</span>
+        <AuthMessage :error="error" :message="message" />
         <label for="login">E-mail</label>
         <input type="email" id="login" class="input_text" v-model="email" />
         <label for="login">Password</label>
@@ -18,38 +18,35 @@
   
 <script setup lang="ts">
 
-import { ref } from 'vue'
-
 import Icon from '@/components/common/icons/Icon.vue'
+import AuthMessage from './AuthMessage.vue';
+
+import { onBeforeUnmount, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia';
 
 import { IconType } from '@/components/common/icons/IconType'
 import { useAuth, login } from '@/hooks/useAuth';
-import { sleep } from '@/utils/utils'
-
-import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
 const auth = useAuth()
 
+const { locked, error, message } = storeToRefs(auth)
+
 const email = ref('')
 const password = ref('')
-const locked = ref(false)
-
 async function onSubmit() {
-    locked.value = true
-    try {
-        await login(email.value, password.value)
+    if (await login(email.value, password.value)) {
         router.push('/list')
-    } catch (e) {
-        await sleep(500)
-        //@ts-expect-error
-        auth.setError(e.toString())
-        locked.value = false
     }
 }
 
 function noop() { }
+
+onBeforeUnmount(() => {
+    auth.clearMessages()
+})
 
 </script>
   

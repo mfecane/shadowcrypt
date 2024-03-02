@@ -4,7 +4,7 @@
         <span class="user-name">{{ user!.name || user!.email }}</span>
         <ul>
             <li>
-                <a href="#" class="light" @click.prevent="">Settings</a>
+                <router-link to="/user" class="light" @click.prevent="">Settings</router-link>
             </li>
             <li>
                 <button class="btn black" @click="onLogoutClick">Log Out</button>

@@ -1,5 +1,5 @@
 <template>
-    <div class="fullscreen" @click="collectionViewer.closeFullscreen()" @pointermove="e => e.preventDefault()">
+    <div class="fullscreen" @click="onAnything" @pointermove="onAnything" @touchmove="onAnything">
         <Transition>
             <img v-if="fullScreen" :src="image.path" :class="fitClass" />
         </Transition>
@@ -28,6 +28,11 @@ const fitClass = computed<string>(() => {
     const aspect = image.value.width! / image.value.height!
     return aspect > window.innerWidth / window.innerHeight ? 'fit-horizontally' : 'fit-vertically '
 })
+
+function onAnything(event: Event) {
+    event.preventDefault()
+    collectionViewer.closeFullscreen()
+}
 
 </script>
   

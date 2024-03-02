@@ -72,17 +72,23 @@
                 Receive updates with new features and improvements to enhance your experience.
                 Responsive customer support to address any queries or issues promptly.
             </li>
+
+
         </ul>
+
+        <Suppor />
     </div>
 </template>
   
 <script setup lang="ts">
 
-import { useRouter } from 'vue-router';
+import Suppor from './Suppor.vue';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { watch } from 'vue';
+
+import { useAuth } from '@/hooks/useAuth';
 import Hero from './Hero.vue';
 
 const router = useRouter()

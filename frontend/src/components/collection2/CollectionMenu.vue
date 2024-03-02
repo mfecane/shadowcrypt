@@ -72,12 +72,13 @@ async function renameCollection2() {
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--color-darker);
-    padding: 8px 7px;
-    border-radius: 999px;
+    padding: 0 7px;
+    border-radius: 32px;
     box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
     z-index: 2;
     display: flex;
     align-items: center;
+    height: 64px;
 }
 
 .title {

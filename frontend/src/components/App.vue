@@ -6,13 +6,11 @@
 		<CreateButton />
 	</DragWrapper>
 	<Create />
-	<Auth />
 	<Quickfind />
 </template>
 
 <script lang="ts" setup>
 
-import Auth from '@/components/auth/Auth.vue'
 import Create from '@/components/create/Create.vue'
 import CreateButton from '@/components/common/CreateButton.vue'
 import DragWrapper from '@/components/drag/DragWrapper.vue'

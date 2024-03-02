@@ -14,6 +14,7 @@ import Landing from './components/landing/Landing.vue'
 import SignupPage from './components/landing/SignupPage.vue'
 import SigninPage from './components/landing/SigninPage.vue'
 import ForgotPage from './components/landing/ForgotPage.vue'
+import UserSettingsPageVue from './components/pages/UserSettingsPage.vue'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -39,6 +40,10 @@ const routes = [
 	{
 		path: '/forgot',
 		component: ForgotPage,
+	},
+	{
+		path: '/user',
+		component: UserSettingsPageVue,
 	},
 	{
 		path: '/collections/:id',

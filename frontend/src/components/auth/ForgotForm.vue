@@ -1,8 +1,8 @@
 
 <template>
     <form class="login_form" @submit.prevent="onSubmit">
-        <span v-if="auth.error" class="error">{{ auth.error }}</span>
-        <p>Enter email Lorem, ipsum dolor sit amet consectetur adipisicing elit. Possimus quibusdam ratione culpa!...</p>
+        <AuthMessage :error="error" :message="message" />
+        <p>Enter your email. We will send a recovery link.</p>
         <label for="email">E-mail</label>
         <input type="email" id="email" class="input_text" v-model="email" />
         <button type="submit" class="btn input" :disabled="locked">Submit</button>
@@ -11,28 +11,30 @@
   
 <script setup lang="ts">
 
-import { ref } from 'vue'
+import AuthMessage from './AuthMessage.vue';
 
-import { useAuth, login } from '@/hooks/useAuth';
-import { sleep } from '@/utils/utils'
+import { onBeforeUnmount, ref } from 'vue'
+
+import { useAuth, sendEmail } from '@/hooks/useAuth';
+import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
 const auth = useAuth()
 
+const { error, message, locked } = storeToRefs(auth)
+
 const email = ref('')
-const password = ref('')
-const locked = ref(false)
+
+const router = useRouter()
 
 async function onSubmit() {
-    locked.value = true
-    try {
-        await login(email.value, password.value)
-    } catch (e) {
-        await sleep(500)
-        //@ts-expect-error
-        auth.setError(e.toString())
-        locked.value = false
-    }
+    await sendEmail(email.value)
+    router.push('/signin')
 }
+
+onBeforeUnmount(() => {
+    auth.clearMessages()
+})
 
 </script>
   
@@ -62,10 +64,6 @@ async function onSubmit() {
 .or {
     align-self: center;
     font-size: 1.2rem;
-}
-
-.error {
-    color: var(--color-delete);
 }
 
 button.input {

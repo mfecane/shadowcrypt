@@ -6,10 +6,10 @@
             Sign up with google
         </button>
         <h2 class="or">OR</h2>
-        <span v-if="auth.error" class="error">{{ auth.error }}</span>
+        <AuthMessage :error="error" :message="message" />
         <label for="login">E-mail</label>
         <input type="email" id="login" class="input_text" v-model="login" />
-        <label for="login">Password</label>
+        <label for="password">Password</label>
         <input type="password" id="password" class="input_text" v-model="password" />
         <label for="password_confirm">Confirm password</label>
         <input type="password" id="password_confirm" class="input_text " v-model="confirmation" />
@@ -19,35 +19,37 @@
   
 <script setup lang="ts">
 
-import { ref } from 'vue'
-
+import AuthMessage from './AuthMessage.vue';
 import Icon from '@/components/common/icons/Icon.vue'
+
+import { onBeforeUnmount, ref } from 'vue'
+import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
 import { IconType } from '@/components/common/icons/IconType'
 import { useAuth, register } from '@/hooks/useAuth';
-import { sleep } from '@/utils/utils'
 
 const auth = useAuth()
+
+const router = useRouter()
+
+const { locked, error, message } = storeToRefs(auth)
 
 const login = ref('')
 const password = ref('')
 const confirmation = ref('')
-const locked = ref(false)
 
 async function onSubmit() {
-    locked.value = true
-    try {
-        await register(login.value, password.value, confirmation.value)
-    } catch (e) {
-        await sleep(500)
-        //@ts-expect-error
-        auth.setError(e.toString())
-        locked.value = false
+    if (await register(login.value, password.value, confirmation.value)) {
+        router.push('/signin')
     }
 }
 
 function noop() { }
 
+onBeforeUnmount(() => {
+    auth.clearMessages()
+})
 </script>
   
 <style scoped lang="scss">

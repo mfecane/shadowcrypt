@@ -2,12 +2,15 @@ import { defineStore } from 'pinia'
 import {
 	User as FirebaseUser,
 	createUserWithEmailAndPassword,
+	getAuth,
 	onAuthStateChanged,
+	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
 	signOut,
+	updatePassword,
 } from 'firebase/auth'
 import { auth, db } from '@/firebase'
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 
 const ID = 'auth'
 
@@ -27,6 +30,8 @@ interface State {
 	user: User | null
 	dialogType: LoginDialogType | null
 	error: string
+	message: string
+	locked: boolean
 }
 
 interface Actions {
@@ -34,8 +39,12 @@ interface Actions {
 	showLoginDialog(): void
 	showForgotDialig(): void
 	closeDialog(): void
+	lock(): void
+	unlock(): void
 	setError(arr: string): void
+	setMessage(message: string): Promise<void>
 	setUser(user?: User | null): void
+	clearMessages(): void
 }
 
 export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
@@ -43,6 +52,8 @@ export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
 		user: null,
 		dialogType: null,
 		error: '',
+		message: '',
+		locked: false,
 	}),
 
 	actions: {
@@ -74,6 +85,29 @@ export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
 			}
 			this.user = null
 		},
+
+		setMessage(message) {
+			return new Promise((resolve) => {
+				this.message = message
+				setTimeout(() => {
+					this.message = ''
+					resolve()
+				}, 5000)
+			})
+		},
+
+		clearMessages() {
+			this.error = ''
+			this.message = ''
+		},
+
+		lock() {
+			this.locked = true
+		},
+
+		unlock() {
+			this.locked = false
+		},
 	},
 
 	getters: {},
@@ -91,19 +125,28 @@ export async function useAuthWatcher() {
 	})
 }
 
-export async function register(userLogin: string, password: string, confirmation: string) {
+export async function register(userLogin: string, password: string, confirmation: string): Promise<boolean> {
 	const authStore = useAuth()
 	if (password === confirmation) {
-		let userCredential = await createUserWithEmailAndPassword(auth, userLogin, password)
-		const id = userCredential.user.uid
-		await setDoc(doc(collection(db, 'users'), id), {
-			name: '',
-		})
-		const { user } = await signInWithEmailAndPassword(auth, userLogin, password)
-		setUser(user)
+		authStore.lock()
+		try {
+			let userCredential = await createUserWithEmailAndPassword(auth, userLogin, password)
+			const id = userCredential.user.uid
+			await setDoc(doc(collection(db, 'users'), id), {
+				name: '',
+			})
+			const { user } = await signInWithEmailAndPassword(auth, userLogin, password)
+			await authStore.setMessage('User successfully created')
+			await setUser(user)
+			return true
+		} catch (error) {
+			authStore.setError('Failed to create user')
+		}
+		authStore.unlock()
 	} else {
 		authStore.setError('Password and confirmation do not match')
 	}
+	return false
 }
 
 async function setUser(user: FirebaseUser) {
@@ -117,23 +160,69 @@ async function setUser(user: FirebaseUser) {
 			...userData,
 		})
 	} catch (error) {
-		console.error("Can't read user", error)
+		console.error('Failed to read user', error)
 	}
 }
 
-export async function login(userLogin: string, password: string) {
+export async function login(userLogin: string, password: string): Promise<boolean> {
 	const authStore = useAuth()
+	let result: boolean
 	try {
+		authStore.lock()
 		const { user } = await signInWithEmailAndPassword(auth, userLogin, password)
-		setUser(user)
+		await setUser(user)
+		result = true
 	} catch (error) {
-		//@ts-expect-error
-		authStore.setError(error.toString())
+		authStore.setError('Could not login with specified credentials')
+		result = false
 	}
+	authStore.unlock()
+	return result
 }
 
 export async function logout() {
 	const authStore = useAuth()
 	signOut(auth)
 	authStore.setUser()
+}
+
+export async function updatePassword2(password: string) {
+	const auth = getAuth()
+	const authStore = useAuth()
+	if (auth.currentUser) {
+		try {
+			authStore.lock()
+			await updatePassword(auth.currentUser, password)
+			await authStore.setMessage('Password successfully changed')
+		} catch (error) {
+			authStore.setError('Failed to update password')
+		}
+		authStore.unlock()
+	}
+}
+
+export async function updateUser(name: string) {
+	const auth = getAuth()
+	const authStore = useAuth()
+	if (auth.currentUser) {
+		try {
+			authStore.lock()
+			const ref = doc(db, 'users', auth.currentUser.uid)
+			await updateDoc(ref, { name })
+			await authStore.setMessage('User data successfully changed')
+			await setUser(auth.currentUser)
+		} catch (error) {
+			authStore.setError('Failed to update user')
+		}
+		authStore.unlock()
+	}
+}
+
+export async function sendEmail(email: string) {
+	const authStore = useAuth()
+	authStore.lock()
+	const auth = getAuth()
+	await sendPasswordResetEmail(auth, email)
+	await authStore.setMessage('Email with password reset link was sent')
+	authStore.unlock()
 }
