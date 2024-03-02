@@ -1,3 +1,5 @@
+import { Optional, PresentOptional } from 'typescript-optional'
+
 export function isImageUrl(url: string): boolean {
 	const regex = /\/([^\/]+)\.(\w+)(?:[\?#].*)?$/
 	const matches = url.match(regex)
@@ -45,4 +47,8 @@ export type Vector2 = { x: number; y: number }
 
 export async function sleep(timeout: number = 200) {
 	await new Promise((resolve) => setTimeout(resolve, timeout))
+}
+
+export function nn<T>(arg: T | null | undefined, msg: string): T {
+	return Optional.ofNullable(arg).orElseThrow(() => Error(msg))
 }

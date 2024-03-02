@@ -1,7 +1,6 @@
-import { CollectionData, getCollection } from '@/api/collections'
-import { resolveImage } from '@/api/images'
-import { CollectionImage } from '@/model/Data'
+import { Collection, fetchOneCollection, getCollectionsById } from '@/model/CollectionsModel'
 import { defineStore } from 'pinia'
+import { nn } from '@/utils/utils'
 
 const ID = 'id'
 
@@ -11,9 +10,7 @@ export const enum Orientation {
 }
 
 interface State {
-	id: string
-	name: string
-	images: CollectionImage[]
+	collection: Collection | null
 	orientation: Orientation
 	selected: string | null
 	resetScale: number
@@ -22,15 +19,13 @@ interface State {
 }
 
 interface Actions {
-	setCollectionData(id: string, collectionData: CollectionData): void
+	init(collection: Collection): void
 
 	changeOrientation(): void
 
 	select(id?: string): void
 
 	resetScale2(): void
-
-	setImages(list: CollectionImage[]): void
 
 	openFullscreen(id: string): void
 
@@ -39,11 +34,14 @@ interface Actions {
 	clear(): void
 }
 
-export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID, {
+interface Getters {
+	requireCollection(state: State): Collection
+}
+
+//@ts-expect-error
+export const useCollectionViewer = defineStore<typeof ID, State, Getters, Actions>(ID, {
 	state: (): State => ({
-		id: '',
-		name: '',
-		images: [],
+		collection: null,
 		orientation: Orientation.vertical,
 		selected: null,
 		resetScale: 0,
@@ -52,10 +50,8 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 	}),
 
 	actions: {
-		setCollectionData(id, collectionData) {
-			this.id = id
-			this.name = collectionData.name
-			this.images = []
+		init(collection) {
+			this.collection = collection
 		},
 
 		changeOrientation() {
@@ -74,10 +70,6 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 			this.resetScale++
 		},
 
-		setImages(list) {
-			this.images = [...list]
-		},
-
 		openFullscreen(id: string) {
 			this.fullScreen = id
 		},
@@ -87,9 +79,7 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 		},
 
 		clear() {
-			this.id = ''
-			this.name = ''
-			this.images = []
+			this.collection = null
 			this.selected = null
 			this.resetScale = 0
 			this.loading = true
@@ -97,20 +87,25 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 		},
 	},
 
-	getters: {},
+	getters: {
+		requireCollection(state) {
+			return nn(state.collection, `No collection is loaded`)
+		},
+	},
 })
 
-export async function fetch(id: string): Promise<void> {
+export async function fetch(userId: string, id: string): Promise<void> {
 	const store = useCollectionViewer()
 	store.loading = true
-	const collectionData = await getCollection(id)
-	store.setCollectionData(id, collectionData)
-	const images: CollectionImage[] = []
-	if (collectionData.images) {
-		for (let i = 0; i < collectionData.images.length; ++i) {
-			images.push(await resolveImage(id, collectionData.images[i]))
-		}
-	}
-	store.setImages(images)
+	await fetchOneCollection(userId, id)
+	store.init(await getCollectionsById(id))
+	store.loading = false
+}
+
+export async function update(id: string): Promise<void> {
+	const store = useCollectionViewer()
+	store.clear()
+	store.loading = true
+	store.init(await getCollectionsById(id))
 	store.loading = false
 }

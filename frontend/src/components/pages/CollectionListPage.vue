@@ -23,21 +23,4 @@ watch(user, (user) => {
 
 </script>
 
-<style lang="scss" scoped>
-.no-collections {
-    padding-top: 20px;
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--accent-color)
-}
-
-.pinned-bg {
-    position: relative;
-    padding: 6px 0;
-    background-color: var(--color-darkish);
-}
-
-.loader-gap {
-    margin-top: 40px;
-}
-</style>
+<style lang="scss" scoped></style>

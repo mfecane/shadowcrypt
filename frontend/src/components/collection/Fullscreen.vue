@@ -1,7 +1,7 @@
 <template>
     <div class="fullscreen" @click="close" @pointermove="onPointerMove" @touchmove="close">
         <Transition>
-            <img v-if="fullScreen" :src="image.path" :class="fitClass" />
+            <img v-if="fullScreen" :src="image.src" :class="fitClass" />
         </Transition>
     </div>
 </template>
@@ -12,16 +12,16 @@ import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 
 import { useCollectionViewer } from '@/hooks/useCollectionViewer';
-import { CollectionImage } from '@/model/Data';
+import { CollectionImage } from '@/model/CollectionsModel';
 
 const collectionViewer = useCollectionViewer()
 
 const { fullScreen } = storeToRefs(collectionViewer)
 
-const { images } = storeToRefs(useCollectionViewer())
+const { requireCollection: collection } = storeToRefs(useCollectionViewer())
 
 const image = computed(() => {
-    return images.value.find(it => it.id === fullScreen.value!) as CollectionImage
+    return collection.value.images.find(it => it.id === fullScreen.value!) as CollectionImage
 })
 
 const fitClass = computed<string>(() => {

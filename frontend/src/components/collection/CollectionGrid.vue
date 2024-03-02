@@ -1,8 +1,8 @@
 <template>
     <div class="colection-container" ref="container" @click.prevent="onClick">
         <div :style="style" class='image-list' ref="imageList">
-            <CollectionImage v-for="image of images" :id="image.id" :width="image.width ?? 0"
-                :height="image.height ?? 0" :src="image.path" :key="image.id" />
+            <CollectionImage v-for="image of props.collection.images" :id="image.id" :width="image.width ?? 0"
+                :height="image.height ?? 0" :src="image.src" :key="image.id" />
         </div>
     </div>
 </template>
@@ -17,9 +17,9 @@ import { grid } from '@/hooks/grid'
 import { useCollectionViewer } from '@/hooks/useCollectionViewer'
 import { Navigator } from '@/viewer/Navigator'
 import { storeToRefs } from 'pinia'
-import Loader from '../common/Loader.vue'
+import { Collection } from '@/model/CollectionsModel'
 
-const { images, loading } = storeToRefs(useCollectionViewer())
+const props = defineProps<{ collection: Collection }>()
 
 const container = ref<HTMLDivElement>()
 
@@ -31,7 +31,7 @@ const collectionViewer = useCollectionViewer()
 const { resetScale, orientation } = storeToRefs(collectionViewer)
 
 const style = computed<StyleValue>(() => {
-    const columns = Math.ceil(Math.sqrt(images.value.length))
+    const columns = Math.ceil(Math.sqrt(props.collection.images.length))
     return grid(columns, orientation.value)
 })
 

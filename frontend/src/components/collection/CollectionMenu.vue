@@ -4,7 +4,7 @@
             <button @click="onShowMenuClick" class="round">
                 <Icon :type="IconType.dots" :size="1.5" />
             </button>
-            <div class="title">{{ props.name }}</div>
+            <div class="title">{{ collection.name }}</div>
             <button @click="router.back()" class="round">
                 <Icon :type="IconType.back" :size="1.5" />
             </button>
@@ -42,10 +42,10 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router'
 
 import { IconType } from '@/components/common/icons/IconType'
-import { useCollectionViewer } from '@/hooks/useCollectionViewer';
+import { useCollectionViewer, update } from '@/hooks/useCollectionViewer';
 import { useDialogs } from '@/hooks/useDialogs';
 import { storeToRefs } from 'pinia';
-import { deleteImage } from '@/api/images';
+import { Collection, deleteImage } from '@/model/CollectionsModel';
 
 const router = useRouter()
 
@@ -57,13 +57,11 @@ const dialogs = useDialogs()
 
 const showMenu = ref(false)
 
-const props = defineProps<{
-    name: string
-    id: string
-}>()
+const props = defineProps<{ collection: Collection }>()
+const collection = ref(props.collection)
 
 function editCollection() {
-    dialogs.editCollection(props.id)
+    dialogs.editCollection(collection.value.id)
 }
 
 function onShowMenuClick() {
@@ -75,8 +73,10 @@ function onShowMenuClick() {
     }
 }
 
-function deleteImage2() {
-    deleteImage(collectionViewer.id, selected.value!)
+async function deleteImage2() {
+    const id = collectionViewer.requireCollection.id
+    await deleteImage(id, selected.value!)
+    await update(id)
 }
 
 watch(selected, value => {
@@ -86,7 +86,6 @@ watch(selected, value => {
         showMenu.value = false
     }
 })
-
 </script>
 
 <style lang="scss" scoped>
@@ -158,8 +157,6 @@ watch(selected, value => {
     padding: 24px 16px 24px 16px;
     display: flex;
     flex-direction: column;
-
-    li {}
 
     &>*:not(:first-child) {
         margin-top: 16px;

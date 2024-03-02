@@ -1,8 +1,8 @@
 <template>
     <Fullscreen />
-    <CollectionMenu :id="props.id" :name="name ?? ''" />
+    <CollectionMenu v-if="collection" :collection="collection" />
     <Loader v-if="loading" size="large" class="grid-loader" caption />
-    <CollectionGrid v-else />
+    <CollectionGrid v-else-if="collection" :collection="collection" />
 </template>
 
 <script setup lang="ts">
@@ -12,11 +12,12 @@ import CollectionGrid from '@/components/collection/CollectionGrid.vue';
 import Loader from '../common/Loader.vue';
 import Fullscreen from './Fullscreen.vue';
 
-import { onBeforeUnmount, onMounted } from 'vue';
+import { onBeforeUnmount, watch } from 'vue';
 
 import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { fetch, useCollectionViewer } from '@/hooks/useCollectionViewer';
 import { storeToRefs } from 'pinia';
+import { useAuth } from '@/hooks/useAuth';
 
 const uploadDialog = useUploadDialog()
 
@@ -24,12 +25,16 @@ const props = defineProps<{ id: string }>()
 
 const store = useCollectionViewer()
 
-const { name, images, loading } = storeToRefs(store)
+const { collection, loading } = storeToRefs(store)
 
-onMounted(() => {
-    fetch(props.id)
-    uploadDialog.setSelectedCollection(props.id)
-})
+const { user } = storeToRefs(useAuth())
+
+watch(user, (user) => {
+    if (user) {
+        fetch(user.id, props.id)
+        uploadDialog.setSelectedCollection(props.id)
+    }
+}, { immediate: true })
 
 onBeforeUnmount(() => store.clear())
 

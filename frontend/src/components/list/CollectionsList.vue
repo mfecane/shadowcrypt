@@ -32,15 +32,16 @@
 import FirstRow from '@/components/list/FirstRow.vue'
 import MainGrid from '@/components/list/MainGrid.vue'
 import Header from '@/components/common/Header.vue'
-import Loader from '@/components/common/Loader.vue';
+import Loader from '@/components/common/Loader.vue'
 
-import { onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 
-import { useCollectionList, fetch } from '@/hooks/useCollectionList';
+import { useCollectionList, fetch } from '@/hooks/useCollectionList'
 
-const collectionListStore = useCollectionList()
-const { filteredCollection, pinnedCollections, firstRow, secondRow, collectionExist, filter, loading } = storeToRefs(collectionListStore)
+const {
+	filteredCollection, pinnedCollections, firstRow, secondRow, collectionExist, filter, loading
+} = storeToRefs(useCollectionList())
 
 onMounted(() => fetch())
 
