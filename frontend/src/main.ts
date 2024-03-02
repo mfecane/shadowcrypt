@@ -7,14 +7,14 @@ import '@/scss/null.scss'
 import '@/scss/style.scss'
 
 import App from '@/components/App.vue'
-import CollectionsList from '@/components/list/CollectionsList.vue'
-import Collection from '@/components/collection2/Collection.vue'
+import Collection from '@/components/collection/Collection.vue'
 import Home from './components/routes/Home.vue'
 import Landing from './components/landing/Landing.vue'
 import SignupPage from './components/landing/SignupPage.vue'
 import SigninPage from './components/landing/SigninPage.vue'
 import ForgotPage from './components/landing/ForgotPage.vue'
 import UserSettingsPageVue from './components/pages/UserSettingsPage.vue'
+import CollectionListPage from './components/pages/CollectionListPage.vue'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -27,7 +27,7 @@ const routes = [
 	},
 	{
 		path: '/list',
-		component: CollectionsList,
+		component: CollectionListPage,
 	},
 	{
 		path: '/signup',

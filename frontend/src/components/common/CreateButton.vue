@@ -19,11 +19,11 @@ const { user } = storeToRefs(useAuth())
 
 <style scoped lang="scss">
 .create-button {
-    right: 30px;
     position: fixed;
-    bottom: 30px;
-    width: 60px;
-    height: 60px;
+    right: 36px;
+    bottom: 36px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background-color: white;
     display: flex;
@@ -32,7 +32,7 @@ const { user } = storeToRefs(useAuth())
     box-shadow: 2px 2px 8px #00000050, 1px 1px 2px #00000050;
 
     & :deep(svg path) {
-        fill: var(--accent-color-dark);
+        fill: var(--dark-color);
     }
 }
 </style>

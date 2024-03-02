@@ -1,63 +1,80 @@
-
 <template>
     <div class="collection-options">
-        <span class="hint">
-            {{ hintText }}
-        </span>
-        <button class="pin" @click.prevent="pinCollection" @mouseenter="() => { hintText = 'Pin' }"
-            @mouseleave="() => { hintText = '' }">
-            <IconPin />
+        <button class="pin" @click.prevent="pinCollection2">
+            <Icon :type="IconType.pin" :size="1.3" />{{ pinLabel }}
         </button>
-        <button class="pin" @click.prevent="editCollection" @mouseenter="() => { hintText = 'Edit' }"
-            @mouseleave="() => { hintText = '' }">
-            <IconPencil />
+        <button class="pin" @click.prevent="editCollection">
+            <Icon :type="IconType.pencil" :size="1.3" />Edit
         </button>
-        <button class="pin" @click.prevent="editCollection" @mouseenter="() => { hintText = 'Delete' }"
-            @mouseleave="() => { hintText = '' }">
-            <IconBasket />
+        <button class="pin" @click.prevent="deleteCollection">
+            <Icon :type="IconType.basket" :size="1.3" />Delete
         </button>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
-import IconPin from '@/components/common/icons/IconPin.vue';
-import IconPencil from '@/components/common/icons/IconPencil.vue';
-import IconBasket from '@/components/common/icons/IconBasket.vue';
+import Icon from '../common/icons/Icon.vue';
 
-import { ref } from 'vue';
+import { CollectionWithImages } from '@/model/Data';
+import { IconType } from '../common/icons/IconType';
+import { pinCollection } from '@/hooks/useCollectionList';
+import { computed, toRefs } from 'vue';
+import { useDialogs } from '@/hooks/useDialogs';
 
-const hintText = ref<string>('')
+const props = defineProps<{ collection: CollectionWithImages, collectionId: string }>()
 
-function pinCollection() {
-    throw new Error('Not implemented')
+const { collection } = toRefs(props)
+
+const dialogs = useDialogs()
+
+function pinCollection2() {
+    pinCollection(props.collectionId)
 }
+
 
 function editCollection() {
-    throw new Error('Not implemented')
+    dialogs.editCollection(props.collection.id)
 }
 
+function deleteCollection() {
+    dialogs.deleteCollection(props.collection.id)
+}
+
+
+const pinLabel = computed(() => { return collection.value.pinned ? 'Unpin' : 'Pin' })
 
 </script>
-  
+
 <style scoped lang="scss">
 .collection-options {
-    background-color: var(--bg-color-dark);
+    position: absolute;
+    top: 48px;
+    right: 0px;
+    z-index: 1;
+    background-color: var(--color-darker);
     border-radius: 4px;
     display: flex;
-    padding: 10px 12px;
-    align-items: center;
+    flex-direction: column;
+    padding: 16px 12px;
 }
 
-.collection-options>*:not(:last-child) {
-    margin-right: 8px;
+.collection-options>*:not(:first-child) {
+    margin-top: 12px;
 }
 
 .pin {
     background-color: transparent;
     outline: none;
-    width: 24px;
-    height: 24px;
+    min-width: 160px;
+    display: flex;
+    color: var(--accent-color);
+    font-weight: 500;
+    align-items: center;
+}
+
+.pin :deep(.icon) {
+    flex: 0 0 28px;
 }
 
 .pin :deep(path) {
@@ -76,11 +93,5 @@ function editCollection() {
 
 .pin:hover :deep(rect) {
     fill: var(--color-light3);
-}
-
-.hint {
-    min-width: 100px;
-    color: var(--color-light2);
-    font-size: 14px;
 }
 </style>

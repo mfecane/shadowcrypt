@@ -20,3 +20,7 @@ export interface CollectionImage {
 	tmp?: boolean
 	created?: Timestamp
 }
+
+export interface ImageData {
+	path: string
+}

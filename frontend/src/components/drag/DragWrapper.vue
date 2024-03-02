@@ -1,7 +1,6 @@
-
 <template>
-    <div class="drag-wrapper" :class="{ 'lock-children': dragging }" @drop.prevent="onDrop" @dragenter.prevent="onDragEnter"
-        @dragover.prevent="noop" @dragleave.prevent="onDragLeave">
+    <div class="drag-wrapper" :class="{ 'lock-children': dragging }" @drop.prevent="onDrop"
+        @dragenter.prevent="onDragEnter" @dragover.prevent="noop" @dragleave.prevent="onDragLeave">
         <slot></slot>
         <Transition>
             <div class="drag-target" v-show="dragging">
@@ -10,15 +9,17 @@
         </Transition>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
 import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { uploadFile } from '@/api/images';
+import { useAuth } from '@/hooks/useAuth';
 
 const dragging = ref<boolean>(false)
 const store = useUploadDialog()
+const auth = useAuth()
 
 // flag lets us await for lock class to take effect
 const enableDragInteractions = ref<boolean>(false)
@@ -63,7 +64,10 @@ async function onDrop(event: DragEvent) {
     const file = (Array.from(files))[0]
 
     try {
-        const fileId = await uploadFile(file)
+        if (!auth.user) {
+            return
+        }
+        const fileId = await uploadFile(auth.user.id, file)
         store.showCreateDialog()
         store.setImageId(fileId)
     } catch (error) {
@@ -75,7 +79,7 @@ async function onDrop(event: DragEvent) {
 function noop() { }
 
 </script>
-  
+
 <style scoped lang="scss">
 .drag-wrapper {
     min-height: 100vh;

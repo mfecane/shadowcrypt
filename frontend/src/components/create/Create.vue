@@ -1,6 +1,6 @@
-
 <template>
-    <dialog class="create-dialog" ref="dialogRef" @click="onClick" @close.prevent="() => dialogStore.discardDialog()">
+    <dialog v-if="showCreateModal" class="create-dialog" ref="dialogRef" @click="onClick"
+        @close.prevent="() => dialogStore.discardDialog()">
         <form class="container" @submit.prevent="upload">
             <div class="image">
                 <UploadFile />
@@ -12,7 +12,7 @@
         </form>
     </dialog>
 </template>
-  
+
 <script setup lang="ts">
 
 // TODO clear url upon discard
@@ -23,7 +23,7 @@ import CollectionSelector from '@/components/create/CollectionSelector.vue'
 import { ref, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import { useUploadDialog } from '@/hooks/useUploadDialog'
+import { checkClipboard, useUploadDialog } from '@/hooks/useUploadDialog'
 import { assignTmpImageToCollection } from '@/api/images'
 import { useCollectionsLocal } from '@/hooks/useCollectionsLocal'
 
@@ -36,15 +36,15 @@ const dialogRef = ref<HTMLDialogElement>()
 
 const collectionId = ref<string | null>(null)
 
-onMounted(() => {
+onMounted(() =>
     reloadCollections()
-})
+)
 
-watch(showCreateModal, (show) => {
-    if (show) {
-        dialogRef.value?.showModal()
-    } else {
-        dialogRef.value?.close()
+watch([showCreateModal, dialogRef], ([show, dialogRef]) => {
+    if (show && dialogRef) {
+        dialogRef.showModal()
+    } else if (dialogRef) {
+        dialogRef.close()
     }
 }, { immediate: true })
 
@@ -68,7 +68,7 @@ watch(selectedCollection, (id) => {
 })
 
 </script>
-  
+
 <style scoped lang="scss">
 .create-dialog {
     background-color: var(--color-light3);

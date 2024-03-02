@@ -8,8 +8,8 @@
 </template>
 
 <script setup lang="ts">
-import CollectionThumbnail from '@/components/CollectionThumbnail.vue'
-import { CollectionWithImages } from '../model/Data';
+import CollectionThumbnail from '@/components/list/CollectionThumbnail.vue'
+import { CollectionWithImages } from '../../model/Data';
 
 const props = defineProps<{ collections: CollectionWithImages[] }>()
 </script>
@@ -22,4 +22,4 @@ const props = defineProps<{ collections: CollectionWithImages[] }>()
 	gap: 32px;
 	margin: 16px 0px 32px 0;
 }
-</style>
+</style>../../model/Data

@@ -1,7 +1,9 @@
 <template>
-	<template v-if="user">
-		<Header></Header>
+	<Header></Header>
 
+	<Loader v-if="loading" size="large" class="loader-gap" caption />
+
+	<template v-else>
 		<MainGrid v-if="filteredCollection.length" :collections="filteredCollection" />
 
 		<div v-if="filter && !filteredCollection.length" class="no-collections">
@@ -18,46 +20,29 @@
 
 		<div v-if="!collectionExist" class="no-collections">
 			<div class="container">
-				No collections</div>
+				No collections
+			</div>
 		</div>
 	</template>
+
 </template>
 
 <script setup lang="ts">
 
-import FirstRow from '@/components/FirstRow.vue'
-import MainGrid from '@/components/MainGrid.vue'
+import FirstRow from '@/components/list/FirstRow.vue'
+import MainGrid from '@/components/list/MainGrid.vue'
 import Header from '@/components/common/Header.vue'
+import Loader from '@/components/common/Loader.vue';
 
-import { onMounted, watch } from 'vue';
+import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
 
-import { useCollectionList } from '@/hooks/useCollectionList';
-import { useCollectionsLocal } from '@/hooks/useCollectionsLocal';
-import { CollectionWithImages } from '@/model/Data';
-import { useAuth } from '@/hooks/useAuth';
+import { useCollectionList, fetch } from '@/hooks/useCollectionList';
 
 const collectionListStore = useCollectionList()
-const { filteredCollection, pinnedCollections, firstRow, secondRow, collectionExist, filter } = storeToRefs(collectionListStore)
+const { filteredCollection, pinnedCollections, firstRow, secondRow, collectionExist, filter, loading } = storeToRefs(collectionListStore)
 
-const { store: collectionsLocalStore, reloadCollections } = useCollectionsLocal()
-const { collections } = storeToRefs(collectionsLocalStore)
-
-const router = useRouter()
-const { user } = storeToRefs(useAuth())
-
-if (!user) {
-	router.push('/landing')
-}
-
-watch(collections, (value: CollectionWithImages[]) => {
-	collectionListStore.init(value)
-})
-
-onMounted(() => {
-	reloadCollections()
-})
+onMounted(() => fetch())
 
 </script>
 
@@ -69,10 +54,13 @@ onMounted(() => {
 	color: var(--accent-color)
 }
 
-
 .pinned-bg {
 	position: relative;
 	padding: 6px 0;
 	background-color: var(--color-darkish);
+}
+
+.loader-gap {
+	margin-top: 40px;
 }
 </style>

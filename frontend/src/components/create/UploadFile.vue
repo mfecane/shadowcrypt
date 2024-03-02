@@ -1,8 +1,7 @@
-
 <template>
     <div v-if="uploadStore.imageId" class="image2">
         <CollectionImage2 :id="uploadStore.imageId" />
-        <IconButton :type="IconType.cross" class="discard" @click="discard" :size="1.25" />
+        <IconButton :type="IconType.cross" class="discard" @click="discardTmpImage2" :size="1.25" />
     </div>
     <template v-else>
         <label for="filename">Input file name</label>
@@ -12,40 +11,34 @@
             @dragleave.prevent="noop">Drag image here</div>
     </template>
 </template>
-  
+
 <script setup lang="ts">
 
 import IconButton from '@/components/common/inputs/IconButton.vue'
 
 import { debounce } from 'lodash'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import CollectionImage2 from './CollectionImage2.vue'
-import { useUploadDialog } from '@/hooks/useUploadDialog'
+import { checkClipboard, useUploadDialog, discardTmpImage2 } from '@/hooks/useUploadDialog'
 import { IconType } from '../common/icons/IconType'
-import { discardTmpImage, createImageFromUrl, uploadFile } from '@/api/images'
+import { createTmpImageFromUrl, uploadFile } from '@/api/images'
+import { useAuth } from '@/hooks/useAuth'
 
 const filename = ref('')
 const uploadStore = useUploadDialog()
+const auth = useAuth()
 
 async function onChange() {
     try {
         // TODOOO OPTIMIZE!!!
-        uploadStore.setImageId(await createImageFromUrl(filename.value))
+        uploadStore.setImageId(await createTmpImageFromUrl(filename.value))
     } catch (error) {
         console.log('uploading image failed')
     }
 }
 
 const onChangeDebounce = debounce(onChange, 500)
-
-
-async function discard() {
-    if (uploadStore.imageId) {
-        await discardTmpImage(uploadStore.imageId)
-        uploadStore.setImageId(null)
-    }
-}
 
 function noop() { }
 
@@ -56,14 +49,19 @@ async function onDrop(event: DragEvent): Promise<void> {
     }
     const file = (Array.from(files))[0]
     try {
-        uploadStore.setImageId(await uploadFile(file))
+        if (!auth.user) {
+            return
+        }
+        uploadStore.setImageId(await uploadFile(auth.user.id, file))
     } catch (error) {
         console.log('uploading image failed')
     }
 }
 
+onMounted(() => checkClipboard())
+
 </script>
-  
+
 <style scoped lang="scss">
 #filename {
     border: 1px solid black;

@@ -35,6 +35,8 @@ interface Actions {
 	openFullscreen(id: string): void
 
 	closeFullscreen(): void
+
+	clear(): void
 }
 
 export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID, {
@@ -81,6 +83,16 @@ export const useCollectionViewer = defineStore<typeof ID, State, {}, Actions>(ID
 		},
 
 		closeFullscreen() {
+			this.fullScreen = null
+		},
+
+		clear() {
+			this.id = ''
+			this.name = ''
+			this.images = []
+			this.selected = null
+			this.resetScale = 0
+			this.loading = true
 			this.fullScreen = null
 		},
 	},

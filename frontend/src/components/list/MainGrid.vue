@@ -1,4 +1,4 @@
-<template >
+<template>
 	<div class='container'>
 		<div class="main-grid">
 			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
@@ -8,8 +8,8 @@
 </template>
 
 <script lang="ts" setup>
-import CollectionThumbnail from '@/components/CollectionThumbnail.vue'
-import { CollectionWithImages } from '../model/Data';
+import CollectionThumbnail from '@/components/list/CollectionThumbnail.vue'
+import { CollectionWithImages } from '../../model/Data';
 
 const props = defineProps<{ collections: CollectionWithImages[] }>()
 </script>
@@ -22,4 +22,4 @@ const props = defineProps<{ collections: CollectionWithImages[] }>()
 	gap: 24px;
 	margin-bottom: 100px;
 }
-</style>
+</style>../../model/Data

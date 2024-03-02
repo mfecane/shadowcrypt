@@ -1,12 +1,18 @@
 import { defineStore, storeToRefs } from 'pinia'
-import { CollectionWithImages } from '../model/Data'
+import { CollectionImage, CollectionWithImages } from '../model/Data'
 import FuzzySearch from 'fuzzy-search'
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
+import { db } from '@/firebase'
+import { resolveImage2 } from '@/api/images'
+import { CollectionData } from '@/api/collections'
+import { useAuth } from './useAuth'
 
 const ID = 'collection_list'
 
 interface State {
 	list: CollectionWithImages[]
 	filter: string
+	loading: boolean
 }
 
 interface Actions {
@@ -27,7 +33,7 @@ interface Getters {
 
 //@ts-expect-error wtf
 export const useCollectionList = defineStore<typeof ID, State, Getters, Actions>(ID, {
-	state: (): State => ({ list: [], filter: '' }),
+	state: (): State => ({ list: [], filter: '', loading: false }),
 
 	actions: {
 		init(list) {
@@ -74,3 +80,59 @@ export const useCollectionList = defineStore<typeof ID, State, Getters, Actions>
 		},
 	},
 })
+
+export async function fetch(): Promise<void> {
+	const store = useCollectionList()
+	const auth = useAuth()
+	store.loading = true
+	if (!auth.user) {
+		throw 'User not authorised'
+	}
+	const q = query(collection(db, 'collections'), where('user', '==', auth.user.id))
+	const { docs } = await getDocs(q)
+	const collecions: CollectionWithImages[] = []
+	for (const coll of docs) {
+		const id = coll.id
+		const data = coll.data() as CollectionData
+		const newImages: CollectionImage[] = []
+		if (data.images) {
+			for (let path of data.images) {
+				newImages.push(await resolveImage2(coll.id, path))
+			}
+		}
+		collecions.push({ id, ...data, images: newImages })
+	}
+	store.loading = false
+	store.init(collecions)
+}
+
+export async function pinCollection(collectionId: string): Promise<void> {
+	try {
+		const docRef = doc(db, 'collections', collectionId)
+		const dod = await getDoc(docRef)
+		const { pinned } = dod.data() as CollectionData
+		await updateDoc(docRef, { pinned: !pinned })
+	} catch (error) {
+		throw error
+	}
+	fetch()
+}
+
+export function getCollection(collectionId: string): CollectionWithImages {
+	const store = useCollectionList()
+	const collection = store.list.find((it) => it.id === collectionId)
+	if (!collection) {
+		throw new Error('No collection')
+	}
+	return collection
+}
+
+export async function updateCollection(collectionId: string, name: string) {
+	try {
+		const docRef = doc(db, 'collections', collectionId)
+		await updateDoc(docRef, { name })
+	} catch (error) {
+		throw error
+	}
+	await fetch()
+}

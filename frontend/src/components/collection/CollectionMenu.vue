@@ -1,7 +1,7 @@
 <template>
     <div class="breadcrumbs">
         <div class="header">
-            <button @click="showMenu = !showMenu" class="round">
+            <button @click="onShowMenuClick" class="round">
                 <Icon :type="IconType.dots" :size="1.5" />
             </button>
             <div class="title">{{ props.name }}</div>
@@ -10,16 +10,26 @@
             </button>
         </div>
         <ul v-if="showMenu" class="menu">
-            <li>
-                <a href="#" @click.prevent="collectionViewer.changeOrientation()">Change layout</a>
-            </li>
-            <li>
-                <a href="#" @click.prevent="collectionViewer.resetScale2()">Scale to fit</a>
-            </li>
-            <li>
-                <a href="#" @click.prevent="">Edit colleciton</a>
-            </li>
-            <li>Help</li>
+
+            <template v-if="!collectionViewer.selected">
+                <li>
+                    <a href="#" @click.prevent="collectionViewer.changeOrientation()">Change layout</a>
+                </li>
+                <li>
+                    <a href="#" @click.prevent="collectionViewer.resetScale2()">Scale to fit</a>
+                </li>
+                <li>
+                    <a href="#" @click.prevent="editCollection">Edit colleciton</a>
+                </li>
+                <li>Help</li>
+            </template>
+
+            <template v-else>
+                <li>
+                    <a href="#" @click.prevent="deleteImage2">Delete image</a>
+                </li>
+            </template>
+
         </ul>
     </div>
 </template>
@@ -28,15 +38,22 @@
 
 import Icon from '@/components/common/icons/Icon.vue'
 
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router'
 
 import { IconType } from '@/components/common/icons/IconType'
 import { useCollectionViewer } from '@/hooks/useCollectionViewer';
+import { useDialogs } from '@/hooks/useDialogs';
+import { storeToRefs } from 'pinia';
+import { deleteImage } from '@/api/images';
 
 const router = useRouter()
 
 const collectionViewer = useCollectionViewer()
+
+const { selected } = storeToRefs(collectionViewer)
+
+const dialogs = useDialogs()
 
 const showMenu = ref(false)
 
@@ -44,6 +61,31 @@ const props = defineProps<{
     name: string
     id: string
 }>()
+
+function editCollection() {
+    dialogs.editCollection(props.id)
+}
+
+function onShowMenuClick() {
+    if (showMenu.value) {
+        showMenu.value = false
+        collectionViewer.select()
+    } else {
+        showMenu.value = true
+    }
+}
+
+function deleteImage2() {
+    deleteImage(collectionViewer.id, selected.value!)
+}
+
+watch(selected, value => {
+    if (value) {
+        showMenu.value = true
+    } else {
+        showMenu.value = false
+    }
+})
 
 </script>
 

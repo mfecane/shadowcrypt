@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 
-import CollectionImage from '@/components/collection2/CollectionImage.vue'
+import CollectionImage from '@/components/collection/CollectionImage.vue'
 
 import { StyleValue, computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 

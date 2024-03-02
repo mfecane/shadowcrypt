@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 
-const props = withDefaults(defineProps<{ size: 'small' | 'medium' | 'large', caption: boolean }>(), { size: 'medium', caption: false })
+const props = withDefaults(defineProps<{ size?: 'small' | 'medium' | 'large', caption?: boolean }>(), { size: 'medium', caption: false })
 
 </script>
 

@@ -1,12 +1,9 @@
-
 <template>
 	<router-link :to="'/collections/' + props.collection.id">
-		<div class='item'>
-			<div class='item__header-container'>
-				<div class='item__name' :class="props.big ? 'big' : 'small'">{{ props.collection.name }}</div>
-				<div class='item__count'>{{ props.collection.images.length }} items</div>
-				<Icon v-if="props.collection.pinned" :type="IconType.pin" :size="2" />
-			</div>
+		<div class='item' ref="item">
+			<CollectionHeader :collection="props.collection" :pinned="props.collection.pinned ?? false"
+				:name="props.collection.name" :count="props.collection.images.length" :big="props.big"
+				:collectionId="props.collection.id" />
 			<div class="item__wrapper">
 				<div v-if="displayImages.length" class="item__grid" :class="props.big ? 'big' : 'small'">
 					<div v-for="(image, index) in displayImages" key={image.id}>
@@ -15,7 +12,6 @@
 					</div>
 				</div>
 				<div v-else class="empty">Nothing</div>
-				<CollectionOptions class="collection-options" />
 			</div>
 		</div>
 	</router-link>
@@ -23,17 +19,17 @@
 
 <script setup lang="ts">
 
-import Icon from './common/icons/Icon.vue';
+import CollectionHeader from './CollectionHeader.vue'
 
-import { computed } from 'vue';
-import { CollectionWithImages } from '../model/Data';
-import CollectionOptions from './list/CollectionOptions.vue';
-import { IconType } from './common/icons/IconType';
+import { computed, ref } from 'vue';
+import { CollectionWithImages } from '../../model/Data'
 
 const props = withDefaults(
 	defineProps<{ big?: boolean, collection: CollectionWithImages }>(),
 	{ big: false }
 )
+
+const item = ref<HTMLDivElement>()
 
 const displayImages = computed(() => {
 	if (!props.collection.images.length) {
@@ -57,49 +53,6 @@ function onDragStart(event: DragEvent) {
 	height: 100%;
 }
 
-.item__header-container {
-	flex: 0 0 26px;
-	display: flex;
-	flex-direction: column;
-	grid-template-columns: auto 32px;
-	position: relative;
-}
-
-.item__header-container :deep(svg) {
-	position: absolute;
-	right: 0;
-
-	path {
-		fill: var(--color-light3);
-	}
-}
-
-.item__header-data {
-	display: flex;
-	flex-direction: column;
-}
-
-.item__name {
-	color: #000;
-	font-size: 18px;
-	font-weight: 500;
-	color: var(--color-light);
-	padding-left: 2px;
-
-	&.big {
-		font-size: 20px;
-		font-weight: 500;
-	}
-
-}
-
-.item__count {
-	font-size: 12px;
-	font-weight: 500;
-	color: var(--accent-color-alt);
-	margin-bottom: 2px;
-	padding-left: 2px;
-}
 
 .item__wrapper {
 	flex: 1 1 auto;
@@ -165,21 +118,6 @@ function onDragStart(event: DragEvent) {
 	object-fit: cover;
 }
 
-.collection-options {
-	position: absolute;
-	z-index: 1;
-	bottom: 12px;
-	right: 12px;
-	opacity: 0;
-	transition: opacity 200ms ease;
-	pointer-events: none;
-}
-
-.item:hover .collection-options {
-	opacity: 1;
-	pointer-events: all;
-}
-
 .empty {
 	display: flex;
 	align-items: center;
@@ -187,4 +125,4 @@ function onDragStart(event: DragEvent) {
 	min-height: 160px;
 	color: var(--color-light);
 }
-</style>
+</style>../../model/Data

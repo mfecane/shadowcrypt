@@ -8,7 +8,9 @@ collections -> boards -> images
 
 ## TODO:
 
+- design and improve create dialog
 - (?) reset navigator on change orientation
+- update landing
 - viewer menu
 - edit image
 - edit collection
@@ -17,7 +19,8 @@ collections -> boards -> images
 - interactions hint
 - help
 - Ctrl P fuzzy search menu with filters
-- multiselect
+- select/multiselect
+- move
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/

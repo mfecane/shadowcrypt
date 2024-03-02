@@ -1,18 +1,18 @@
 <template>
     <Fullscreen />
     <CollectionMenu :id="props.id" :name="name ?? ''" />
-    <CollectionGrid v-if="images.length" />
-    <Loader v-else size="large" class="grid-loader" caption />
+    <Loader v-if="loading" size="large" class="grid-loader" caption />
+    <CollectionGrid v-else />
 </template>
 
 <script setup lang="ts">
 
-import CollectionMenu from '@/components/collection2/CollectionMenu.vue'
-import CollectionGrid from '@/components/collection2/CollectionGrid.vue';
+import CollectionMenu from '@/components/collection/CollectionMenu.vue'
+import CollectionGrid from '@/components/collection/CollectionGrid.vue';
 import Loader from '../common/Loader.vue';
 import Fullscreen from './Fullscreen.vue';
 
-import { onMounted } from 'vue';
+import { onBeforeUnmount, onMounted } from 'vue';
 
 import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { fetch, useCollectionViewer } from '@/hooks/useCollectionViewer';
@@ -22,12 +22,16 @@ const uploadDialog = useUploadDialog()
 
 const props = defineProps<{ id: string }>()
 
-const { name, images } = storeToRefs(useCollectionViewer())
+const store = useCollectionViewer()
+
+const { name, images, loading } = storeToRefs(store)
 
 onMounted(() => {
     fetch(props.id)
     uploadDialog.setSelectedCollection(props.id)
 })
+
+onBeforeUnmount(() => store.clear())
 
 </script>
 

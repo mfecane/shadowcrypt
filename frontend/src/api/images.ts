@@ -1,6 +1,6 @@
 import { STORAGE_URL, db, storage } from '@/firebase'
 import { uploadImage } from '@/firebase/functions'
-import { CollectionImage } from '@/model/Data'
+import { CollectionImage, ImageData } from '@/model/Data'
 import { getImageDimensions, makeid } from '@/utils/utils'
 import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
@@ -9,16 +9,16 @@ import { CollectionData } from './collections'
 const FOLDER = 'images'
 
 // won't work for free 😭
-export async function createImageFromUrl(imageUrl: string): Promise<string> {
+export async function createTmpImageFromUrl(imageUrl: string): Promise<string> {
 	const {
 		data: { path },
 	} = await uploadImage({ url: imageUrl })
 	return createTmpImageRecord(path)
 }
 
-export async function uploadBlob(blob: Blob, imageType: string): Promise<string> {
+export async function createTmpImageFRomBlob(blob: Blob, userId: string, imageType: string): Promise<string> {
 	const filename = generateFilename(imageType)
-	const path = `${FOLDER}/${filename}`
+	const path = g(userId, filename)
 	const imagesRef = ref(storage, path)
 	await uploadBytes(imagesRef, blob, {
 		contentType: imageType,
@@ -38,8 +38,8 @@ function generateFilename(imageType: string): string {
 	}
 }
 
-export async function uploadFile(file: File): Promise<string> {
-	const path = `${FOLDER}/${file.name}`
+export async function uploadFile(userId: string, file: File): Promise<string> {
+	const path = g(userId, file.name)
 	const imagesRef = ref(storage, path)
 	await uploadBytes(imagesRef, await file.arrayBuffer(), {
 		contentType: file.type,
@@ -80,11 +80,8 @@ export async function getTmpImageSource(tmpImageId: string) {
 }
 
 export async function discardTmpImage(id: string): Promise<void> {
-	const docRef = await getDoc(doc(db, 'images', id))
-	if (!docRef.exists()) {
-		throw 'File does not exist'
-	}
-	const path = docRef.data().path
+	const docRef = await getDoc(doc(db, 'tmp_images', id))
+	const { path } = docRef.data() as ImageData
 	const imagesRef = ref(storage, path)
 	try {
 		await deleteObject(imagesRef)
@@ -95,20 +92,42 @@ export async function discardTmpImage(id: string): Promise<void> {
 	await deleteDoc(doc(db, 'tmp_images', id))
 }
 
-export async function deleteImage(id: string): Promise<void> {
-	throw new Error('Looks like some moron forgot to implement this shit')
+export async function deleteImage(collectionId: string, id: string): Promise<void> {
+	try {
+		const docRef = doc(db, 'collections', collectionId)
+		const docRef2 = await getDoc(docRef)
+		let { images } = docRef2.data() as CollectionData
+		if (!images || !images.length) {
+			return
+		}
+		const index = images.findIndex((it) => it === id)
+		if (index === -1) {
+			return
+		}
+		// console.log('index', index)
+		images.splice(index, 1)
+		// console.log('images', images)
+		updateDoc(docRef, { images })
+	} catch (error) {
+		console.error('error', error)
+	}
 }
 
 export async function resolvePath(path: string): Promise<string | null> {
-	const imagesRef = ref(storage, path)
-	let downloadUrl = ''
 	try {
-		downloadUrl = await getDownloadURL(imagesRef)
+		const imagesRef = ref(storage, path)
+		let downloadUrl = ''
+		try {
+			downloadUrl = await getDownloadURL(imagesRef)
+		} catch (error) {
+			return null
+		}
+		downloadUrl = downloadUrl.replace(/http\:\/\/database\:9199\//, STORAGE_URL)
+		return downloadUrl
 	} catch (error) {
-		return null
+		console.error(`Failed to resolve path ${path}`)
+		throw error
 	}
-	downloadUrl = downloadUrl.replace(/http\:\/\/database\:9199\//, STORAGE_URL)
-	return downloadUrl
 }
 
 export async function resolveImage(collectionId: string, src: string): Promise<CollectionImage> {
@@ -121,4 +140,16 @@ export async function resolveImage(collectionId: string, src: string): Promise<C
 		width,
 		height,
 	}
+}
+
+export async function resolveImage2(collectionId: string, src: string): Promise<CollectionImage> {
+	return {
+		id: src,
+		path: (await resolvePath(src)) as string,
+		collectionId,
+	}
+}
+
+function g(userId: string, filename: string): string {
+	return `${FOLDER}/${userId}/${filename}`
 }
