@@ -1,67 +1,49 @@
 <template>
     <div class="breadcrumbs">
-        <button @click="router.back()" class="round">
-            <Icon :type="IconType.dots" :size="1.5" />
-        </button>
-        <span class="title">{{ props.name }}</span>
-        <button @click="router.back()" class="round">
-            <Icon :type="IconType.back" :size="1.5" />
-        </button>
+        <div class="header">
+            <button @click="showMenu = !showMenu" class="round">
+                <Icon :type="IconType.dots" :size="1.5" />
+            </button>
+            <div class="title">{{ props.name }}</div>
+            <button @click="router.back()" class="round">
+                <Icon :type="IconType.back" :size="1.5" />
+            </button>
+        </div>
+        <ul v-if="showMenu" class="menu">
+            <li>
+                <a href="#" @click.prevent="collectionViewer.changeOrientation()">Change layout</a>
+            </li>
+            <li>
+                <a href="#" @click.prevent="collectionViewer.resetScale2()">Scale to fit</a>
+            </li>
+            <li>
+                <a href="#" @click.prevent="">Edit colleciton</a>
+            </li>
+            <li>Help</li>
+        </ul>
     </div>
 </template>
 
 <script setup lang="ts">
 
-// TODO rename to menu
-
-import IconButton from '@/components/common/inputs/IconButton.vue'
 import Icon from '@/components/common/icons/Icon.vue'
-import Confirmation from '@/components/common/Confirmation.vue'
 
-import { computed, ref } from 'vue'
+import { ref } from 'vue';
 import { useRouter } from 'vue-router'
 
-import { Orientation, useCollectionViewer } from '@/hooks/useCollectionViewer'
-import { deleteImage } from '@/api/images'
-import Dialog from '../common/Dialog.vue'
-import { renameCollection } from '@/api/collections'
 import { IconType } from '@/components/common/icons/IconType'
+import { useCollectionViewer } from '@/hooks/useCollectionViewer';
 
 const router = useRouter()
+
 const collectionViewer = useCollectionViewer()
+
+const showMenu = ref(false)
 
 const props = defineProps<{
     name: string
     id: string
 }>()
-
-const confirmationRef = ref()
-const renameRef = ref()
-const collectionName = ref<string>(props.name)
-
-const iconType = computed(() => {
-    switch (collectionViewer.orientation) {
-        case Orientation.horizontal: return IconType.horizontal
-        case Orientation.vertical: return IconType.vertical
-        default: throw new Error('Unhandled case')
-    }
-})
-
-function confirmDelete() {
-    confirmationRef.value.showModal()
-}
-
-function deletePin2() {
-    const { selected } = collectionViewer
-    if (selected) {
-        deleteImage(selected)
-        collectionViewer.select()
-    }
-}
-
-async function renameCollection2() {
-    await renameCollection(props.id, collectionName.value)
-}
 
 </script>
 
@@ -72,23 +54,26 @@ async function renameCollection2() {
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--color-darker);
-    padding: 0 7px;
-    border-radius: 32px;
+    padding: 0 4px;
+    border-radius: 22px;
     box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
     z-index: 2;
+}
+
+.header {
     display: flex;
+    height: 44px;
     align-items: center;
-    height: 64px;
 }
 
 .title {
+    font-size: 1.2rem;
     display: block;
-    min-width: 200px;
+    min-width: 180px;
     text-align: center;
     margin: 0 20px;
     color: var(--color-light);
     font-weight: 500;
-    font-size: 20px;
 }
 
 .buttons {
@@ -111,8 +96,8 @@ async function renameCollection2() {
 }
 
 .round {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     min-width: unset;
     background-color: var(--color-darkish);
     border-radius: 999px;
@@ -123,6 +108,19 @@ async function renameCollection2() {
     :deep(.icon circle),
     :deep(.icon path) {
         fill: var(--accent-color)
+    }
+}
+
+.menu {
+    color: var(--accent-color);
+    padding: 24px 16px 24px 16px;
+    display: flex;
+    flex-direction: column;
+
+    li {}
+
+    &>*:not(:first-child) {
+        margin-top: 16px;
     }
 }
 </style>

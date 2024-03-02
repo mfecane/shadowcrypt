@@ -1,8 +1,8 @@
 <template>
     <div class="colection-container" ref="container" @click.prevent="onClick">
         <div :style="style" class='image-list' ref="imageList">
-            <CollectionImage v-for="image of images" :id="image.id" :width="image.width ?? 0" :height="image.height ?? 0"
-                :src="image.path" :key="image.id" />
+            <CollectionImage v-for="image of images" :id="image.id" :width="image.width ?? 0"
+                :height="image.height ?? 0" :src="image.path" :key="image.id" />
         </div>
     </div>
 </template>

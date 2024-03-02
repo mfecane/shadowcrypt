@@ -8,8 +8,11 @@ collections -> boards -> images
 
 ## TODO:
 
-- login with gluglu
-- reset navigator on change orientation
+- (?) reset navigator on change orientation
+- viewer menu
+- edit image
+- edit collection
+- hide menu on idle timeout
 - animate keyboard interaction
 - interactions hint
 - help
