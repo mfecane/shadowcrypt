@@ -1,15 +1,18 @@
 import { defineStore } from 'pinia'
 import {
 	User as FirebaseUser,
+	GoogleAuthProvider,
 	createUserWithEmailAndPassword,
+	getAdditionalUserInfo,
 	getAuth,
 	onAuthStateChanged,
 	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
+	signInWithPopup,
 	signOut,
 	updatePassword,
 } from 'firebase/auth'
-import { auth, db } from '@/firebase'
+import { auth, db, provider } from '@/firebase'
 import { collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 
 const ID = 'auth'
@@ -182,8 +185,8 @@ export async function login(userLogin: string, password: string): Promise<boolea
 
 export async function logout() {
 	const authStore = useAuth()
-	signOut(auth)
-	authStore.setUser()
+	await signOut(auth)
+	authStore.setUser(/* nobody */)
 }
 
 export async function updatePassword2(password: string) {
@@ -225,4 +228,26 @@ export async function sendEmail(email: string) {
 	await sendPasswordResetEmail(auth, email)
 	await authStore.setMessage('Email with password reset link was sent')
 	authStore.unlock()
+}
+
+export async function signInWithGluGlu(): Promise<boolean> {
+	const authStore = useAuth()
+	try {
+		const result = await signInWithPopup(auth, provider)
+		const credential = GoogleAuthProvider.credentialFromResult(result)
+		if (!credential) {
+			throw new Error('No credential')
+		}
+		const user = result.user
+		const info = getAdditionalUserInfo(result)
+		const id = user.uid
+		await setDoc(doc(collection(db, 'users'), id), {
+			name: info?.profile?.name ?? '',
+		})
+		await setUser(user)
+		return true
+	} catch (error) {
+		authStore.setError('Failed to log in with google')
+		return false
+	}
 }

@@ -1,5 +1,11 @@
 import { FirebaseOptions, initializeApp } from 'firebase/app'
-import { browserSessionPersistence, connectAuthEmulator, getAuth, setPersistence } from 'firebase/auth'
+import {
+	GoogleAuthProvider,
+	browserSessionPersistence,
+	connectAuthEmulator,
+	getAuth,
+	setPersistence,
+} from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
@@ -20,6 +26,9 @@ export const functions = getFunctions(app)
 
 export const auth = getAuth(app)
 setPersistence(auth, browserSessionPersistence)
+auth.useDeviceLanguage()
+
+export const provider = new GoogleAuthProvider()
 
 if (location.hostname === 'localhost') {
 	connectFirestoreEmulator(db, 'localhost', 8083)

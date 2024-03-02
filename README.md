@@ -8,7 +8,6 @@ collections -> boards -> images
 
 ## TODO:
 
-- forgot password
 - login with gluglu
 - reset navigator on change orientation
 - animate keyboard interaction

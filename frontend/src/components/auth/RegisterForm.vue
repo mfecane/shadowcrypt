@@ -1,10 +1,6 @@
-
 <template>
     <form class="login_form" @submit.prevent="onSubmit">
-        <button class="btn input signup-google" @click.prevent="noop">
-            <Icon :type="IconType.google" />
-            Sign up with google
-        </button>
+        <GluGlu />
         <h2 class="or">OR</h2>
         <AuthMessage :error="error" :message="message" />
         <label for="login">E-mail</label>
@@ -16,17 +12,16 @@
         <button type="submit" class="btn input" :disabled="locked">Sign up</button>
     </form>
 </template>
-  
+
 <script setup lang="ts">
 
 import AuthMessage from './AuthMessage.vue';
-import Icon from '@/components/common/icons/Icon.vue'
+import GluGlu from './GluGlu.vue';
 
 import { onBeforeUnmount, ref } from 'vue'
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 
-import { IconType } from '@/components/common/icons/IconType'
 import { useAuth, register } from '@/hooks/useAuth';
 
 const auth = useAuth()
@@ -45,13 +40,11 @@ async function onSubmit() {
     }
 }
 
-function noop() { }
-
 onBeforeUnmount(() => {
     auth.clearMessages()
 })
 </script>
-  
+
 <style scoped lang="scss">
 .login_form {
     display: flex;
@@ -60,18 +53,6 @@ onBeforeUnmount(() => {
 
     &>*:not(:last-child) {
         margin-bottom: 16px;
-    }
-}
-
-.signup-google {
-    display: flex;
-
-    &>:deep(*:first-child) {
-        margin-right: 6px;
-    }
-
-    :deep(.icon) path {
-        fill: black;
     }
 }
 

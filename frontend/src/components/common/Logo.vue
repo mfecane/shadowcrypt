@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 
-const props = withDefaults(defineProps<{ size: 'small' | 'medium' | 'large', autoHide?: boolean }>(), { size: 'medium', autoHide: false })
+const props = withDefaults(defineProps<{ size?: 'small' | 'medium' | 'large', autoHide?: boolean }>(), { size: 'medium', autoHide: false })
 
 </script>
 
