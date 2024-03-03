@@ -1,6 +1,7 @@
+import { getTmpImage as getTmpImageSrc } from '@/api/images'
 import { STORAGE_URL, db, storage } from '@/firebase'
 import { getImageDimensions, nn } from '@/utils/utils'
-import { Timestamp, collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
+import { Timestamp, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import { getDownloadURL, ref } from 'firebase/storage'
 
 interface CollectionApiData {
@@ -73,7 +74,7 @@ export function getCollectionsList() {
 	return state.collections
 }
 
-export async function getCollectionsById(collectionID: string) {
+export async function getCollectionById(collectionID: string) {
 	const collection = nn(
 		state.collections.find((it) => it.id === collectionID),
 		`No collection with id = ${collectionID}`
@@ -94,9 +95,11 @@ async function resolveImageDimensions(collection: Collection) {
 		return
 	}
 	for (let img of collection.images) {
-		const [width, height] = await getImageDimensions(img.src)
-		img.width = width
-		img.height = height
+		if (!img.width || !img.height) {
+			const [width, height] = await getImageDimensions(img.src)
+			img.width = width
+			img.height = height
+		}
 	}
 	collection.dimensionsResolved = true
 }
@@ -119,6 +122,7 @@ export async function resolvePath(path: string): Promise<string | null> {
 }
 
 export async function deleteImage(collectionId: string, id: string): Promise<void> {
+	await deleteImageApi(collectionId, id)
 	const collection = nn(
 		state.collections.find((it) => it.id === collectionId),
 		`No collection with id = ${collectionId}`
@@ -128,7 +132,6 @@ export async function deleteImage(collectionId: string, id: string): Promise<voi
 		return
 	}
 	collection.images.splice(index, 1)
-	await deleteImageApi(collectionId, id)
 }
 
 async function deleteImageApi(collectionId: string, id: string): Promise<void> {
@@ -151,18 +154,52 @@ async function deleteImageApi(collectionId: string, id: string): Promise<void> {
 }
 
 export async function updateCollection(collectionId: string, name: string) {
+	await updateCollectionApi(collectionId, name)
 	const coll = nn(
 		state.collections.find((it) => it.id === collectionId),
 		`No collection with id = ${collectionId}`
 	)
 	coll.name = name
-	await updateCollectionApi(collectionId, name)
 }
 
-export async function updateCollectionApi(collectionId: string, name: string) {
+async function updateCollectionApi(collectionId: string, name: string) {
 	try {
 		const docRef = doc(db, 'collections', collectionId)
 		await updateDoc(docRef, { name })
+	} catch (error) {
+		throw error
+	}
+}
+
+export async function assignTmpImageToCollection(collectionId: string, tmpImageId: string): Promise<void> {
+	const tmpImageSrc = await getTmpImageSrc(tmpImageId)
+	await assignTmpImageToCollectionApi(collectionId, tmpImageId, tmpImageSrc)
+	const coll = nn(
+		state.collections.find((it) => it.id === collectionId),
+		`No collection with id = ${collectionId}`
+	)
+	coll.images = [...coll.images, await resolveImageSrc(tmpImageSrc)]
+	coll.dimensionsResolved = false
+}
+
+async function assignTmpImageToCollectionApi(
+	collectionId: string,
+	tmpImageId: string,
+	tmpImageSrc: string
+): Promise<void> {
+	try {
+		const r = doc(db, 'collections', collectionId)
+		const cd = await getDoc(r)
+		const cdd = cd.data() as CollectionApiData
+		const images = [...(cdd.images ?? []), tmpImageSrc]
+
+		await updateDoc(doc(db, 'collections', collectionId), {
+			images,
+			updated: Timestamp.now(),
+		})
+
+		// discard tmp image record
+		await deleteDoc(doc(db, 'tmp_images', tmpImageId))
 	} catch (error) {
 		throw error
 	}

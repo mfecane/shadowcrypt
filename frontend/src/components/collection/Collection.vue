@@ -18,6 +18,7 @@ import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { fetch, useCollectionViewer } from '@/hooks/useCollectionViewer';
 import { storeToRefs } from 'pinia';
 import { useAuth } from '@/hooks/useAuth';
+import { nn } from '@/utils/utils';
 
 const uploadDialog = useUploadDialog()
 
@@ -31,10 +32,13 @@ const { user } = storeToRefs(useAuth())
 
 watch(user, (user) => {
     if (user) {
-        fetch(user.id, props.id)
-        uploadDialog.setSelectedCollection(props.id)
+        fetch(props.id, true, user.id)
     }
 }, { immediate: true })
+
+watch(collection, () => {
+    uploadDialog.setSelectedCollection(nn(collection.value).id)
+})
 
 onBeforeUnmount(() => store.clear())
 

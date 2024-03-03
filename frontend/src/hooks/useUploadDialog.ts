@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { discardTmpImage, createTmpImageFRomBlob } from '@/api/images'
+import { discardTmpImage, createTmpImageFromBlob } from '@/api/images'
 import { useAuth } from './useAuth'
 
 const ID = 'upload_dialog_store'
@@ -84,13 +84,12 @@ export async function checkClipboard() {
 		return
 	}
 	const items = await getImageFromClipboard()
-	console.log('items', items)
 	if (!items) {
 		return
 	}
 	const [imageType, item] = items
 	const blob = await item.getType(imageType)
-	const imageId = await createTmpImageFRomBlob(blob, auth.user.id, imageType)
+	const imageId = await createTmpImageFromBlob(blob, auth.user.id, imageType)
 	upload.showCreateDialog()
 	upload.setImageId(imageId)
 }
@@ -106,9 +105,11 @@ export async function discardTmpImage2() {
 	try {
 		if (upload.imageId) {
 			await discardTmpImage(upload.imageId)
+			upload.imageId = null
 		}
 	} catch (error) {
 		upload.error = 'Internal error: failed to delete temporary image'
+		console.log('error', error)
 		throw new Error(upload.error)
 	}
 }

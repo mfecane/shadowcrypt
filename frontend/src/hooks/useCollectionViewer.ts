@@ -1,8 +1,11 @@
-import { Collection, fetchOneCollection, getCollectionsById } from '@/model/CollectionsModel'
+import { Collection, fetchOneCollection, getCollectionById } from '@/model/CollectionsModel'
 import { defineStore } from 'pinia'
 import { nn } from '@/utils/utils'
+import { useAuth } from './useAuth'
 
 const ID = 'id'
+let lastUpdatedOne = 0
+const UPDATE_TIMEOUT_MSEC = 120_000
 
 export const enum Orientation {
 	vertical,
@@ -94,18 +97,25 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 	},
 })
 
-export async function fetch(userId: string, id: string): Promise<void> {
+export async function fetch(collectionId: string, force: boolean = false, userId?: string): Promise<void> {
+	if (!userId) {
+		const { user } = useAuth()
+		if (!user) {
+			return
+		}
+		userId = user.id
+	}
 	const store = useCollectionViewer()
 	store.loading = true
-	await fetchOneCollection(userId, id)
-	store.init(await getCollectionsById(id))
+	if (force || Date.now() - lastUpdatedOne > UPDATE_TIMEOUT_MSEC) {
+		await fetchOneCollection(userId, collectionId)
+		lastUpdatedOne = Date.now()
+	}
+	store.init(await getCollectionById(collectionId))
 	store.loading = false
 }
 
+// TODO remove
 export async function update(id: string): Promise<void> {
-	const store = useCollectionViewer()
-	store.clear()
-	store.loading = true
-	store.init(await getCollectionsById(id))
-	store.loading = false
+	await fetch(id)
 }

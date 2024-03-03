@@ -1,4 +1,6 @@
-import { Optional, PresentOptional } from 'typescript-optional'
+import { Optional } from 'typescript-optional'
+
+const FILENAME_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'
 
 export function isImageUrl(url: string): boolean {
 	const regex = /\/([^\/]+)\.(\w+)(?:[\?#].*)?$/
@@ -33,12 +35,9 @@ export function clamp(value: number, min: number, max: number) {
 
 export function makeid(length: number): string {
 	let result = ''
-	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-	const charactersLength = characters.length
-	let counter = 0
-	while (counter < length) {
-		result += characters.charAt(Math.floor(Math.random() * charactersLength))
-		counter += 1
+	const charactersLength = FILENAME_CHARACTERS.length
+	for (let i = 0; i < length; ++i) {
+		result += FILENAME_CHARACTERS.charAt(Math.floor(Math.random() * charactersLength))
 	}
 	return result
 }
@@ -49,6 +48,6 @@ export async function sleep(timeout: number = 200) {
 	await new Promise((resolve) => setTimeout(resolve, timeout))
 }
 
-export function nn<T>(arg: T | null | undefined, msg: string): T {
+export function nn<T>(arg: T | null | undefined, msg: string = 'Internal error'): T {
 	return Optional.ofNullable(arg).orElseThrow(() => Error(msg))
 }

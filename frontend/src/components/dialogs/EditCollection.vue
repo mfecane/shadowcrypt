@@ -18,7 +18,7 @@ import { ref, watch } from 'vue'
 
 import { useDialogs } from '@/hooks/useDialogs';
 import { storeToRefs } from 'pinia';
-import { getCollectionsById, updateCollection } from '@/model/CollectionsModel';
+import { getCollectionById, updateCollection } from '@/model/CollectionsModel';
 import { update } from '@/hooks/useCollectionViewer';
 
 const show = defineModel<boolean>()
@@ -41,7 +41,7 @@ watch([show, dialogRef], ([show, dialogRef]) => {
 
 watch(deleteCollectionId, async () => {
     if (deleteCollectionId.value) {
-        const { name } = await getCollectionsById(deleteCollectionId.value)
+        const { name } = await getCollectionById(deleteCollectionId.value)
         collectionName.value = name
     }
 })

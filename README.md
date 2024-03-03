@@ -8,12 +8,10 @@ collections -> boards -> images
 
 ## TODO:
 
+- delete pin confirmation
+- update landing
 - design and improve create dialog
 - (?) reset navigator on change orientation
-- update landing
-- viewer menu
-- edit image
-- edit collection
 - hide menu on idle timeout
 - animate keyboard interaction
 - interactions hint

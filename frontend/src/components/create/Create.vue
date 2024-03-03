@@ -23,9 +23,10 @@ import CollectionSelector from '@/components/create/CollectionSelector.vue'
 import { ref, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import { checkClipboard, useUploadDialog } from '@/hooks/useUploadDialog'
-import { assignTmpImageToCollection } from '@/api/images'
+import { useUploadDialog } from '@/hooks/useUploadDialog'
 import { useCollectionsLocal } from '@/hooks/useCollectionsLocal'
+import { fetch as collectionViewerFetch } from '@/hooks/useCollectionViewer'
+import { assignTmpImageToCollection } from '@/model/CollectionsModel'
 
 const dialogStore = useUploadDialog()
 const { showCreateModal, selectedCollection } = storeToRefs(dialogStore)
@@ -56,10 +57,12 @@ function onClick(event: MouseEvent) {
 
 async function upload() {
     if (dialogStore.imageId && collectionId.value) {
-        await assignTmpImageToCollection(collectionId.value, dialogStore.imageId)
+        const { imageId } = dialogStore
+        const collectionId2 = collectionId.value
         dialogStore.setImageId(null)
         dialogStore.closeDialog()
-        reloadCollections()
+        await assignTmpImageToCollection(collectionId2, imageId)
+        await collectionViewerFetch(collectionId2)
     }
 }
 

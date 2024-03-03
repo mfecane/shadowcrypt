@@ -5,8 +5,11 @@ import { getImageDimensions, makeid } from '@/utils/utils'
 import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { CollectionData } from './collections'
+import { resizeImage } from '@/utils/resizeImage'
 
 const FOLDER = 'images'
+const MAX_WIDTH = 1200
+const MAX_HEIGHT = 1200
 
 // won't work for free 😭
 export async function createTmpImageFromUrl(imageUrl: string): Promise<string> {
@@ -16,7 +19,7 @@ export async function createTmpImageFromUrl(imageUrl: string): Promise<string> {
 	return createTmpImageRecord(path)
 }
 
-export async function createTmpImageFRomBlob(blob: Blob, userId: string, imageType: string): Promise<string> {
+export async function createTmpImageFromBlob(blob: Blob, userId: string, imageType: string): Promise<string> {
 	const filename = generateFilename(imageType)
 	const path = g(userId, filename)
 	const imagesRef = ref(storage, path)
@@ -31,6 +34,7 @@ function generateFilename(imageType: string): string {
 	switch (imageType) {
 		case 'image/png':
 			return `${filename}.png`
+		case 'image/jpg':
 		case 'image/jpeg':
 			return `${filename}.jpg`
 		default:
@@ -39,7 +43,14 @@ function generateFilename(imageType: string): string {
 }
 
 export async function uploadFile(userId: string, file: File): Promise<string> {
-	const path = g(userId, file.name)
+	file = await resizeImage({
+		file,
+		width: MAX_WIDTH,
+		height: MAX_HEIGHT,
+		quality: 0.5,
+	})
+	const filename = generateFilename(file.type)
+	const path = g(userId, filename)
 	const imagesRef = ref(storage, path)
 	await uploadBytes(imagesRef, await file.arrayBuffer(), {
 		contentType: file.type,
@@ -47,6 +58,7 @@ export async function uploadFile(userId: string, file: File): Promise<string> {
 	return createTmpImageRecord(path)
 }
 
+//TODO do i really need this?
 async function createTmpImageRecord(path: string): Promise<string> {
 	const { id } = await addDoc(collection(db, 'tmp_images'), { path: path })
 	return id
@@ -80,13 +92,14 @@ export async function getTmpImageSource(tmpImageId: string) {
 }
 
 export async function discardTmpImage(id: string): Promise<void> {
-	const docRef = await getDoc(doc(db, 'tmp_images', id))
-	const { path } = docRef.data() as ImageData
-	const imagesRef = ref(storage, path)
 	try {
+		const docRef = await getDoc(doc(db, 'tmp_images', id))
+		const { path } = docRef.data() as ImageData
+		const imagesRef = ref(storage, path)
 		await deleteObject(imagesRef)
-	} catch {
-		throw 'Could not delete'
+	} catch (error) {
+		console.error(error)
+		throw new Error(`Failed to delete image ${id}`)
 	}
 	// discard tmp image record
 	await deleteDoc(doc(db, 'tmp_images', id))
