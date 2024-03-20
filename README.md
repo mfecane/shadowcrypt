@@ -1,3 +1,5 @@
+# FFFUUUU
+
 Functions do not work!!
 
 ## ARCH
@@ -19,6 +21,10 @@ collections -> boards -> images
 - Ctrl P fuzzy search menu with filters
 - select/multiselect
 - move
+
+# RUN
+
+    	docker compose down && docker compose up -d --build
 
 http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/

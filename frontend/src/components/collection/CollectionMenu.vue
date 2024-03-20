@@ -42,10 +42,11 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router'
 
 import { IconType } from '@/components/common/icons/IconType'
-import { useCollectionViewer, update } from '@/hooks/useCollectionViewer';
+import { useCollectionViewer } from '@/hooks/useCollectionViewer';
 import { useDialogs } from '@/hooks/useDialogs';
 import { storeToRefs } from 'pinia';
-import { Collection, deleteImage } from '@/model/CollectionsModel';
+import { Collection } from '@/model/CollectionsModel';
+import { nn } from '@/utils/utils';
 
 const router = useRouter()
 
@@ -74,9 +75,7 @@ function onShowMenuClick() {
 }
 
 async function deleteImage2() {
-    const id = collectionViewer.requireCollection.id
-    await deleteImage(id, selected.value!)
-    await update(id)
+    dialogs.deleteImage(nn(collection.value?.id), nn(selected.value))
 }
 
 watch(selected, value => {

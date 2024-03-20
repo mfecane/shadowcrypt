@@ -11,6 +11,11 @@ service cloud.firestore {
 			allow read: if request.auth != null && request.auth.uid == resource.data.user;
 			allow write: if isMfecane(request.auth.uid);
 		}
+
+		match /images/{imageId} {
+			allow write: if isMfecane(request.auth.uid);
+			allow read: if request.auth != null;
+		}
 		
 		match /tmp_images/{imageId} {
 			allow write: if isMfecane(request.auth.uid);

@@ -12,7 +12,11 @@ interface State {
 
 	deleteCollectionDialog: boolean
 
+	deleteImageDialog: boolean
+
 	collectionId: string | null
+
+	imageId: string | null
 }
 
 interface Actions {
@@ -20,11 +24,23 @@ interface Actions {
 
 	editCollection(id: string): void
 
+	deleteImage(collectionId: string, id: string): void
+
 	clear(): void
 }
 
+/**
+ * this is shit idea remove too many coupling with client code
+ */
+
 export const useDialogs = defineStore<typeof ID, State, {}, Actions>(ID, {
-	state: (): State => ({ editCollectionDialog: false, deleteCollectionDialog: false, collectionId: null }),
+	state: (): State => ({
+		editCollectionDialog: false,
+		deleteCollectionDialog: false,
+		deleteImageDialog: false,
+		collectionId: null,
+		imageId: null,
+	}),
 
 	actions: {
 		editCollection(id) {
@@ -37,10 +53,18 @@ export const useDialogs = defineStore<typeof ID, State, {}, Actions>(ID, {
 			this.collectionId = id
 		},
 
+		deleteImage(collectionId, id) {
+			this.deleteImageDialog = true
+			this.collectionId = collectionId
+			this.imageId = id
+		},
+
 		clear() {
 			this.deleteCollectionDialog = false
+			this.deleteImageDialog = false
 			this.editCollectionDialog = false
 			this.collectionId = null
+			this.imageId = null
 		},
 	},
 

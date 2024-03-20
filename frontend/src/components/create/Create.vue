@@ -20,16 +20,20 @@
 import UploadFile from '@/components/create/UploadFile.vue'
 import CollectionSelector from '@/components/create/CollectionSelector.vue'
 
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, useAttrs } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useUploadDialog } from '@/hooks/useUploadDialog'
 import { useCollectionsLocal } from '@/hooks/useCollectionsLocal'
 import { fetch as collectionViewerFetch } from '@/hooks/useCollectionViewer'
 import { assignTmpImageToCollection } from '@/model/CollectionsModel'
+import { useAuth } from '@/hooks/useAuth'
+import { nn } from '@/utils/utils'
 
 const dialogStore = useUploadDialog()
 const { showCreateModal, selectedCollection } = storeToRefs(dialogStore)
+
+const { user } = storeToRefs(useAuth())
 
 const { reloadCollections } = useCollectionsLocal()
 
@@ -61,7 +65,7 @@ async function upload() {
         const collectionId2 = collectionId.value
         dialogStore.setImageId(null)
         dialogStore.closeDialog()
-        await assignTmpImageToCollection(collectionId2, imageId)
+        await assignTmpImageToCollection(collectionId2, imageId, nn(user.value?.id))
         await collectionViewerFetch(collectionId2)
     }
 }

@@ -1,7 +1,18 @@
 import { getTmpImage as getTmpImageSrc } from '@/api/images'
 import { STORAGE_URL, db, storage } from '@/firebase'
 import { getImageDimensions, nn } from '@/utils/utils'
-import { Timestamp, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
+import {
+	Timestamp,
+	addDoc,
+	collection,
+	deleteDoc,
+	doc,
+	getDoc,
+	getDocs,
+	query,
+	updateDoc,
+	where,
+} from 'firebase/firestore'
 import { getDownloadURL, ref } from 'firebase/storage'
 
 interface CollectionApiData {
@@ -148,8 +159,23 @@ async function deleteImageApi(collectionId: string, id: string): Promise<void> {
 		}
 		images.splice(index, 1)
 		updateDoc(docRef, { images })
+
+		try {
+			const id2 = nn(await getImageId(id), `No image with src ${id}`)
+			await deleteDoc(doc(db, 'images', id2))
+		} catch (error) {
+			console.warn('error', error)
+			console.warn('But it is okay for now')
+		}
 	} catch (error) {
 		console.error('error', error)
+	}
+}
+
+export async function getImageId(src: string): Promise<string | undefined> {
+	const imagesQuery = query(collection(db, 'images'), where('src', '==', src))
+	for (let document of (await getDocs(imagesQuery)).docs) {
+		return document.id
 	}
 }
 
@@ -171,9 +197,13 @@ async function updateCollectionApi(collectionId: string, name: string) {
 	}
 }
 
-export async function assignTmpImageToCollection(collectionId: string, tmpImageId: string): Promise<void> {
+export async function assignTmpImageToCollection(
+	collectionId: string,
+	tmpImageId: string,
+	userId: string
+): Promise<void> {
 	const tmpImageSrc = await getTmpImageSrc(tmpImageId)
-	await assignTmpImageToCollectionApi(collectionId, tmpImageId, tmpImageSrc)
+	await assignTmpImageToCollectionApi(collectionId, tmpImageId, tmpImageSrc, userId)
 	const coll = nn(
 		state.collections.find((it) => it.id === collectionId),
 		`No collection with id = ${collectionId}`
@@ -185,7 +215,8 @@ export async function assignTmpImageToCollection(collectionId: string, tmpImageI
 async function assignTmpImageToCollectionApi(
 	collectionId: string,
 	tmpImageId: string,
-	tmpImageSrc: string
+	tmpImageSrc: string,
+	userId: string
 ): Promise<void> {
 	try {
 		const r = doc(db, 'collections', collectionId)
@@ -196,6 +227,13 @@ async function assignTmpImageToCollectionApi(
 		await updateDoc(doc(db, 'collections', collectionId), {
 			images,
 			updated: Timestamp.now(),
+		})
+
+		await addDoc(collection(db, 'images'), {
+			collection: collectionId,
+			src: tmpImageSrc,
+			updated: Timestamp.now(),
+			user: userId,
 		})
 
 		// discard tmp image record

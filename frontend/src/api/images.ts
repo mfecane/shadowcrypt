@@ -37,6 +37,8 @@ function generateFilename(imageType: string): string {
 		case 'image/jpg':
 		case 'image/jpeg':
 			return `${filename}.jpg`
+		case 'image/webp':
+			return `${filename}.webp`
 		default:
 			throw new Error(`Image type ${imageType} is not supported`)
 	}

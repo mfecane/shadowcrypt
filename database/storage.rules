@@ -21,5 +21,5 @@ function isMfecane(userId) {
 }
 
 function isProbablyAnImage(contentType) {
-  return contentType == 'image/jpg' || contentType == 'image/jpeg' || contentType == 'image/png';
+  return contentType == 'image/jpg' || contentType == 'image/jpeg' || contentType == 'image/png' || contentType == 'image/webp';
 }

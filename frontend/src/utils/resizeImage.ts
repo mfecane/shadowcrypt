@@ -1,7 +1,7 @@
 import { nn } from './utils'
 
 function allowed(type: string) {
-	if (['image/jpeg', 'image/png'].includes(type)) {
+	if (['image/jpeg', 'image/png', 'image/webp'].includes(type)) {
 		return true
 	}
 	throw new Error('file type is not allowed for resizing')

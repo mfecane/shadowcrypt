@@ -9,7 +9,7 @@ export function isImageUrl(url: string): boolean {
 		return false
 	}
 	const extension = matches[2]
-	return ['jpg', 'png'].includes(extension.toLowerCase())
+	return ['jpg', 'png', 'pnwebpg'].includes(extension.toLowerCase())
 }
 
 // TODO read dimensions on upload
