@@ -24,7 +24,6 @@ import { ref, onMounted, watch, useAttrs } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useUploadDialog } from '@/hooks/useUploadDialog'
-import { useCollectionsLocal } from '@/hooks/useCollectionsLocal'
 import { fetch as collectionViewerFetch } from '@/hooks/useCollectionViewer'
 import { assignTmpImageToCollection } from '@/model/CollectionsModel'
 import { useAuth } from '@/hooks/useAuth'
@@ -35,13 +34,11 @@ const { showCreateModal, selectedCollection } = storeToRefs(dialogStore)
 
 const { user } = storeToRefs(useAuth())
 
-const { reloadCollections } = useCollectionsLocal()
 
 const dialogRef = ref<HTMLDialogElement>()
 
 const collectionId = ref<string | null>(null)
 
-onMounted(() => reloadCollections())
 
 watch([showCreateModal, dialogRef], ([show, dialogRef]) => {
     if (show && dialogRef) {

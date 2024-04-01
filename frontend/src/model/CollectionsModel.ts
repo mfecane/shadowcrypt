@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore'
 import { getDownloadURL, ref } from 'firebase/storage'
 
-interface CollectionApiData {
+export interface CollectionApiData {
 	name: string
 	pinned: boolean
 	updated: Timestamp
@@ -53,6 +53,13 @@ export async function fetchAll(userId: string) {
 		const id = document.id
 		state.collections.push(await buildCollection(id, data))
 	}
+}
+
+export async function getCollections(userId: string) {
+	if (!state.collections.length) {
+		await fetchAll(userId)
+	}
+	return state.collections
 }
 
 async function buildCollection(id: string, data: CollectionApiData): Promise<Collection> {
@@ -106,19 +113,19 @@ export async function resolveImageSrc(src: string): Promise<CollectionImage> {
 	}
 }
 
-async function resolveImageDimensions(collection: Collection) {
-	if (collection.dimensionsResolved) {
-		return
-	}
-	for (let img of collection.images) {
-		if (!img.width || !img.height) {
-			const [width, height] = await getImageDimensions(img.src)
-			img.width = width
-			img.height = height
-		}
-	}
-	collection.dimensionsResolved = true
-}
+// async function resolveImageDimensions(collection: Collection) {
+// 	if (collection.dimensionsResolved) {
+// 		return
+// 	}
+// 	for (let img of collection.images) {
+// 		if (!img.width || !img.height) {
+// 			const [width, height] = await getImageDimensions(img.src)
+// 			img.width = width
+// 			img.height = height
+// 		}
+// 	}
+// 	collection.dimensionsResolved = true
+// }
 
 export async function resolvePath(path: string): Promise<string | null> {
 	try {
@@ -250,4 +257,26 @@ async function assignTmpImageToCollectionApi(
 	} catch (error) {
 		throw error
 	}
+}
+
+export async function createCollection(name: string, userId: string) {
+	const id = await createCollectionApi(name, userId)
+	state.collections.push({
+		name,
+		id,
+		pinned: false,
+		updated: Timestamp.now(),
+		dimensionsResolved: false,
+		images: [],
+	})
+}
+
+export async function createCollectionApi(name: string, userId: string) {
+	const docRef = await addDoc(collection(db, 'collections'), {
+		name: name,
+		user: userId,
+		updated: Timestamp.now(),
+		images: [],
+	})
+	return docRef.id
 }

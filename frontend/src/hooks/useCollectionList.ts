@@ -4,8 +4,8 @@ import FuzzySearch from 'fuzzy-search'
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { resolveImage2 } from '@/api/images'
-import { CollectionData } from '@/api/collections'
 import { useAuth } from './useAuth'
+import { CollectionApiData, fetchAll } from '@/model/CollectionsModel'
 
 const ID = 'collection_list'
 
@@ -93,7 +93,7 @@ export async function fetch(): Promise<void> {
 	const collecions: CollectionWithImages[] = []
 	for (const coll of docs) {
 		const id = coll.id
-		const data = coll.data() as CollectionData
+		const data = coll.data() as CollectionApiData
 		const newImages: CollectionImage[] = []
 		if (data.images) {
 			for (let path of data.images) {
@@ -104,13 +104,15 @@ export async function fetch(): Promise<void> {
 	}
 	store.loading = false
 	store.init(collecions)
+	// TODO remove
+	fetchAll(auth.user.id)
 }
 
 export async function pinCollection(collectionId: string): Promise<void> {
 	try {
 		const docRef = doc(db, 'collections', collectionId)
 		const dod = await getDoc(docRef)
-		const { pinned } = dod.data() as CollectionData
+		const { pinned } = dod.data() as CollectionApiData
 		await updateDoc(docRef, { pinned: !pinned })
 	} catch (error) {
 		throw error

@@ -1,9 +1,9 @@
-import { CollectionData } from '@/api/collections'
 import { db, storage } from '@/firebase'
 import { deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { deleteObject, ref } from 'firebase/storage'
 import { defineStore } from 'pinia'
 import { fetch } from './useCollectionList'
+import { CollectionApiData } from '@/model/CollectionsModel'
 
 const ID = 'dialogs'
 
@@ -83,7 +83,7 @@ export async function deleteCollectionById(id: string) {
 	try {
 		const ref2 = doc(db, 'collections', id)
 		const doc2 = await getDoc(ref2)
-		const data = doc2.data() as CollectionData
+		const data = doc2.data() as CollectionApiData
 		if (data.images) {
 			for (let src of data.images) {
 				const imagesRef = ref(storage, src)

@@ -76,6 +76,12 @@ function onDragStart(event: DragEvent) {
 	box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.3);
 }
 
+.item__wrapper:has(.loader) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
 .item__grid {
 	height: 100%;
 	flex: 0 1 auto;

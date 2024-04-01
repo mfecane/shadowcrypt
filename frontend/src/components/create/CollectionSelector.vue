@@ -3,7 +3,7 @@
         <label for="collection-selector-prompt">Add to collection</label>
         <input type="text" id="collection-selector-prompt" v-model="searchPrompt" class="prompt">
 
-        <button class="btn light create-button" v-if="canCreateCollection" @click="createCollection">Create</button>
+        <button class="btn light create-button" v-if="canCreateCollection" @click="createCollection2">Create</button>
 
         <div v-if="filteredList.length" class="list">
 
@@ -24,13 +24,13 @@
 <script setup lang="ts">
 
 import { storeToRefs } from 'pinia';
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import FuzzySearch from 'fuzzy-search';
 
-import { useCollectionsLocal } from '@/hooks/useCollectionsLocal';
 import { Collection } from '@/model/Data';
-import { createCollection as createCollectionApi } from '@/api/collections';
 import { useAuth } from '@/hooks/useAuth';
+import { useCollectionSelector, fetch } from '@/hooks/useCollectionSelector'
+import { createCollection } from '@/model/CollectionsModel'
 
 /**
  * TODO
@@ -38,9 +38,7 @@ import { useAuth } from '@/hooks/useAuth';
  * clear search button
  */
 
-const { store: localCollectinsStore, reloadCollections } = useCollectionsLocal()
-
-const { collections } = storeToRefs(localCollectinsStore)
+const { list: collections } = storeToRefs(useCollectionSelector())
 
 const { user } = storeToRefs(useAuth())
 
@@ -50,7 +48,6 @@ const collectionId = defineModel<string | null>({ default: null })
 
 const filteredList = computed(() => {
     const value: string | undefined = searchPrompt.value
-    let filtered: Collection[] = []
     if (value) {
         const searcher = new FuzzySearch(collections.value, ['name'], {
             caseSensitive: false,
@@ -82,12 +79,12 @@ function onSelect(name: string) {
     searchPrompt.value = ''
 }
 
-function createCollection() {
+function createCollection2() {
     const value: string | undefined = searchPrompt.value
     if (value) {
         searchPrompt.value = ''
-        createCollectionApi(value, user.value!.id)
-        reloadCollections()
+        createCollection(value, user.value!.id)
+        fetch()
     }
 }
 
@@ -109,6 +106,8 @@ watch(searchPrompt, (value) => {
         }
     }
 })
+
+onMounted(() => fetch())
 
 </script>
 

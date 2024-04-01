@@ -4,8 +4,8 @@ import { CollectionImage, ImageData } from '@/model/Data'
 import { getImageDimensions, makeid } from '@/utils/utils'
 import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-import { CollectionData } from './collections'
 import { resizeImage } from '@/utils/resizeImage'
+import { CollectionApiData } from '@/model/CollectionsModel'
 
 const FOLDER = 'images'
 const MAX_WIDTH = 1200
@@ -76,7 +76,7 @@ export async function assignTmpImageToCollection(collectionId: string, tmpImageI
 
 	const r = doc(db, 'collections', collectionId)
 	const cd = await getDoc(r)
-	const cdd = cd.data() as CollectionData
+	const cdd = cd.data() as CollectionApiData
 	const images = [...(cdd.images ?? []), path]
 
 	await updateDoc(doc(db, 'collections', collectionId), {
@@ -111,7 +111,7 @@ export async function deleteImage(collectionId: string, id: string): Promise<voi
 	try {
 		const docRef = doc(db, 'collections', collectionId)
 		const docRef2 = await getDoc(docRef)
-		let { images } = docRef2.data() as CollectionData
+		let { images } = docRef2.data() as CollectionApiData
 		if (!images || !images.length) {
 			return
 		}
