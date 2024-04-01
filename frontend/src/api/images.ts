@@ -160,7 +160,7 @@ export async function resolveImage(collectionId: string, src: string): Promise<C
 export async function resolveImage2(collectionId: string, src: string): Promise<CollectionImage> {
 	return {
 		id: src,
-		path: (await resolvePath(src)) as string,
+		path: src,
 		collectionId,
 	}
 }

@@ -38,6 +38,7 @@ watch(user, (user) => {
 
 watch(collection, () => {
     uploadDialog.setSelectedCollection(nn(collection.value).id)
+    document.title = collection.value?.name ?? 'Shadowcrypt'
 })
 
 onBeforeUnmount(() => store.clear())

@@ -5,8 +5,9 @@
 				:name="props.collection.name" :count="props.collection.images.length" :big="props.big"
 				:collectionId="props.collection.id" />
 			<div class="item__wrapper">
-				<div v-if="displayImages.length" class="item__grid" :class="props.big ? 'big' : 'small'">
-					<div v-for="(image, index) in displayImages" key={image.id}>
+				<Loader v-if="loading" />
+				<div v-else-if="displayImages.length" class="item__grid" :class="props.big ? 'big' : 'small'">
+					<div v-for="(image) in displayImages" key={image.id}>
 						<img v-if="image.path" :src="image.path" class='item__image' @dragstart.prevent="onDragStart" />
 						<span v-else></span>
 					</div>
@@ -21,8 +22,10 @@
 
 import CollectionHeader from './CollectionHeader.vue'
 
-import { computed, ref } from 'vue';
-import { CollectionWithImages } from '../../model/Data'
+import { onMounted, ref } from 'vue';
+import { CollectionImage, CollectionWithImages } from '../../model/Data'
+import { resolvePath } from '@/api/images';
+import Loader from '../common/Loader.vue';
 
 const props = withDefaults(
 	defineProps<{ big?: boolean, collection: CollectionWithImages }>(),
@@ -31,12 +34,20 @@ const props = withDefaults(
 
 const item = ref<HTMLDivElement>()
 
-const displayImages = computed(() => {
-	if (!props.collection.images.length) {
-		return []
+const loading = ref<boolean>(true)
+
+let displayImages = ref<CollectionImage[]>([])
+
+onMounted(async () => {
+	const tmp = props.collection.images.slice(0, 5)
+	for (let it of tmp) {
+		//@ts-ignore fuck off for now, bitch, ok?
+		it.path = await resolvePath(it.id)
 	}
-	return props.collection.images.slice(0, 5)
+	displayImages.value = tmp
+	loading.value = false
 })
+
 
 function onDragStart(event: DragEvent) {
 	event.stopPropagation()

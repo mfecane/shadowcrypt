@@ -17,28 +17,19 @@ import CreateButton from '@/components/common/CreateButton.vue'
 import DragWrapper from '@/components/drag/DragWrapper.vue'
 import DialogRoot from '@/components/dialogs/DialogRoot.vue'
 
-import { onMounted, watch } from 'vue'
-import { storeToRefs } from 'pinia'
+import { onMounted } from 'vue'
 
-import { useAuth, useAuthWatcher } from '@/hooks/useAuth'
-import { useCollectionsLocal } from '../hooks/useCollectionsLocal'
+import { useAuthWatcher } from '@/hooks/useAuth'
 import { setupEvent } from '@/hooks/interaction/useQuickfind'
 import Quickfind from './quickfind/Quickfind.vue'
 import { listenPaste } from '@/hooks/useUploadDialog'
 
 
-onMounted(() => {
-	setupEvent()
-})
+onMounted(() => setupEvent())
 
 useAuthWatcher()
+
 listenPaste()
-
-const { user } = storeToRefs(useAuth())
-
-const { reloadCollections } = useCollectionsLocal()
-
-watch(user, () => reloadCollections())
 
 </script>
 

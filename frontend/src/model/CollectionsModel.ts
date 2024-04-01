@@ -71,10 +71,10 @@ async function buildCollection(id: string, data: CollectionApiData): Promise<Col
 }
 
 export async function fetchOneCollection(userId: string, collectionID: string) {
-	if (!state.collections.length) {
-		await fetchAll(userId)
-		return
-	}
+	// if (!state.collections.length) {
+	// 	await fetchAll(userId)
+	// 	return
+	// }
 	const dd = await getDoc(doc(db, 'collections', collectionID))
 	const collection = await buildCollection(collectionID, dd.data() as CollectionApiData)
 	const index = state.collections.findIndex((it) => it.id === collectionID)
@@ -120,6 +120,10 @@ export async function resolvePath(path: string): Promise<string | null> {
 		const imagesRef = ref(storage, path)
 		let downloadUrl = ''
 		try {
+			// console.groupCollapsed('getDownloadURL')
+			// console.trace()
+			// console.groupEnd()
+
 			downloadUrl = await getDownloadURL(imagesRef)
 		} catch (error) {
 			return null
