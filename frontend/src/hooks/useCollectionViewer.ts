@@ -1,6 +1,6 @@
-import { Collection, fetchOneCollection, getCollectionById } from '@/model/CollectionsModel'
+import { Collection, fetchOneCollection, getCollectionById, resolvePath } from '@/model/CollectionsModel'
 import { defineStore } from 'pinia'
-import { nn } from '@/utils/utils'
+import { getImageDimensions, nn } from '@/utils/utils'
 import { useAuth } from './useAuth'
 
 const ID = 'id'
@@ -14,15 +14,24 @@ export const enum Orientation {
 
 interface State {
 	collection: Collection | null
+	images: {
+		id: string
+		src?: string
+		width?: number
+		height?: number
+	}[]
 	orientation: Orientation
 	selected: string | null
 	resetScale: number
 	loading: boolean
 	fullScreen: string | null
+	resolved: boolean
 }
 
 interface Actions {
 	init(collection: Collection): void
+
+	resolveImage(id: string): Promise<void>
 
 	changeOrientation(): void
 
@@ -33,6 +42,8 @@ interface Actions {
 	openFullscreen(id: string): void
 
 	closeFullscreen(): void
+
+	checkIfResolved(): void
 
 	clear(): void
 }
@@ -50,11 +61,31 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 		resetScale: 0,
 		loading: true,
 		fullScreen: null,
+		images: [],
+		resolved: false,
 	}),
 
 	actions: {
 		init(collection) {
 			this.collection = collection
+			this.images = collection.images.map((it) => ({
+				id: it.id,
+			}))
+			this.resolved = false
+		},
+
+		async resolveImage(id) {
+			const image = nn(this.images.find((it) => it.id === id))
+			const path = nn(await resolvePath(id))
+			const [width, height] = await getImageDimensions(path)
+			image.width = width
+			image.height = height
+			image.src = path
+			this.checkIfResolved()
+		},
+
+		checkIfResolved() {
+			this.resolved = !this.images.some((it) => !it.src || it.width == undefined || it.height == undefined)
 		},
 
 		changeOrientation() {
@@ -98,22 +129,28 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 })
 
 export async function fetch(collectionId: string, force: boolean = false, userId?: string): Promise<void> {
-	if (!userId) {
-		const { user } = useAuth()
-		if (!user) {
-			return
+	try {
+		if (!userId) {
+			const { user } = useAuth()
+			if (!user) {
+				return
+			}
+			userId = user.id
 		}
-		userId = user.id
+		const store = useCollectionViewer()
+		store.loading = true
+		if (force || Date.now() - lastUpdatedOne > UPDATE_TIMEOUT_MSEC) {
+			await fetchOneCollection(userId, collectionId)
+			lastUpdatedOne = Date.now()
+		}
+		store.init(await getCollectionById(collectionId))
+		store.loading = false
+	} catch (error) {
+		console.error('error', error)
 	}
-	const store = useCollectionViewer()
-	store.loading = true
-	if (force || Date.now() - lastUpdatedOne > UPDATE_TIMEOUT_MSEC) {
-		await fetchOneCollection(userId, collectionId)
-		lastUpdatedOne = Date.now()
-	}
-	store.init(await getCollectionById(collectionId))
-	store.loading = false
 }
+
+// add async loading of images one by one
 
 // TODO remove
 export async function update(id: string): Promise<void> {

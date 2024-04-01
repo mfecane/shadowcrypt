@@ -16,12 +16,12 @@ import { CollectionImage } from '@/model/CollectionsModel';
 
 const collectionViewer = useCollectionViewer()
 
-const { fullScreen } = storeToRefs(collectionViewer)
+const { fullScreen, images } = storeToRefs(collectionViewer)
 
 const { requireCollection: collection } = storeToRefs(useCollectionViewer())
 
 const image = computed(() => {
-    return collection.value.images.find(it => it.id === fullScreen.value!) as CollectionImage
+    return images.value.find(it => it.id === fullScreen.value!) as CollectionImage
 })
 
 const fitClass = computed<string>(() => {

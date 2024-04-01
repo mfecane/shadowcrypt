@@ -13,14 +13,14 @@ export const routes = [
 		path: '/',
 		component: Home,
 		meta: {
-			title: 'Home',
+			title: 'Shadowcrypt',
 		},
 	},
 	{
 		path: '/landing',
 		component: Landing,
 		meta: {
-			title: 'Home',
+			title: 'Shadowcrypt',
 		},
 	},
 	{

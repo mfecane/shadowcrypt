@@ -2,7 +2,7 @@
     <div class="colection-container" ref="container" @click.prevent="onClick">
         <div :style="style" class='image-list' ref="imageList">
             <CollectionImage v-for="image of props.collection.images" :id="image.id" :width="image.width ?? 0"
-                :height="image.height ?? 0" :src="image.src" :key="image.id" />
+                :height="image.height ?? 0" :key="image.id" />
         </div>
     </div>
 </template>
@@ -28,7 +28,7 @@ const imageList = ref<HTMLDivElement>()
 const navigator = ref<Navigator | null>(null)
 
 const collectionViewer = useCollectionViewer()
-const { resetScale, orientation } = storeToRefs(collectionViewer)
+const { resetScale, orientation, resolved } = storeToRefs(collectionViewer)
 
 const style = computed<StyleValue>(() => {
     const columns = Math.ceil(Math.sqrt(props.collection.images.length))
@@ -40,13 +40,12 @@ function onClick(e: MouseEvent) {
     collectionViewer.select()
 }
 
-watch([resetScale], () => {
-    navigator.value?.scaleToFit()
-})
+watch([resetScale], () => navigator.value?.scaleToFit())
+
+watch([resolved], () => navigator.value?.scaleToFit())
 
 onMounted(() => {
     navigator.value = new Navigator(container.value!, imageList.value!)
-    navigator.value?.scaleToFit()
 })
 
 onBeforeUnmount(() => navigator.value?.destroy())

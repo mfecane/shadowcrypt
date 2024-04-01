@@ -58,7 +58,7 @@ export async function fetchAll(userId: string) {
 async function buildCollection(id: string, data: CollectionApiData): Promise<Collection> {
 	const images: CollectionImage[] = []
 	for (let src of data.images ?? []) {
-		images.push(await resolveImageSrc(src))
+		images.push({ id: src, src })
 	}
 	return {
 		id,
@@ -90,7 +90,12 @@ export async function getCollectionById(collectionID: string) {
 		state.collections.find((it) => it.id === collectionID),
 		`No collection with id = ${collectionID}`
 	)
-	await resolveImageDimensions(collection)
+
+	/**
+	 * since i removed this shit, colleciton is not aligned on loaded
+	 */
+
+	// await resolveImageDimensions(collection)
 	return collection
 }
 

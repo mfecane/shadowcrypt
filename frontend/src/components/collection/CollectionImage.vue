@@ -2,26 +2,33 @@
     <div class="image-container" :class="{
         'selected': props.id === collectionViewer.selected
     }" :style="style" @click="onClick">
-        <img :src="props.src" class='image' ref="image" />
+        <img v-if="src" :src="src" class='image' ref="image" />
     </div>
 </template>
 
 <script setup lang="ts">
 
-import { StyleValue, computed, onMounted, onUnmounted, ref } from 'vue';
+import { StyleValue, computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 
 import { gridElement } from '@/hooks/grid';
 import { useCollectionViewer } from '@/hooks/useCollectionViewer';
 import { ImageHandler } from '@/viewer/ImageHandler';
+import { getImageDimensions, nn } from '@/utils/utils';
+import { resolvePath } from '@/model/CollectionsModel';
 
-const props = defineProps<{ id: string, width: number, height: number, src: string }>()
+const props = defineProps<{ id: string, width: number, height: number }>()
+
+const dimensions = ref<{ width: number, height: number }>({ width: 1, height: 1 })
+
+
+const src = ref<string | null>(null)
 
 const image = ref<HTMLImageElement>()
 
 const collectionViewer = useCollectionViewer()
 
 let style = computed<StyleValue>(() =>
-    gridElement(collectionViewer.orientation, props.height / props.width))
+    gridElement(collectionViewer.orientation, dimensions.value.height / dimensions.value.width))
 
 function onClick() {
     collectionViewer.select(props.id)
@@ -33,11 +40,19 @@ function onDoubleClick() {
 
 let imageHandler: ImageHandler
 
-onMounted(() => {
-    imageHandler = new ImageHandler(image.value)
-    imageHandler.addEventListener('click', onClick)
-    imageHandler.addEventListener('doubleclick', onDoubleClick)
+onMounted(async () => {
+    await collectionViewer.resolveImage(props.id)
+    const img = nn(collectionViewer.images.find(it => it.id === props.id))
+    src.value = nn(img.src)
+    dimensions.value = { width: nn(img.width), height: nn(img.height) }
+    nextTick(() => {
+        imageHandler = new ImageHandler(image.value)
+        imageHandler.addEventListener('click', onClick)
+        imageHandler.addEventListener('doubleclick', onDoubleClick)
+    })
 })
+
+
 
 onUnmounted(() => {
     imageHandler.removeEventListener('click', onClick)
@@ -47,7 +62,7 @@ onUnmounted(() => {
 })
 
 </script>
-  
+
 <style scoped lang="scss">
 .image {
     width: 100%;

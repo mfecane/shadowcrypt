@@ -41,9 +41,7 @@ const dialogRef = ref<HTMLDialogElement>()
 
 const collectionId = ref<string | null>(null)
 
-onMounted(() =>
-    reloadCollections()
-)
+onMounted(() => reloadCollections())
 
 watch([showCreateModal, dialogRef], ([show, dialogRef]) => {
     if (show && dialogRef) {

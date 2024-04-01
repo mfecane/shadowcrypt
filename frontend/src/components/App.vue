@@ -6,7 +6,7 @@
 		<CreateButton />
 		<DialogRoot />
 	</DragWrapper>
-	<Create />
+	<Create v-if="user?.id" />
 	<Quickfind />
 </template>
 
@@ -16,14 +16,16 @@ import Create from '@/components/create/Create.vue'
 import CreateButton from '@/components/common/CreateButton.vue'
 import DragWrapper from '@/components/drag/DragWrapper.vue'
 import DialogRoot from '@/components/dialogs/DialogRoot.vue'
+import Quickfind from './quickfind/Quickfind.vue'
 
 import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 
-import { useAuthWatcher } from '@/hooks/useAuth'
+import { useAuth, useAuthWatcher } from '@/hooks/useAuth'
 import { setupEvent } from '@/hooks/interaction/useQuickfind'
-import Quickfind from './quickfind/Quickfind.vue'
 import { listenPaste } from '@/hooks/useUploadDialog'
 
+const { user } = storeToRefs(useAuth())
 
 onMounted(() => setupEvent())
 

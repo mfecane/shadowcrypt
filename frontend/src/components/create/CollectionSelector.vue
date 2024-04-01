@@ -1,4 +1,3 @@
-
 <template>
     <div class="collection-container">
         <label for="collection-selector-prompt">Add to collection</label>
@@ -13,15 +12,15 @@
             </div>
             <div class="filteredlist">
                 <div v-for="collection in filteredListWitoutSelected" :key="collection.id" class="item" :class="{
-                    'selected': collection.id === collectionId
-                }" @click="() => onSelect(collection.id)">
+            'selected': collection.id === collectionId
+        }" @click="() => onSelect(collection.id)">
                     {{ collection.name }}
                 </div>
             </div>
         </div>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
 import { storeToRefs } from 'pinia';
@@ -112,7 +111,7 @@ watch(searchPrompt, (value) => {
 })
 
 </script>
-  
+
 <style scoped lang="scss">
 .create-button {
     margin-top: 20px;
