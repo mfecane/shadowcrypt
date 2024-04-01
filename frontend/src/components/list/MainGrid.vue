@@ -1,9 +1,7 @@
 <template>
-	<div class='container'>
-		<div class="main-grid">
-			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
-				:index="index" />
-		</div>
+	<div class="main-grid">
+		<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
+			:index="index" />
 	</div>
 </template>
 

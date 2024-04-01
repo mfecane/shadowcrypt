@@ -4,9 +4,6 @@
         <IconButton :type="IconType.cross" class="discard" @click="discardTmpImage2" :size="1.25" />
     </div>
     <template v-else>
-        <label for="filename">Input file name</label>
-        <input id="filename" type="text" class="add" v-model.trim="filename" @change="onChangeDebounce" />
-        <p>or</p>
         <div class="drag" @drop.prevent="onDrop" @dragenter.prevent="noop" @dragover.prevent="noop"
             @dragleave.prevent="noop">Drag image here</div>
     </template>

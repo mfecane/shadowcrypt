@@ -1,9 +1,7 @@
 <template>
-	<div class='container'>
-		<div class='upper-grid'>
-			<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
-				:index="index" :big="index === 0" />
-		</div>
+	<div class='upper-grid'>
+		<CollectionThumbnail v-for="(collection, index) in props.collections" :collection="collection" :key="index"
+			:index="index" :big="index === 0" />
 	</div>
 </template>
 
@@ -20,6 +18,6 @@ const props = defineProps<{ collections: CollectionWithImages[] }>()
 	grid-template-columns: 3fr 2fr 2fr;
 	grid-template-rows: 380px;
 	gap: 32px;
-	margin: 16px 0px 32px 0;
+	margin: 0px 0px 32px 0;
 }
 </style>../../model/Data

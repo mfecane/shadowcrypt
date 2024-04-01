@@ -24,10 +24,16 @@ import { storeToRefs } from 'pinia'
 import { useAuth, useAuthWatcher } from '@/hooks/useAuth'
 import { setupEvent } from '@/hooks/interaction/useQuickfind'
 import { listenPaste } from '@/hooks/useUploadDialog'
+import { fetch as collectionSelectorFetch } from '@/hooks/useCollectionSelector'
+import { subscribeToCollectionsList } from '@/model/CollectionsModel'
 
 const { user } = storeToRefs(useAuth())
 
-onMounted(() => setupEvent())
+onMounted(() => {
+	setupEvent()
+
+	subscribeToCollectionsList(() => collectionSelectorFetch())
+})
 
 useAuthWatcher()
 

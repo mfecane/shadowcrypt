@@ -5,7 +5,7 @@ import { useAuth } from './useAuth'
 const ID = 'collection_selector'
 
 interface State {
-	list: Collection[]
+	collections: Collection[]
 }
 
 interface Actions {
@@ -14,12 +14,12 @@ interface Actions {
 
 export const useCollectionSelector = defineStore<typeof ID, State, {}, Actions>(ID, {
 	state: (): State => ({
-		list: [],
+		collections: [],
 	}),
 
 	actions: {
 		init(list) {
-			this.list = list
+			this.collections = [...list]
 		},
 	},
 

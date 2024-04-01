@@ -14,6 +14,7 @@ import {
 	where,
 } from 'firebase/firestore'
 import { getDownloadURL, ref } from 'firebase/storage'
+import { Subject } from 'rxjs'
 
 export interface CollectionApiData {
 	name: string
@@ -46,13 +47,17 @@ const state: State = {
 	collections: [],
 }
 
+const collectionsSubject = new Subject<number>()
+
 export async function fetchAll(userId: string) {
+	state.collections = []
 	const collectionsQuery = query(collection(db, 'collections'), where('user', '==', userId))
 	for (let document of (await getDocs(collectionsQuery)).docs) {
 		const data = document.data() as CollectionApiData
 		const id = document.id
 		state.collections.push(await buildCollection(id, data))
 	}
+	collectionsSubject.next(Math.random())
 }
 
 export async function getCollections(userId: string) {
@@ -259,7 +264,7 @@ async function assignTmpImageToCollectionApi(
 	}
 }
 
-export async function createCollection(name: string, userId: string) {
+export async function createCollection(name: string, userId: string): Promise<string> {
 	const id = await createCollectionApi(name, userId)
 	state.collections.push({
 		name,
@@ -269,6 +274,8 @@ export async function createCollection(name: string, userId: string) {
 		dimensionsResolved: false,
 		images: [],
 	})
+	collectionsSubject.next(Math.random())
+	return id
 }
 
 export async function createCollectionApi(name: string, userId: string) {
@@ -279,4 +286,8 @@ export async function createCollectionApi(name: string, userId: string) {
 		images: [],
 	})
 	return docRef.id
+}
+
+export async function subscribeToCollectionsList(callback: () => void) {
+	collectionsSubject.subscribe(callback)
 }

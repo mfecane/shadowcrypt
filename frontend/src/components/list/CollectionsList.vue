@@ -13,10 +13,16 @@
 		</div>
 
 		<div v-if="pinnedCollections.length" class="pinned-bg">
-			<FirstRow :collections="pinnedCollections" />
+			<div class='container'>
+				<h2>PINNED</h2>
+				<FirstRow :collections="pinnedCollections" />
+			</div>
 		</div>
-		<FirstRow v-if="firstRow.length" :collections="firstRow" />
-		<MainGrid v-if="secondRow.length" :collections="secondRow" />
+		<div class='container recent'>
+			<h2>RECENT</h2>
+			<FirstRow v-if="firstRow.length" :collections="firstRow" />
+			<MainGrid v-if="secondRow.length" :collections="secondRow" />
+		</div>
 
 		<div v-if="!collectionExist" class="no-collections">
 			<div class="container">
@@ -59,6 +65,21 @@ onMounted(() => fetch())
 	position: relative;
 	padding: 6px 0;
 	background-color: var(--color-darkish);
+}
+
+h2 {
+	margin-top: 8px;
+	margin-bottom: 8px;
+	font-size: 24px;
+	font-weight: 600;
+}
+
+.pinned-bg h2 {
+	color: #4d575c;
+}
+
+.recent h2 {
+	color: #3c4246;
 }
 
 .loader-gap {

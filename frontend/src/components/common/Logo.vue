@@ -24,8 +24,8 @@ const props = withDefaults(defineProps<{ size?: 'small' | 'medium' | 'large', au
 }
 
 .logo span {
-    margin-left: 2px;
-    letter-spacing: -1.4px;
+    margin-left: 4px;
+    letter-spacing: -0.8px;
     font-size: 34px;
     font-weight: bold;
     transform: translateY(1px);

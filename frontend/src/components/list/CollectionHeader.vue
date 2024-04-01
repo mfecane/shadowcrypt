@@ -1,8 +1,5 @@
 <template>
     <div class='header' ref="parent">
-        <div v-if="pinned" class="icon-pin">
-            <Icon :type="IconType.pin" :size="2" />
-        </div>
         <div class="collection-title">
             <div class='item__name' :class="props.big ? 'big' : 'small'">{{ name }}</div>
             <div class='item__count'>{{ count }} items</div>
@@ -18,7 +15,6 @@
 
 <script setup lang="ts">
 
-import Icon from '../common/icons/Icon.vue'
 import IconButton from '../common/inputs/IconButton.vue'
 import CollectionOptions from './CollectionOptions.vue';
 
@@ -27,7 +23,7 @@ import { onBeforeUnmount, ref, watch } from 'vue';
 import { IconType } from '../common/icons/IconType'
 import { CollectionWithImages } from '@/model/Data';
 
-const props = defineProps<{ collection: CollectionWithImages, pinned: boolean, name: string, big: boolean, count: number, collectionId: string }>()
+const props = defineProps<{ collection: CollectionWithImages, name: string, big: boolean, count: number, collectionId: string }>()
 
 const showMenu2 = ref<boolean>(false)
 
@@ -82,11 +78,6 @@ onBeforeUnmount(() => {
     path {
         fill: var(--color-light3);
     }
-}
-
-.icon-pin {
-    flex: 0 0 2rem;
-    margin-right: 6px;
 }
 
 .collection-title {

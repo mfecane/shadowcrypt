@@ -1,5 +1,3 @@
-
-
 <template>
 	<div class='container header-content' ref="header">
 		<div class='header-content2'>
@@ -68,8 +66,8 @@ onUnmounted(() => {
 	justify-content: space-between;
 
 	width: 100%;
-	padding-top: 16px;
-	padding-bottom: 16px;
+	padding-top: 24px;
+	padding-bottom: 24px;
 }
 
 .logo-and-search {

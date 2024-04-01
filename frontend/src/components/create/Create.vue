@@ -20,12 +20,12 @@
 import UploadFile from '@/components/create/UploadFile.vue'
 import CollectionSelector from '@/components/create/CollectionSelector.vue'
 
-import { ref, onMounted, watch, useAttrs } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useUploadDialog } from '@/hooks/useUploadDialog'
 import { fetch as collectionViewerFetch } from '@/hooks/useCollectionViewer'
-import { assignTmpImageToCollection } from '@/model/CollectionsModel'
+import { assignTmpImageToCollection, subscribeToCollectionsList } from '@/model/CollectionsModel'
 import { useAuth } from '@/hooks/useAuth'
 import { nn } from '@/utils/utils'
 

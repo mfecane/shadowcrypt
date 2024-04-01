@@ -2,18 +2,14 @@
     <div class="collection-container">
         <label for="collection-selector-prompt">Add to collection</label>
         <input type="text" id="collection-selector-prompt" v-model="searchPrompt" class="prompt">
-
         <button class="btn light create-button" v-if="canCreateCollection" @click="createCollection2">Create</button>
-
         <div v-if="filteredList.length" class="list">
-
             <div v-if="selected" :key="selected.id" class="item selected">
                 {{ selected.name }}
             </div>
             <div class="filteredlist">
-                <div v-for="collection in filteredListWitoutSelected" :key="collection.id" class="item" :class="{
-            'selected': collection.id === collectionId
-        }" @click="() => onSelect(collection.id)">
+                <div v-for="collection in filteredList" :key="collection.id" class="item"
+                    @click="() => onSelect(collection.id)">
                     {{ collection.name }}
                 </div>
             </div>
@@ -38,7 +34,7 @@ import { createCollection } from '@/model/CollectionsModel'
  * clear search button
  */
 
-const { list: collections } = storeToRefs(useCollectionSelector())
+const { collections } = storeToRefs(useCollectionSelector())
 
 const { user } = storeToRefs(useAuth())
 
@@ -46,21 +42,19 @@ const searchPrompt = ref('')
 
 const collectionId = defineModel<string | null>({ default: null })
 
-const filteredList = computed(() => {
+const filteredList = computed<Collection[]>(() => {
     const value: string | undefined = searchPrompt.value
+    let filtered
     if (value) {
         const searcher = new FuzzySearch(collections.value, ['name'], {
             caseSensitive: false,
             sort: true,
         })
-        return searcher.search(value.toLocaleLowerCase())
+        filtered = searcher.search(value.toLocaleLowerCase())
     } else {
-        return collections.value
+        filtered = collections.value
     }
-})
-
-const filteredListWitoutSelected = computed(() => {
-    return filteredList.value.filter(c => c.id !== collectionId.value)
+    return filtered.filter(c => c.id !== collectionId.value)
 })
 
 const selected = computed<Collection | null>(() => {
@@ -79,12 +73,13 @@ function onSelect(name: string) {
     searchPrompt.value = ''
 }
 
-function createCollection2() {
+async function createCollection2() {
     const value: string | undefined = searchPrompt.value
     if (value) {
         searchPrompt.value = ''
-        createCollection(value, user.value!.id)
+        const id = await createCollection(value, user.value!.id)
         fetch()
+        collectionId.value = id
     }
 }
 
@@ -105,6 +100,10 @@ watch(searchPrompt, (value) => {
             collectionId.value = found.id
         }
     }
+})
+
+watch(collections, () => {
+    console.log('collections changed')
 })
 
 onMounted(() => fetch())
@@ -169,4 +168,3 @@ onMounted(() => fetch())
     padding-right: 4px;
 }
 </style>
-@/api/collections
