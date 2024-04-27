@@ -8,12 +8,12 @@
         </template>
     </AuthPage>
 </template>
-  
+
 <script setup lang="ts">
 
-import AuthPage from '@/components/landing/AuthPage.vue'
+import AuthPage from '@/components/pages/AuthPage.vue'
 import ForgotForm from '@/components/auth/ForgotForm.vue'
 
 </script>
-  
+
 <style scoped lang="scss"></style>

@@ -2,11 +2,24 @@
     <Hero />
     <div class="container descr">
         <p>
-            ArtRefCollect is a specialized platform designed to cater to the needs of artists by providing a user-friendly
+            Shadowcrypt is a specialized platform designed to cater to the needs of artists by providing a
+            user-friendly
             and efficient solution for collecting and storing reference images. Whether you're an illustrator, painter,
-            sculptor, or any other type of visual artist, ArtRefCollect aims to streamline your creative process by offering
+            sculptor, or any other type of visual artist, ArtRefCollect aims to streamline your creative process by
+            offering
             a centralized hub for managing and organizing your reference materials.
         </p>
+
+        keywords inspiration
+
+        <div class="columns">
+            <h3>
+                Either drag and drop or copy and paste your favorite image to save it in your collection
+            </h3>
+            <img src="/assets/images/cat.png" alt="">
+        </div>
+
+
         <h2>Key Features:</h2>
         <ul>
             <li>
@@ -79,7 +92,7 @@
         <Suppor />
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
 import Suppor from './Suppor.vue';
@@ -101,8 +114,27 @@ watch(user, (user) => {
 })
 
 </script>
-  
+
 <style scoped lang="scss">
+.columns {
+    display: flex;
+
+    h3 {
+        flex: 1 1 50%;
+        font-size: 2rem;
+        line-height: 2.8rem;
+    }
+
+    img {
+        flex: 1 1 50%;
+        min-width: 0;
+    }
+
+    @media (max-width: 800px) {
+        display: block;
+    }
+}
+
 .descr {
     color: var(--color-light);
     padding-top: 60px;

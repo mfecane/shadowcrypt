@@ -102,10 +102,6 @@ watch(searchPrompt, (value) => {
     }
 })
 
-watch(collections, () => {
-    console.log('collections changed')
-})
-
 onMounted(() => fetch())
 
 </script>

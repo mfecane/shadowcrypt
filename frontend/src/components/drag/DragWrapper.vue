@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 
 import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { uploadFile } from '@/api/images';
@@ -21,10 +21,16 @@ const dragging = ref<boolean>(false)
 const store = useUploadDialog()
 const auth = useAuth()
 
+const enabled = computed(() =>
+    !!auth.user
+)
+
 // flag lets us await for lock class to take effect
 const enableDragInteractions = ref<boolean>(false)
 
 async function onDragEnter(event: DragEvent): Promise<void> {
+    if (!enabled) return
+
     dragging.value = true
 
     // TODO try nextTick
@@ -32,16 +38,8 @@ async function onDragEnter(event: DragEvent): Promise<void> {
     enableDragInteractions.value = true
 }
 
-// function onDragOver() {
-//     if (!enableDragInteractions.value) {
-//         return
-//     }
-
-//     dragging.value = true
-// }
-
 function onDragLeave() {
-    if (!enableDragInteractions.value) {
+    if (!enableDragInteractions.value || !enabled) {
         return
     }
 
@@ -51,7 +49,7 @@ function onDragLeave() {
 
 // TODO add loaders
 async function onDrop(event: DragEvent) {
-    if (!dragging.value) {
+    if (!dragging.value || !enabled) {
         return
     }
 

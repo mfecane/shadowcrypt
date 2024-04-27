@@ -1,6 +1,6 @@
-import { Tween, update as updateTween } from '@tweenjs/tween.js'
-import { Vector2, clamp } from '../utils/utils'
-import { TouchInteractionState } from './PinchNav'
+import { Vector2 } from '../utils/utils'
+import { TouchInteractionState } from './TouchInteractionState'
+import { MouseInteractionState } from './MouseInteractionState'
 
 export interface NavigatorState {
 	onPointerDown(event: PointerEvent): void
@@ -12,117 +12,7 @@ export interface NavigatorState {
 	setScale(value: number): void
 }
 
-class MouseInteractionState implements NavigatorState {
-	private static readonly MIDDLE_MOUSE_BUTTON = 1
-
-	private isDragging: boolean = false
-
-	private startDrag: Vector2 = { x: 0, y: 0 }
-
-	private virtualScale: number = 1
-
-	private tweenTarget = { scale: 1 }
-
-	private tween: Tween<{ scale: number }> = new Tween(this.tweenTarget)
-
-	private animationId: number = -1
-
-	public constructor(private readonly navigator: Navigator) {}
-
-	public enterState() {
-		this.animate()
-	}
-
-	public exitState() {
-		this.tween.stop()
-		cancelAnimationFrame(this.animationId)
-	}
-
-	public onPointerDown(event: PointerEvent): void {
-		if (this.isMiddleMouseOrPointer(event)) {
-			this.isDragging = true
-			this.startDrag = { x: event.clientX, y: event.clientY }
-			this.navigator.container.setPointerCapture(event.pointerId)
-		}
-	}
-
-	public onPointerMove(event: PointerEvent): void {
-		if (this.isDragging) {
-			this.navigator.position.x += event.clientX - this.startDrag.x
-			this.navigator.position.y += event.clientY - this.startDrag.y
-			this.startDrag = { x: event.clientX, y: event.clientY }
-		}
-	}
-
-	public onPointerUp(event: PointerEvent): void {
-		if (this.isDragging) {
-			this.isDragging = false
-			this.navigator.container.releasePointerCapture(event.pointerId)
-		}
-	}
-
-	public onWheel(e: WheelEvent) {
-		this.virtualScale += 1 - 2 ** (e.deltaY * 0.005)
-		this.virtualScale = clamp(this.virtualScale, 0.25, 4.0)
-		this.setScaleToPointWithTransition(e)
-	}
-
-	private setScaleToPointWithTransition(e: WheelEvent) {
-		this.tween.stop()
-		this.tween = new Tween<{ scale: number }>(this.tweenTarget)
-			.to({ scale: this.virtualScale }, 200)
-			.onUpdate(() => this.setScaleToPoint(this.tweenTarget.scale, e))
-			.start()
-	}
-
-	public setScale(scale: number) {
-		this.tweenTarget.scale = scale
-		this.virtualScale = scale
-	}
-
-	private animate() {
-		this.animationId = requestAnimationFrame(() => {
-			updateTween()
-			this.animate()
-		})
-	}
-
-	private isMiddleMouseOrPointer(event: PointerEvent): boolean {
-		return event.pointerType === 'mouse' && event.button === MouseInteractionState.MIDDLE_MOUSE_BUTTON
-	}
-
-	private setScaleToPoint(scale: number, e: WheelEvent) {
-		const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY })
-		this.scaleFromPoint(scale, mousePos)
-	}
-
-	private clientPosToTranslatedPos({ x, y }: Vector2) {
-		return {
-			x: x - this.navigator.position.x,
-			y: y - this.navigator.position.y,
-		}
-	}
-
-	private scaleFromPoint(newScale: number, focalPt: Vector2) {
-		const scaleRatio = newScale / (this.navigator.scale != 0 ? this.navigator.scale : 1)
-		const focalPtDelta = {
-			x: this.coordChange(focalPt.x, scaleRatio),
-			y: this.coordChange(focalPt.y, scaleRatio),
-		}
-		this.navigator.position = {
-			x: this.navigator.position.x - focalPtDelta.x,
-			y: this.navigator.position.y - focalPtDelta.y,
-		}
-		this.navigator.scale = newScale
-	}
-
-	private coordChange(coordinate: number, scaleRatio: number) {
-		return scaleRatio * coordinate - coordinate
-	}
-}
-
-export class Navigator {
-	private static readonly MIDDLE_MOUSE_BUTTON = 1
+export class Navigator extends EventTarget {
 	private static readonly TOP_GUTTER = 60
 	private static readonly STEP = 100
 
@@ -139,6 +29,8 @@ export class Navigator {
 	private animationId: number = -1
 
 	public constructor(public readonly container: HTMLDivElement, private readonly element: HTMLDivElement) {
+		super()
+
 		if (!this.container) {
 			debugger
 		}
@@ -232,13 +124,11 @@ export class Navigator {
 
 	private onPointerMove(event: PointerEvent): void {
 		event.preventDefault()
-
 		this.state?.onPointerMove(event)
 	}
 
 	private onPointerUp(event: PointerEvent): void {
 		event.preventDefault()
-
 		this.state?.onPointerUp(event)
 	}
 
@@ -280,14 +170,20 @@ export class Navigator {
 		}
 	}
 
-	private animate() {
+	private animate(): void {
 		this.animationId = requestAnimationFrame(() => {
 			this.update()
 			this.animate()
 		})
 	}
 
-	public update() {
+	public setPosition(x: number, y: number): void {
+		this.position.x = x
+		this.position.y = y
+		this.dispatchEvent(new CustomEvent('bump'))
+	}
+
+	public update(): void {
 		this.element.style.transform = `translate(${this.position.x}px, ${this.position.y}px) scale(${this.scale})`
 	}
 }

@@ -13,40 +13,29 @@
                 Start building your library
                 <Icon :type="IconType.back" />
             </router-link>
-
         </div>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
-import { storeToRefs } from 'pinia';
-import { watch } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { RouterLink } from 'vue-router';
 
 import Logo from '../common/Logo.vue';
 import Icon from '../common/icons/Icon.vue';
 
-import { useAuth } from '@/hooks/useAuth';
 import { IconType } from '../common/icons/IconType';
 
-const router = useRouter()
-const { user } = storeToRefs(useAuth())
-
-watch(user, (user) => {
-    if (user) {
-        router.push('/list')
-    }
-})
-
 </script>
-  
+
 <style scoped lang="scss">
 .hero {
     height: 500px;
     min-height: 60vmin;
     position: relative;
-    background: url(/assets/images/goblin.png) no-repeat;
+    background-image: url(/assets/images/goblin_merged.png), url(/assets/images/goblin_merged.jpg);
+
+    background-repeat: no-repeat;
     background-size: cover;
     background-position-x: center;
     background-position-y: center;
@@ -95,19 +84,21 @@ watch(user, (user) => {
     max-width: 500px;
 }
 
-.signin-button {
+.signin-button.black {
     padding: 12px 20px;
-    border: 1px solid var(--accent-color);
+    border: 1px solid var(--accent-color-dim);
+    background-color: rgba(0, 0, 0, 0.4);
 
     :deep(*:not(:first-child)) {
         margin-left: 6px;
     }
 }
 
-.call-to-action {
+.btn.call-to-action {
     font-size: 1.2rem;
     display: flex;
     padding: 10px 32px;
+    background-color: rgba(0, 0, 0, 0.4);
 
     & :deep(.icon) {
         transform: rotate(180deg);

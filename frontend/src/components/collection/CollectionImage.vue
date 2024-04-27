@@ -1,25 +1,23 @@
 <template>
     <div class="image-container" :class="{
         'selected': props.id === collectionViewer.selected
-    }" :style="style" @click="onClick">
+    }" :style="style" @click.stop="() => { }">
         <img v-if="src" :src="src" class='image' ref="image" />
     </div>
 </template>
 
 <script setup lang="ts">
 
-import { StyleValue, computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { StyleValue, computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
-import { gridElement } from '@/hooks/grid';
-import { useCollectionViewer } from '@/hooks/useCollectionViewer';
-import { ImageHandler } from '@/viewer/ImageHandler';
-import { getImageDimensions, nn } from '@/utils/utils';
-import { resolvePath } from '@/model/CollectionsModel';
+import { gridElement } from '@/hooks/grid'
+import { useCollectionViewer } from '@/hooks/useCollectionViewer'
+import { nn } from '@/utils/utils'
+import { ImageHandler } from '@/interactions/ImageHandler'
 
 const props = defineProps<{ id: string, width: number, height: number }>()
 
 const dimensions = ref<{ width: number, height: number }>({ width: 1, height: 1 })
-
 
 const src = ref<string | null>(null)
 
@@ -30,7 +28,8 @@ const collectionViewer = useCollectionViewer()
 let style = computed<StyleValue>(() =>
     gridElement(collectionViewer.orientation, dimensions.value.height / dimensions.value.width))
 
-function onClick() {
+function onClick(e: Event) {
+    e.stopPropagation()
     collectionViewer.select(props.id)
 }
 
@@ -51,8 +50,6 @@ onMounted(async () => {
         imageHandler.addEventListener('doubleclick', onDoubleClick)
     })
 })
-
-
 
 onUnmounted(() => {
     imageHandler.removeEventListener('click', onClick)

@@ -1,6 +1,8 @@
 <template>
     <Fullscreen />
-    <CollectionMenu v-if="collection" :collection="collection" />
+    <Transition>
+        <CollectionMenu v-if="shouldShowMenu" :collection="collection!" />
+    </Transition>
     <Loader v-if="loading" size="large" class="grid-loader" caption />
     <CollectionGrid v-else-if="collection" :collection="collection" />
 </template>
@@ -12,7 +14,7 @@ import CollectionGrid from '@/components/collection/CollectionGrid.vue';
 import Loader from '../common/Loader.vue';
 import Fullscreen from './Fullscreen.vue';
 
-import { onBeforeUnmount, watch } from 'vue';
+import { onBeforeUnmount, onMounted, watch } from 'vue';
 
 import { useUploadDialog } from '@/hooks/useUploadDialog';
 import { fetch, useCollectionViewer } from '@/hooks/useCollectionViewer';
@@ -26,7 +28,7 @@ const props = defineProps<{ id: string }>()
 
 const store = useCollectionViewer()
 
-const { collection, loading } = storeToRefs(store)
+const { collection, loading, shouldShowMenu } = storeToRefs(store)
 
 const { user } = storeToRefs(useAuth())
 
@@ -41,7 +43,18 @@ watch(collection, () => {
     document.title = collection.value?.name ?? 'Shadowcrypt'
 })
 
-onBeforeUnmount(() => store.clear())
+function handleMove(event: MouseEvent) {
+    if (event.clientY < 200) store.bumpMenu()
+}
+
+onMounted(() => {
+    document.addEventListener('mousemove', handleMove)
+})
+
+onBeforeUnmount(() => {
+    store.clear()
+    document.removeEventListener('mousemove', handleMove)
+})
 
 </script>
 
@@ -51,5 +64,15 @@ onBeforeUnmount(() => store.clear())
     top: 160px;
     left: 50%;
     transform: translateX(-50%);
+}
+
+.v-enter-active,
+.v-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+    opacity: 0;
 }
 </style>

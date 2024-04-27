@@ -1,10 +1,13 @@
 <template>
-    <CollectionsList v-if="user" />
+    <LoggedIn>
+        <CollectionsList v-if="user" />
+    </LoggedIn>
 </template>
 
 <script setup lang="ts">
 
 import CollectionsList from '@/components/list/CollectionsList.vue'
+import LoggedIn from '@/components/pages/LoggedIn.vue'
 
 import { watch } from 'vue';
 import { storeToRefs } from 'pinia';

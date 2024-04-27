@@ -1,7 +1,7 @@
 import { FirebaseOptions, initializeApp } from 'firebase/app'
 import {
 	GoogleAuthProvider,
-	browserSessionPersistence,
+	browserLocalPersistence,
 	connectAuthEmulator,
 	getAuth,
 	setPersistence,
@@ -25,7 +25,7 @@ export const storage = getStorage(app)
 export const functions = getFunctions(app)
 
 export const auth = getAuth(app)
-setPersistence(auth, browserSessionPersistence)
+setPersistence(auth, browserLocalPersistence)
 auth.useDeviceLanguage()
 
 export const provider = new GoogleAuthProvider()

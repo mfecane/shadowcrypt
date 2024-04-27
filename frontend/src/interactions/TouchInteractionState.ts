@@ -43,16 +43,15 @@ export class TouchInteractionState implements NavigatorState {
 		}
 	}
 
-	private handleZoom(delta: number) {
+	private handleZoom(delta: number): void {
 		this.virtualScale += 1 - 2 ** (delta * 0.00001)
 		// TODO clamp scale in navigator ???
 		this.virtualScale = clamp(this.virtualScale, 0.25, 4.0)
 		this.setScaleToPoint(this.virtualScale, this.prevPos)
 	}
 
-	private handleShift(delta: Vector2) {
-		this.navigator.position.x += delta.x
-		this.navigator.position.y += delta.y
+	private handleShift(delta: Vector2): void {
+		this.navigator.setPosition(this.navigator.position.x + delta.x, this.navigator.position.y + delta.y)
 	}
 
 	public onPointerUp(event: PointerEvent): void {
@@ -70,7 +69,7 @@ export class TouchInteractionState implements NavigatorState {
 
 	public setScale(value: number): void {}
 
-	private replaceCachedEvent(event: PointerEvent) {
+	private replaceCachedEvent(event: PointerEvent): void {
 		const index = this.evCache.findIndex((c) => c.pointerId === event.pointerId)
 		if (index == -1) {
 			throw new Error('corrupted event')
@@ -78,7 +77,7 @@ export class TouchInteractionState implements NavigatorState {
 		this.evCache[index] = event
 	}
 
-	private removeCachedEvent(event: PointerEvent) {
+	private removeCachedEvent(event: PointerEvent): void {
 		const index = this.evCache.findIndex((c) => c.pointerId === event.pointerId)
 		if (index == -1) {
 			throw new Error('corrupted event')
@@ -86,7 +85,7 @@ export class TouchInteractionState implements NavigatorState {
 		this.evCache.splice(index, 1)
 	}
 
-	private setScaleToPoint(scale: number, position: Vector2) {
+	private setScaleToPoint(scale: number, position: Vector2): void {
 		const mousePos = this.clientPosToTranslatedPos(position)
 		this.scaleFromPoint(scale, mousePos)
 	}
@@ -98,20 +97,17 @@ export class TouchInteractionState implements NavigatorState {
 		}
 	}
 
-	private scaleFromPoint(newScale: number, focalPt: Vector2) {
+	private scaleFromPoint(newScale: number, focalPt: Vector2): void {
 		const scaleRatio = newScale / (this.navigator.scale != 0 ? this.navigator.scale : 1)
 		const focalPtDelta = {
 			x: this.coordChange(focalPt.x, scaleRatio),
 			y: this.coordChange(focalPt.y, scaleRatio),
 		}
-		this.navigator.position = {
-			x: this.navigator.position.x - focalPtDelta.x,
-			y: this.navigator.position.y - focalPtDelta.y,
-		}
+		this.navigator.setPosition(this.navigator.position.x - focalPtDelta.x, this.navigator.position.y - focalPtDelta.y)
 		this.navigator.scale = newScale
 	}
 
-	private coordChange(coordinate: number, scaleRatio: number) {
+	private coordChange(coordinate: number, scaleRatio: number): number {
 		return scaleRatio * coordinate - coordinate
 	}
 }

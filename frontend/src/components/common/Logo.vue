@@ -44,7 +44,11 @@ const props = withDefaults(defineProps<{ size?: 'small' | 'medium' | 'large', au
 }
 
 .logo svg path {
-    fill: var(--accent-color)
+    fill: var(--accent-color);
+}
+
+a:hover .logo svg path {
+    fill: var(--color-light);
 }
 
 .small {

@@ -1,4 +1,3 @@
-
 <template>
     <div class="input_container">
         <input type="text" class='input_text2' v-model="model" />
@@ -10,7 +9,7 @@
         </Transition>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
 import Icon from '@/components/common/icons/Icon.vue'
@@ -53,8 +52,8 @@ function clear() {
     display: flex;
     align-items: center;
     position: relative;
-    padding: 8px 18px;
-    min-height: 46px;
+    padding: 8px 22px;
+    min-height: 42px;
     background-color: white;
     border-radius: 999px;
     box-shadow: inset 0px 4px 8px 0px rgba(45, 47, 52, 0.15), inset 0px 2px 0px 0px rgba(45, 47, 52, 0.05);
@@ -76,7 +75,7 @@ input:focus~.hint {
     color: #a5aeb7;
     position: absolute;
     top: 50%;
-    transform: translateY(calc(-50% + 2px));
+    transform: translate(-2px, calc(-50% + 1px));
     pointer-events: none;
 }
 

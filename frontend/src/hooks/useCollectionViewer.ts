@@ -6,6 +6,9 @@ import { useAuth } from './useAuth'
 const ID = 'id'
 let lastUpdatedOne = 0
 const UPDATE_TIMEOUT_MSEC = 120_000
+const SHOW_MENU_MSEC = 2_000
+
+let BUMP_MENU_TIMEOUT_ID: number | null = null
 
 export const enum Orientation {
 	vertical,
@@ -26,6 +29,7 @@ interface State {
 	loading: boolean
 	fullScreen: string | null
 	resolved: boolean
+	showMenu: boolean
 }
 
 interface Actions {
@@ -37,6 +41,8 @@ interface Actions {
 
 	select(id?: string): void
 
+	deselect(): void
+
 	resetScale2(): void
 
 	openFullscreen(id: string): void
@@ -46,10 +52,14 @@ interface Actions {
 	checkIfResolved(): void
 
 	clear(): void
+
+	bumpMenu(): void
 }
 
 interface Getters {
 	requireCollection(state: State): Collection
+
+	shouldShowMenu(state: State): boolean
 }
 
 //@ts-expect-error
@@ -63,6 +73,7 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 		fullScreen: null,
 		images: [],
 		resolved: false,
+		showMenu: false,
 	}),
 
 	actions: {
@@ -72,6 +83,7 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 				id: it.id,
 			}))
 			this.resolved = false
+			this.bumpMenu()
 		},
 
 		async resolveImage(id) {
@@ -93,11 +105,19 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 		},
 
 		select(id) {
-			if (id) {
+			if (id && this.selected !== id) {
 				this.selected = id
+				this.bumpMenu()
 				return
 			}
-			this.selected = null
+			this.deselect()
+		},
+
+		deselect() {
+			if (this.selected) {
+				this.selected = null
+				this.bumpMenu()
+			}
 		},
 
 		resetScale2() {
@@ -119,11 +139,25 @@ export const useCollectionViewer = defineStore<typeof ID, State, Getters, Action
 			this.loading = true
 			this.fullScreen = null
 		},
+
+		bumpMenu() {
+			this.showMenu = true
+			if (BUMP_MENU_TIMEOUT_ID) {
+				clearTimeout(BUMP_MENU_TIMEOUT_ID)
+			}
+			BUMP_MENU_TIMEOUT_ID = window.setTimeout(() => {
+				this.showMenu = false
+			}, SHOW_MENU_MSEC)
+		},
 	},
 
 	getters: {
 		requireCollection(state) {
 			return nn(state.collection, `No collection is loaded`)
+		},
+
+		shouldShowMenu() {
+			return this.collection && (this.showMenu || this.selected)
 		},
 	},
 })

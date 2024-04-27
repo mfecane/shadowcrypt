@@ -119,6 +119,7 @@ export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
 export async function useAuthWatcher() {
 	const authStore = useAuth()
 	onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
+		console.log('watching user', user)
 		if (user) {
 			setUser(user)
 		} else {

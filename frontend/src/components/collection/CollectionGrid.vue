@@ -15,7 +15,7 @@ import { StyleValue, computed, onBeforeUnmount, onMounted, ref, watch } from 'vu
 
 import { grid } from '@/hooks/grid'
 import { useCollectionViewer } from '@/hooks/useCollectionViewer'
-import { Navigator } from '@/viewer/Navigator'
+import { Navigator } from '@/interactions/Navigator'
 import { storeToRefs } from 'pinia'
 import { Collection } from '@/model/CollectionsModel'
 
@@ -37,18 +37,27 @@ const style = computed<StyleValue>(() => {
 
 function onClick(e: MouseEvent) {
     e.stopPropagation()
-    collectionViewer.select()
+    collectionViewer.deselect()
+    collectionViewer.bumpMenu()
 }
 
 watch([resetScale], () => navigator.value?.scaleToFit())
 
 watch([resolved], () => navigator.value?.scaleToFit())
 
+function onBump() {
+    collectionViewer.bumpMenu()
+}
+
 onMounted(() => {
     navigator.value = new Navigator(container.value!, imageList.value!)
+    navigator.value.addEventListener('bump', onBump)
 })
 
-onBeforeUnmount(() => navigator.value?.destroy())
+onBeforeUnmount(() => {
+    navigator.value!.destroy()
+    navigator.value!.removeEventListener('bump', onBump)
+})
 
 </script>
 

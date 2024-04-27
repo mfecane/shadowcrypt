@@ -1,17 +1,16 @@
-import App from '@/components/App.vue'
-import Collection from '@/components/collection/Collection.vue'
-import Home from './components/routes/Home.vue'
-import Landing from './components/landing/Landing.vue'
-import SignupPage from './components/landing/SignupPage.vue'
-import SigninPage from './components/landing/SigninPage.vue'
-import ForgotPage from './components/landing/ForgotPage.vue'
-import UserSettingsPageVue from './components/pages/UserSettingsPage.vue'
-import CollectionListPage from './components/pages/CollectionListPage.vue'
+import Landing from '@/components/landing/Landing.vue'
+import HomePage from '@/components/pages/HomePage.vue'
+import SignupPage from '@/components/pages/SignupPage.vue'
+import SigninPage from '@/components/pages/SigninPage.vue'
+import ForgotPage from '@/components/pages/ForgotPage.vue'
+import UserSettingsPage from '@/components/pages/UserSettingsPage.vue'
+import CollectionListPage from '@/components/pages/CollectionListPage.vue'
+import CollectionViewPage from '@/components/pages/CollectionViewPage.vue'
 
 export const routes = [
 	{
 		path: '/',
-		component: Home,
+		component: HomePage,
 		meta: {
 			title: 'Shadowcrypt',
 		},
@@ -53,14 +52,14 @@ export const routes = [
 	},
 	{
 		path: '/user',
-		component: UserSettingsPageVue,
+		component: UserSettingsPage,
 		meta: {
 			title: 'User settings',
 		},
 	},
 	{
 		path: '/collections/:id',
-		component: Collection,
+		component: CollectionViewPage,
 		meta: {
 			title: 'Collection',
 		},
