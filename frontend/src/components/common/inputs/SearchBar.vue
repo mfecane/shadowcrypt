@@ -1,7 +1,12 @@
 <template>
     <div class="input_container">
         <input type="text" class='input_text2' v-model="model" />
-        <span class="hint" v-if="!model && props.hint">{{ props.hint }}</span>
+        <Transition>
+            <span class="hint" v-if="!model && props.hint">
+                <Icon :type="IconType.search" :size="1.25" />
+                {{ props.hint }}
+            </span>
+        </Transition>
         <Transition>
             <div class="clear_icon" v-if="model" @click="clear">
                 <Icon :type="IconType.cross" :size="1" />
@@ -19,6 +24,7 @@ import { IconType } from '../icons/IconType';
 const props = withDefaults(defineProps<{ hint: string }>(), {
     hint: ''
 })
+
 const model = defineModel<string>({ default: '' })
 
 function clear() {
@@ -77,6 +83,16 @@ input:focus~.hint {
     top: 50%;
     transform: translate(-2px, calc(-50% + 1px));
     pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+.hint :deep(.icon) {
+    margin-right: 6px;
+}
+
+.hint :deep(.icon path) {
+    fill: #a5aeb7;
 }
 
 .v-enter-active,

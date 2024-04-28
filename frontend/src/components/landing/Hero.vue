@@ -116,13 +116,7 @@ import { IconType } from '../common/icons/IconType';
     min-width: 240px;
 
     &:hover {
-        color: white;
-        background-color: rgba(55, 56, 58, 0.3);
-        border: 1px solid var(--accent-color-dim);
-
-        :deep(.icon path) {
-            fill: var(--accent-color);
-        }
+        background-color: white;
     }
 
     :deep(.icon) {
@@ -131,7 +125,6 @@ import { IconType } from '../common/icons/IconType';
     }
 
     :deep(.icon path) {
-        transition: fill 200ms ease;
         fill: var(--color-dark);
     }
 }

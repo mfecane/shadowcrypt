@@ -1,4 +1,3 @@
-
 <template>
     <div class="user" v-click-outside-element="closeOptions">
         <a href="#" @click.prevent="showMenu = true">
@@ -8,7 +7,7 @@
         <UserMenu v-if="showMenu" @onClose="showMenu = false" />
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
 import UserMenu from './UserMenu.vue'
@@ -39,7 +38,7 @@ function closeOptions() {
 }
 
 </script>
-  
+
 <style scoped lang="scss">
 .user2 {
     display: flex;

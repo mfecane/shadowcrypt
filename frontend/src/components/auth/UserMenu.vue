@@ -1,4 +1,3 @@
-
 <template>
     <div class="user-menu visible">
         <span class="user-name">{{ user!.name || user!.email }}</span>
@@ -12,7 +11,7 @@
         </ul>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 
 import { logout, useAuth } from '@/hooks/useAuth';
@@ -35,13 +34,13 @@ async function onLogoutClick() {
 }
 
 </script>
-  
+
 <style scoped lang="scss">
 .user-menu {
     position: absolute;
     top: 68px;
     right: 0;
-    background-color: var(--accent-color);
+    background-color: var(--color-light);
     display: none;
     flex-direction: column;
     z-index: 3;

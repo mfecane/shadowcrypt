@@ -1,7 +1,7 @@
 <template>
     <div class='header' ref="parent">
         <div class="collection-title">
-            <div class='item__name' :class="props.big ? 'big' : 'small'">{{ name }}</div>
+            <div class='item__name'>{{ name }}</div>
             <div class='item__count'>{{ count }} items</div>
         </div>
         <Transition>
@@ -91,16 +91,10 @@ onBeforeUnmount(() => {
 
 .item__name {
     color: #000;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--color-light);
     padding-left: 2px;
-
-    &.big {
-        font-size: 20px;
-        font-weight: 500;
-    }
-
 }
 
 .item__count {

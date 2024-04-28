@@ -40,7 +40,7 @@
         </div>
 
         <div class="collect">
-            <router-link class="btn signin" to="/signin">
+            <router-link class="btn signin" to="/signup">
                 Start building you library
                 <Icon :type="IconType.back" :size="1.0" />
             </router-link>
