@@ -69,6 +69,8 @@ onBeforeUnmount(() => {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+
+    background-image: radial-gradient(circle at 30% 70%, #21292c, #101317);
 }
 
 .image-list {

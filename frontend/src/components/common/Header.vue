@@ -1,11 +1,13 @@
 <template>
-	<div class='container header-content' ref="header">
-		<div class='header-content2'>
-			<Logo auto-hide />
-			<div class="header-content__search">
-				<SearchBar hint="Search your collections" v-model="filter" />
+	<div class='header-content' ref="header">
+		<div class="container">
+			<div class='header-content2'>
+				<Logo auto-hide />
+				<div class="header-content__search">
+					<SearchBar hint="Search your collections" v-model="filter" />
+				</div>
+				<User />
 			</div>
-			<User />
 		</div>
 	</div>
 </template>
@@ -50,12 +52,15 @@ onUnmounted(() => {
 .header-content {
 	position: sticky;
 	top: 0;
-	transition: background-color 100ms ease;
 	z-index: 1;
 
+	background-color: rgba(255, 255, 255, 0);
+	backdrop-filter: blur(10px);
+	transition: background-color 300ms ease;
 
 	&.darkbg {
-		background-color: var(--bg-color-dark);
+		background-color: rgba(15, 16, 16, 0.5);
+		box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.4);
 	}
 
 }

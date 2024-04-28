@@ -21,6 +21,9 @@ import { fetch, useCollectionViewer } from '@/hooks/useCollectionViewer';
 import { storeToRefs } from 'pinia';
 import { useAuth } from '@/hooks/useAuth';
 import { nn } from '@/utils/utils';
+import { sleepPreventer } from '@/SleepPreventer';
+
+const MENU_GUTTER = 180
 
 const uploadDialog = useUploadDialog()
 
@@ -44,15 +47,17 @@ watch(collection, () => {
 })
 
 function handleMove(event: MouseEvent) {
-    if (event.clientY < 200) store.bumpMenu()
+    if (event.clientY < MENU_GUTTER) store.bumpMenu()
 }
 
 onMounted(() => {
+    sleepPreventer.activate()
     document.addEventListener('mousemove', handleMove)
 })
 
 onBeforeUnmount(() => {
     store.clear()
+    sleepPreventer.deactivate()
     document.removeEventListener('mousemove', handleMove)
 })
 
@@ -68,7 +73,7 @@ onBeforeUnmount(() => {
 
 .v-enter-active,
 .v-leave-active {
-    transition: opacity 0.2s ease;
+    transition: opacity 0.4s ease;
 }
 
 .v-enter-from,

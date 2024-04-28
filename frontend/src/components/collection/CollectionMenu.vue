@@ -93,25 +93,26 @@ watch(selected, value => {
     top: 12px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--color-darker);
-    padding: 0 4px;
-    border-radius: 22px;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 0 12px;
+    border-radius: 32px;
     box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
     z-index: 2;
 }
 
 .header {
     display: flex;
-    height: 44px;
+    height: 64px;
     align-items: center;
 }
 
 .title {
     font-size: 1.2rem;
     display: block;
-    min-width: 180px;
+    min-width: 200px;
     text-align: center;
-    margin: 0 20px;
+    margin: 0 24px;
     color: var(--color-light);
     font-weight: 500;
 }
@@ -139,7 +140,7 @@ watch(selected, value => {
     width: 36px;
     height: 36px;
     min-width: unset;
-    background-color: var(--color-darkish);
+    background-color: #636b6e;
     border-radius: 999px;
     display: flex;
     align-items: center;

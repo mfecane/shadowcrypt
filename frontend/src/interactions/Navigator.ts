@@ -13,7 +13,7 @@ export interface NavigatorState {
 }
 
 export class Navigator extends EventTarget {
-	private static readonly TOP_GUTTER = 60
+	private static readonly TOP_GUTTER = 8
 	private static readonly STEP = 100
 
 	public position: Vector2 = { x: 0, y: 0 }

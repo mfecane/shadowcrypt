@@ -4,7 +4,11 @@
 	<Loader v-if="loading" size="large" class="loader-gap" caption />
 
 	<template v-else>
-		<MainGrid v-if="filteredCollection.length" :collections="filteredCollection" />
+		<div v-if="filter && filteredCollection.length">
+			<div class="container">
+				<MainGrid v-if="filteredCollection.length" :collections="filteredCollection" />
+			</div>
+		</div>
 
 		<div v-if="filter && !filteredCollection.length" class="no-collections">
 			<div class="container">
@@ -18,10 +22,13 @@
 				<FirstRow :collections="pinnedCollections" />
 			</div>
 		</div>
-		<div class='container recent'>
-			<h2>RECENT</h2>
-			<FirstRow v-if="firstRow.length" :collections="firstRow" />
-			<MainGrid v-if="secondRow.length" :collections="secondRow" />
+
+		<div v-if="!filter" class='recent'>
+			<div class='container'>
+				<h2>RECENT</h2>
+				<FirstRow v-if="firstRow.length" :collections="firstRow" />
+				<MainGrid v-if="secondRow.length" :collections="secondRow" />
+			</div>
 		</div>
 
 		<div v-if="!collectionExist" class="no-collections">
