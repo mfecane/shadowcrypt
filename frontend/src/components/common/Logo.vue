@@ -25,10 +25,10 @@ const props = withDefaults(defineProps<{ size?: 'small' | 'medium' | 'large', au
 
 .logo span {
     margin-left: 4px;
-    letter-spacing: -0.8px;
-    font-size: 34px;
+    letter-spacing: 0px;
+    font-size: 28px;
     font-weight: bold;
-    transform: translateY(1px);
+    transform: translateY(-2px);
 }
 
 .logo.hide span {
@@ -39,8 +39,8 @@ const props = withDefaults(defineProps<{ size?: 'small' | 'medium' | 'large', au
 
 
 .logo svg {
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
 }
 
 .logo svg path {
@@ -59,8 +59,9 @@ a:hover .logo svg path {
 
     span {
         margin-left: 1px;
-        letter-spacing: -1.0px;
+        letter-spacing: 0px;
         font-size: 18px;
+        transform: translateY(0px);
     }
 }
 </style>

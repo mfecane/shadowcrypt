@@ -3,16 +3,23 @@
         <div class="container">
             <div class="logo-wrapper">
                 <Logo class="hero-logo" />
-                <router-link class="btn black signin-button" to="/signin"><span>Sign In</span>
+            </div>
+            <h1>
+                Get inspired for your artistic projects
+            </h1>
+            <h2>
+                Build and organize your visual reference library
+            </h2>
+            <div class="buttons">
+                <router-link class="btn call-to-action" to="/signup">
+                    Start your library
+                    <Icon :type="IconType.back" />
+                </router-link>
+                <router-link class="btn signin" to="/signin">
+                    Sign in
                     <Icon :type="IconType.person" :size="1.0" />
                 </router-link>
             </div>
-            <h1>Fuel Your Artistic Vision</h1>
-            <h2>Seamlessly collect and store reference images</h2>
-            <router-link class="btn alt call-to-action" to="/signup">
-                Start building your library
-                <Icon :type="IconType.back" />
-            </router-link>
         </div>
     </div>
 </template>
@@ -30,8 +37,8 @@ import { IconType } from '../common/icons/IconType';
 
 <style scoped lang="scss">
 .hero {
-    height: 500px;
-    min-height: 60vmin;
+    height: 560px;
+    min-height: 100vh;
     position: relative;
     background-image: url(/assets/images/goblin_merged.png), url(/assets/images/goblin_merged.jpg);
 
@@ -54,8 +61,7 @@ import { IconType } from '../common/icons/IconType';
 
 .hero .container {
     height: 100%;
-    padding-top: 20px;
-    padding-bottom: 50px;
+    padding: 48px 40px 18vh 40px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -68,40 +74,79 @@ import { IconType } from '../common/icons/IconType';
 
 .hero h1 {
     margin-top: auto;
-    font-size: 4rem;
+    font-size: 3rem;
     font-weight: 500;
     color: var(--accent-color);
-    margin-bottom: 0.5rem;
-    line-height: 4.5rem;
-    max-width: 500px;
+    margin-bottom: 0.8rem;
+    line-height: 4rem;
+    max-width: 560px;
 }
 
 .hero h2 {
     font-size: 1.8rem;
+    line-height: 2.7rem;
     font-weight: 500;
     color: var(--color-light);
     margin-bottom: 2.5rem;
     max-width: 500px;
 }
 
-.signin-button.black {
-    padding: 12px 20px;
-    border: 1px solid var(--accent-color-dim);
-    background-color: rgba(0, 0, 0, 0.4);
+.buttons {
+    display: flex;
 
-    :deep(*:not(:first-child)) {
-        margin-left: 6px;
+    &>*:not(:first-child) {
+        margin-left: 24px;
     }
 }
 
-.btn.call-to-action {
+.btn.call-to-action,
+.btn.signin {
     font-size: 1.2rem;
-    display: flex;
-    padding: 10px 32px;
-    background-color: rgba(0, 0, 0, 0.4);
+    padding: 8px 32px;
 
-    & :deep(.icon) {
+    display: flex;
+    align-items: center;
+}
+
+.btn.call-to-action {
+    color: var(--color-dark);
+    background-color: var(--accent-color);
+    border: 1px solid transparent;
+
+    min-width: 240px;
+
+    &:hover {
+        color: white;
+        background-color: rgba(55, 56, 58, 0.3);
+        border: 1px solid var(--accent-color-dim);
+
+        :deep(.icon path) {
+            fill: var(--accent-color);
+        }
+    }
+
+    :deep(.icon) {
+        margin-left: 0.5rem;
         transform: rotate(180deg);
+    }
+
+    :deep(.icon path) {
+        transition: fill 200ms ease;
+        fill: var(--color-dark);
+    }
+}
+
+.btn.signin {
+    color: var(--accent-color);
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--accent-color-dim);
+
+    &:hover {
+        background-color: rgba(55, 56, 58, 0.3);
+        color: white;
+    }
+
+    :deep(.icon) {
         margin-left: 0.5rem;
     }
 

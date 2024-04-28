@@ -1,101 +1,60 @@
 <template>
     <Hero />
     <div class="container descr">
-        <p>
-            Shadowcrypt is a specialized platform designed to cater to the needs of artists by providing a
-            user-friendly
-            and efficient solution for collecting and storing reference images. Whether you're an illustrator, painter,
-            sculptor, or any other type of visual artist, ArtRefCollect aims to streamline your creative process by
-            offering
-            a centralized hub for managing and organizing your reference materials.
-        </p>
-
-        keywords inspiration
-
         <div class="columns">
-            <h3>
-                Either drag and drop or copy and paste your favorite image to save it in your collection
-            </h3>
+            <div>
+                <h3>
+                    Build
+                </h3>
+                <p>
+                    Save images to your collection by dragging and dropping or copying and pasting them.
+                </p>
+            </div>
             <img src="/assets/images/cat.png" alt="">
         </div>
 
+        <div class="columns organize">
+            <div>
+                <h3>
+                    Organize
+                </h3>
+                <p>
+                    Organize your collections by groups
+                    Pin any collection for quick access
+                </p>
+            </div>
+            <img src="/assets/images/cat.png" alt="">
+        </div>
 
-        <h2>Key Features:</h2>
-        <ul>
-            <li>
-                <h3>Intuitive Image Collection:</h3>
+        <div class="columns">
+            <div>
+                <h3>
+                    Share
+                </h3>
+                <p>
+                    Organize your collections by groups
+                    Pin any collection for quick access
+                </p>
+            </div>
+            <img src="/assets/images/cat.png" alt="">
+        </div>
 
-                Effortlessly collect and organize reference images based on themes, categories, or projects.
-                User-friendly interface for easy navigation and management of your image library.
-                Robust Search Functionality:
-            </li>
+        <div class="collect">
+            <router-link class="btn signin" to="/signin">
+                Start building you library
+                <Icon :type="IconType.back" :size="1.0" />
+            </router-link>
+        </div>
 
-            <li>
-                <h3>Robust Search Functionality:</h3>
-
-                Advanced search options to quickly find specific reference images.
-                Filter images by tags, colors, or content to tailor your search results.
-            </li>
-
-            <li>
-                <h3>Cloud Storage:</h3>
-
-                Securely store your reference images in the cloud for easy access from any device.
-                Unlimited storage space to accommodate your growing collection.
-            </li>
-
-            <li>
-                <h3>Tagging and Annotation:</h3>
-
-                Add custom tags and annotations to your images for detailed organization.
-                Mark key points or elements in an image for quick reference during the creative process.
-            </li>
-
-            <li>
-                <h3>Privacy Controls:</h3>
-
-                Choose between public and private settings for your reference boards.
-                Maintain control over who can view and interact with your collection.
-            </li>
-
-            <li>
-                <h3>Mobile Accessibility:</h3>
-
-                Access your reference images on the go with a mobile-friendly interface.
-                Capture and upload images directly from your mobile device.
-            </li>
-
-            <li>
-                <h3>Offline Mode:</h3>
-
-                Download reference images for offline use when an internet connection is not available.
-                Ensure uninterrupted access to your references during your creative sessions.
-            </li>
-
-            <li>
-                <h3>Community Features:</h3>
-
-                Connect with a community of artists to share insights, tips, and inspiration.
-                Participate in challenges or themed events to spark creativity.
-            </li>
-
-            <li>
-                <h3>Regular Updates and Support:</h3>
-
-                Receive updates with new features and improvements to enhance your experience.
-                Responsive customer support to address any queries or issues promptly.
-            </li>
-
-
-        </ul>
-
-        <Suppor />
     </div>
+    <Support />
 </template>
 
 <script setup lang="ts">
 
-import Suppor from './Suppor.vue';
+import Support from '@/components/landing/Support.vue';
+import Icon from '../common/icons/Icon.vue';
+import { RouterLink } from 'vue-router';
 
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -103,6 +62,7 @@ import { watch } from 'vue';
 
 import { useAuth } from '@/hooks/useAuth';
 import Hero from './Hero.vue';
+import { IconType } from '../common/icons/IconType';
 
 const router = useRouter()
 const { user } = storeToRefs(useAuth())
@@ -119,15 +79,31 @@ watch(user, (user) => {
 .columns {
     display: flex;
 
+    :first-child {
+        flex: 1 1 40%;
+    }
+
+    &:not(:first-child) {
+        margin-top: 40px;
+    }
+
     h3 {
-        flex: 1 1 50%;
-        font-size: 2rem;
-        line-height: 2.8rem;
+        font-size: 2.8rem;
+        color: var(--accent-color);
+    }
+
+    p {
+        margin-top: 18px;
+        font-size: 22px;
     }
 
     img {
-        flex: 1 1 50%;
+        flex: 1 1 60%;
         min-width: 0;
+    }
+
+    &>*:not(:first-child) {
+        margin-left: 16px;
     }
 
     @media (max-width: 800px) {
@@ -135,10 +111,16 @@ watch(user, (user) => {
     }
 }
 
+.organize {
+    flex-flow: row-reverse;
+}
+
+.descr.container {
+    padding: 80px 40px 100px 40px;
+}
+
 .descr {
     color: var(--color-light);
-    padding-top: 60px;
-    padding-bottom: 100px;
     font-size: 1.2rem;
     line-height: 2.2rem;
     font-weight: normal;
@@ -157,6 +139,22 @@ watch(user, (user) => {
     h2 {
         font-size: 2rem;
         font-weight: 500;
+    }
+}
+
+.collect {
+    padding: 40px 0;
+
+    :deep(a) {
+        font-size: 18px;
+        padding: 8px 32px;
+        width: max-content;
+        margin: auto;
+    }
+
+    :deep(.icon) {
+        margin-left: 0.5rem;
+        transform: rotate(180deg);
     }
 }
 </style>
