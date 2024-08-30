@@ -117,16 +117,7 @@ export const useAuth = defineStore<typeof ID, State, {}, Actions>(ID, {
 })
 
 export async function useAuthWatcher() {
-	const authStore = useAuth()
-	onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
-		console.log('watching user', user)
-		if (user) {
-			setUser(user)
-		} else {
-			authStore.setUser(null)
-		}
-		return user
-	})
+	onAuthStateChanged(auth, async (user: FirebaseUser | null) => setUser(user))
 }
 
 export async function register(userLogin: string, password: string, confirmation: string): Promise<boolean> {
@@ -153,8 +144,11 @@ export async function register(userLogin: string, password: string, confirmation
 	return false
 }
 
-async function setUser(user: FirebaseUser) {
+async function setUser(user: FirebaseUser | null) {
 	const authStore = useAuth()
+	if (!user) {
+		return authStore.setUser(null)
+	}
 	try {
 		const s = await getDoc(doc(db, 'users', user.uid))
 		const userData = s.data()

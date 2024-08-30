@@ -29,7 +29,6 @@ export const useQuickfindStore = defineStore<typeof ID, State, {}, Actions>(ID, 
 })
 
 function onKeyPress(event: KeyboardEvent) {
-	// console.log('event', event)
 	const store = useQuickfindStore()
 
 	if (event.key === 'p') {

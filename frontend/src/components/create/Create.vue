@@ -1,15 +1,16 @@
 <template>
     <dialog v-if="showCreateModal" class="create-dialog" ref="dialogRef" @click="onClick"
         @close.prevent="() => dialogStore.discardDialog()">
-        <form class="container" @submit.prevent="upload">
-            <div class="image">
-                <UploadFile />
-                <button type="submit" class="btn light create-button">Create</button>
-            </div>
-            <div class="collection">
-                <CollectionSelector v-model="collectionId" />
-            </div>
+
+        <form class="container" @submit.prevent="upload" v-if="dialogStore.step === Steps.upload_image">
+            <span>Save to collection</span>
+            <CollectionDropdown />
+            <UploadFile />
+            <button type="submit" class="btn light create-button">Create</button>
         </form>
+
+        <CollectionSelector v-if="dialogStore.step === Steps.show_selector" />
+
     </dialog>
 </template>
 
@@ -19,11 +20,12 @@
 
 import UploadFile from '@/components/create/UploadFile.vue'
 import CollectionSelector from '@/components/create/CollectionSelector.vue'
+import CollectionDropdown from '@/components/create/CollectionDropdown.vue'
 
-import { ref, onMounted, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import { useUploadDialog } from '@/hooks/useUploadDialog'
+import { useUploadDialog, fetch, Steps } from '@/hooks/useUploadDialog'
 import { fetch as collectionViewerFetch } from '@/hooks/useCollectionViewer'
 import { assignTmpImageToCollection, subscribeToCollectionsList } from '@/model/CollectionsModel'
 import { useAuth } from '@/hooks/useAuth'
@@ -34,11 +36,9 @@ const { showCreateModal, selectedCollection } = storeToRefs(dialogStore)
 
 const { user } = storeToRefs(useAuth())
 
-
 const dialogRef = ref<HTMLDialogElement>()
 
 const collectionId = ref<string | null>(null)
-
 
 watch([showCreateModal, dialogRef], ([show, dialogRef]) => {
     if (show && dialogRef) {
@@ -69,6 +69,8 @@ watch(selectedCollection, (id) => {
     collectionId.value = id
 })
 
+onMounted(() => fetch())
+
 </script>
 
 <style scoped lang="scss">
@@ -76,7 +78,7 @@ watch(selectedCollection, (id) => {
     background-color: var(--color-light3);
     border-radius: 6px;
 
-    padding: 40px;
+    padding: 38px 24px;
 
     position: fixed;
     z-index: 2;
@@ -84,9 +86,9 @@ watch(selectedCollection, (id) => {
     left: 50%;
     transform: translate(-50%, -50%);
 
-    width: 80vw;
+    width: 50vw;
     min-width: 600px;
-    max-width: 1000px;
+    max-width: 800px;
 
     height: 80vh;
     max-height: 800px;
@@ -102,9 +104,10 @@ watch(selectedCollection, (id) => {
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
 
-    &>*:first-child {
-        margin-right: 22px;
+    &>*:not(:last-child) {
+        margin-bottom: 22px;
     }
 }
 
@@ -128,7 +131,6 @@ watch(selectedCollection, (id) => {
 
 
 .create-button {
-    margin-top: 12px;
     width: 100%;
 }
 

@@ -24,8 +24,8 @@ async function migrate2(id: string) {
 }
 
 async function migrate3(id: string, data: any) {
-	console.log('id', id)
-	console.log('data', data)
+	// console.log('id', id)
+	// console.log('data', data)
 
 	const ref = doc(db, 'images', id)
 	deleteDoc(ref)

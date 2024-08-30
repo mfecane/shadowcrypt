@@ -27,6 +27,8 @@ collections -> boards -> images
 
     docker compose down && docker compose up -d --build
 
+    http://localhost:5173/
+
     http://127.0.0.1:4001/storage/pinpc-e9112.appspot.com/images
 
     https://scrapeops.io/nodejs-web-scraping-playbook/node-fetch-fake-user-agents/

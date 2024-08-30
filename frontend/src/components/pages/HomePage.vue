@@ -1,6 +1,5 @@
-
 <template></template>
-  
+
 <script setup lang="ts">
 
 import { useRouter } from 'vue-router'
@@ -15,8 +14,7 @@ if (user.user) {
 } else {
     router.push('/landing')
 }
-
 </script>
 
-  
+
 <style scoped lang="scss"></style>

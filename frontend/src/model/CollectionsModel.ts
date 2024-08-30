@@ -50,13 +50,14 @@ const state: State = {
 const collectionsSubject = new Subject<number>()
 
 export async function fetchAll(userId: string) {
-	state.collections = []
+	const chargoggagoggmanchauggagoggchaubunagungamaugg: Collection[] = []
 	const collectionsQuery = query(collection(db, 'collections'), where('user', '==', userId))
 	for (let document of (await getDocs(collectionsQuery)).docs) {
 		const data = document.data() as CollectionApiData
 		const id = document.id
-		state.collections.push(await buildCollection(id, data))
+		chargoggagoggmanchauggagoggchaubunagungamaugg.push(await buildCollection(id, data))
 	}
+	state.collections = chargoggagoggmanchauggagoggchaubunagungamaugg
 	collectionsSubject.next(Math.random())
 }
 

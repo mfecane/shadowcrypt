@@ -1,12 +1,15 @@
 <template>
     <div class="collection-container">
-        <label for="collection-selector-prompt">Add to collection</label>
-        <input type="text" id="collection-selector-prompt" v-model="searchPrompt" class="prompt">
-        <button class="btn light create-button" v-if="canCreateCollection" @click="createCollection2">Create</button>
-        <div v-if="filteredList.length" class="list">
-            <div v-if="selected" :key="selected.id" class="item selected">
-                {{ selected.name }}
+        <div class="searcher">
+            <input type="text" id="collection-selector-prompt" v-model="searchPrompt" class="prompt" ref="inputRef">
+            <div class="hint">
+                <Icon :type="IconType.search" :size="1.25" v-if="!searchPrompt" />
+                <span>Find</span>
             </div>
+            <button class="create-button" v-if="canCreateCollection" @click="createCollection3">Create</button>
+        </div>
+
+        <div v-if="filteredList.length" class="list">
             <div class="filteredlist">
                 <div v-for="collection in filteredList" :key="collection.id" class="item"
                     @click="() => onSelect(collection.id)">
@@ -14,19 +17,24 @@
                 </div>
             </div>
         </div>
+
+        <div v-else class="list">No collections found</div>
     </div>
 </template>
 
 <script setup lang="ts">
 
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, watch } from 'vue'
-import FuzzySearch from 'fuzzy-search';
+import { computed, nextTick, onMounted, ref } from 'vue'
+import FuzzySearch from 'fuzzy-search'
+
+import Icon from '@/components/common/icons/Icon.vue'
+import { IconType } from '../common/icons/IconType'
 
 import { Collection } from '@/model/Data';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollectionSelector, fetch } from '@/hooks/useCollectionSelector'
-import { createCollection } from '@/model/CollectionsModel'
+import { useUploadDialog, Steps, createCollection2 } from '@/hooks/useUploadDialog'
 
 /**
  * TODO
@@ -38,79 +46,55 @@ const { collections } = storeToRefs(useCollectionSelector())
 
 const { user } = storeToRefs(useAuth())
 
+const dialogStore = useUploadDialog()
+
+const { getSelectedCollection } = storeToRefs(dialogStore)
+
 const searchPrompt = ref('')
 
-const collectionId = defineModel<string | null>({ default: null })
+const inputRef = ref<HTMLInputElement>()
 
 const filteredList = computed<Collection[]>(() => {
     const value: string | undefined = searchPrompt.value
-    let filtered
     if (value) {
         const searcher = new FuzzySearch(collections.value, ['name'], {
             caseSensitive: false,
             sort: true,
         })
-        filtered = searcher.search(value.toLocaleLowerCase())
+        return searcher.search(value.toLocaleLowerCase())
     } else {
-        filtered = collections.value
+        return collections.value
     }
-    return filtered.filter(c => c.id !== collectionId.value)
-})
-
-const selected = computed<Collection | null>(() => {
-    if (!collectionId.value) {
-        return null
-    }
-    const found = collections.value.find(c => c.id === collectionId.value)
-    if (!found) {
-        throw 'Internal error'
-    }
-    return found
 })
 
 function onSelect(name: string) {
-    collectionId.value = name
     searchPrompt.value = ''
-}
-
-async function createCollection2() {
-    const value: string | undefined = searchPrompt.value
-    if (value) {
-        searchPrompt.value = ''
-        const id = await createCollection(value, user.value!.id)
-        fetch()
-        collectionId.value = id
-    }
+    dialogStore.setSelectedCollection(name)
+    dialogStore.step = Steps.upload_image
 }
 
 function strEqual(str1: string, str2: string) {
     return str1.trim().toLowerCase() === str2.trim().toLowerCase()
 }
 
+
+async function createCollection3() {
+    await createCollection2(searchPrompt.value)
+    searchPrompt.value = ''
+}
+
 const canCreateCollection = computed(() => {
-    return searchPrompt.value && !strEqual(searchPrompt.value, selected.value?.name ?? '')
+    return searchPrompt.value && !strEqual(searchPrompt.value, getSelectedCollection.value?.name ?? '')
 })
 
-watch(searchPrompt, (value) => {
-    if (filteredList.value.length === 1) {
-        collectionId.value = filteredList.value[0].id
-    } else {
-        const found = filteredList.value.find(el => strEqual(value, el.name))
-        if (found) {
-            collectionId.value = found.id
-        }
-    }
+onMounted(async () => {
+    await fetch()
+    inputRef.value?.focus()
 })
-
-onMounted(() => fetch())
 
 </script>
 
 <style scoped lang="scss">
-.create-button {
-    margin-top: 20px;
-}
-
 .collection-container {
     display: grid;
     grid-template-columns: 1fr;
@@ -119,8 +103,8 @@ onMounted(() => fetch())
     overflow: hidden;
     max-height: 100%;
 
-    & *:not(:last-child) {
-        margin-bottom: 6px;
+    &>*:not(:first-child) {
+        margin-top: 20px;
     }
 }
 
@@ -132,9 +116,7 @@ onMounted(() => fetch())
 }
 
 .prompt {
-    border: 1px solid black;
     padding: 12px;
-    border-radius: 4px;
 }
 
 .item {
@@ -162,5 +144,45 @@ onMounted(() => fetch())
 .filteredlist {
     overflow-y: scroll;
     padding-right: 4px;
+}
+
+.searcher {
+    border: 1px solid black;
+    border-radius: 4px;
+    display: flex;
+    position: relative;
+}
+
+.searcher>input {
+    flex: 1 1 auto
+}
+
+.searcher .hint {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 12px;
+    display: flex;
+    align-items: center;
+    color: #a5aeb7;
+
+    &>*:not(:first-child) {
+        margin-left: 6px;
+    }
+}
+
+.searcher :deep(.icon path) {
+    fill: #a5aeb7;
+}
+
+
+input:focus~.hint {
+    opacity: 0;
+}
+
+.create-button {
+    background-color: var(--accent-color-dark);
+    color: var(--accent-color-light);
+    padding: 8px;
 }
 </style>

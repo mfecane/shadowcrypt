@@ -1,17 +1,27 @@
 import { defineStore } from 'pinia'
 import { discardTmpImage, createTmpImageFromBlob } from '@/api/images'
 import { useAuth } from './useAuth'
+import { Collection, createCollection, fetchAll, getCollections } from '@/model/CollectionsModel'
 
 const ID = 'upload_dialog_store'
 
+export enum Steps {
+	upload_image,
+	show_selector,
+}
+
 interface State {
+	step: Steps
 	showCreateModal: boolean
 	imageId: string | null
 	selectedCollection: string | null
 	error: string | null
+	collections: Collection[]
 }
 
 interface Actions {
+	initCollectionsList(list: Collection[]): void
+
 	showCreateDialog(): void
 
 	setImageId(id: string | null): void
@@ -21,11 +31,22 @@ interface Actions {
 	discardDialog(): Promise<void>
 
 	setSelectedCollection(selectedCollection: string): void
+
+	switchStep(): void
+
+	reset(): void
 }
 
-export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
+interface Getters {
+	getSelectedCollection(): Collection | null
+}
+
+//@ts-ignore fuck off
+export const useUploadDialog = defineStore<typeof ID, State, Getters, Actions>(ID, {
 	state: (): State => {
 		return {
+			step: Steps.upload_image,
+			collections: [],
 			showCreateModal: false,
 			selectedCollection: null,
 			imageId: null,
@@ -34,6 +55,17 @@ export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 	},
 
 	actions: {
+		reset() {
+			this.step = Steps.upload_image
+		},
+
+		initCollectionsList(list) {
+			this.collections = [...list]
+			if (this.collections.length) {
+				this.setSelectedCollection(this.collections[0].id)
+			}
+		},
+
 		showCreateDialog() {
 			this.imageId = null
 			this.showCreateModal = true
@@ -52,15 +84,36 @@ export const useUploadDialog = defineStore<typeof ID, State, {}, Actions>(ID, {
 				await discardTmpImage(this.imageId)
 				this.setImageId(null)
 			}
+			this.reset()
 			this.closeDialog()
 		},
 
 		setSelectedCollection(selectedCollection) {
 			this.selectedCollection = selectedCollection
 		},
+
+		switchStep() {
+			if (this.step === Steps.show_selector) {
+				this.step = Steps.upload_image
+			}
+			if (this.step === Steps.upload_image) {
+				this.step = Steps.show_selector
+			}
+		},
 	},
 
-	getters: {},
+	getters: {
+		getSelectedCollection() {
+			if (!this.selectedCollection) {
+				return null
+			}
+			const found = this.collections.find((c) => c.id === this.selectedCollection) ?? null
+			if (!found) {
+				throw new Error('Ermac')
+			}
+			return found
+		},
+	},
 })
 
 async function getImageFromClipboard(): Promise<[imageType: string, item: ClipboardItem] | null> {
@@ -111,5 +164,28 @@ export async function discardTmpImage2() {
 		upload.error = 'Internal error: failed to delete temporary image'
 		console.log('error', error)
 		throw new Error(upload.error)
+	}
+}
+
+export async function fetch(): Promise<void> {
+	const store = useUploadDialog()
+	const auth = useAuth()
+	if (!auth.user) {
+		throw 'User not authorised'
+	}
+	store.initCollectionsList(await getCollections(auth.user.id))
+}
+
+export async function createCollection2(value: string) {
+	const auth = useAuth()
+	const store = useUploadDialog()
+	if (!auth.user) {
+		throw 'User not authorised'
+	}
+	if (value) {
+		const id = await createCollection(value, auth.user.id)
+		await fetch()
+		store.setSelectedCollection(id)
+		store.step = Steps.upload_image
 	}
 }
