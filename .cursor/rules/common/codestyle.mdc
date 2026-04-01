@@ -1,0 +1,35 @@
+---
+globs: *.ts,*.tsx
+alwaysApply: false
+---
+
+## Common
+
+- don't forget to apply @.editorconfig
+- Force absolute imports (from common root configured as @)
+- Do not import as type whenever possible
+- Do not use .cursorrules file - it is deprecated. Use .cursor/rules/\*.mdc files instead.
+- No workarounds for backward compatibility - refactor straight away or report to user if necessary
+- TypeScript class conventions:
+- Always annotate field types explicitly
+- Prefer plain parameters on functions over one-off `{ ... }` types whose only job is to bundle arguments; use object parameters when the shape is a real boundary (e.g. zod-parsed request body, public API) or there are enough fields that callsites become unreadable
+
+## OOP
+
+- constants, then public class fields, then private class fields, then constructor, then public methods, then private methods
+- Access modifiers (public, private, protected) and readonly (where applicable) are mandatory, especially for constructor parameters that initialize class fields
+- no static methods
+- private static readonly variables (constants) are okay, use them for config as well, uppercase
+- method return types are mandatory
+- initialization of fields outside of constructor is preferable
+
+## Naming Conventions
+
+- No class names containing manager (e.g., UserManager, DataManager, Manager)
+- Use more specific, descriptive names that reflect the class's actual responsibility (e.g., UserService, DataRepository, EventHandler)
+
+## Comments
+
+- Do not add new obvious comments that just restate what the code already clearly expresses
+- Adding comments for unclear logic or heavy math is perfectly fine
+- Do not remove existing comments

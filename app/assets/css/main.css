@@ -1,0 +1,94 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme static {
+	/* radii */
+	--radius-xs: 2px;
+	--radius-sm: 4px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+	--radius-2xl: 20px;
+	--radius-3xl: 28px;
+
+	/* very slightly green neutral */
+	--color-neutral-50: #f5f7f7;
+	--color-neutral-100: #e7ebec;
+	--color-neutral-200: #d2d8da;
+	--color-neutral-300: #b4bec0;
+	--color-neutral-400: #7b8a90;
+	--color-neutral-500: #536066;
+	--color-neutral-600: #3f464a;
+	--color-neutral-700: #2a2e31;
+	--color-neutral-800: #1d2021;
+	--color-neutral-900: #131516;
+	--color-neutral-950: #0a0a0b;
+
+	/* beige accent */
+	--color-beige-50: #fbf7ef;
+	--color-beige-100: #f4ebdb;
+	--color-beige-200: #e9d7b6;
+	--color-beige-300: #ddc08e;
+	--color-beige-400: #cfaa6b;
+	--color-beige-500: #bc9150;
+	--color-beige-600: #987241;
+	--color-beige-700: #725634;
+	--color-beige-800: #4f3c28;
+	--color-beige-900: #32261b;
+	--color-beige-950: #1d160f;
+}
+
+:root {
+	color-scheme: dark;
+
+	--ui-radius: var(--radius-lg);
+
+	/* semantic color utilities */
+	--ui-primary: var(--ui-color-primary-400);
+	--ui-secondary: var(--ui-color-secondary-400);
+
+	/* text */
+	--ui-text-dimmed: var(--ui-color-neutral-500);
+	--ui-text-muted: var(--ui-color-neutral-500);
+	--ui-text-toned: var(--ui-color-neutral-300);
+	--ui-text: var(--ui-color-neutral-200);
+	--ui-text-highlighted: #fffdf8;
+	--ui-text-inverted: var(--ui-color-neutral-900);
+
+	/* surfaces */
+	--ui-bg: var(--ui-color-neutral-950);
+	--ui-bg-muted: var(--ui-color-neutral-900);
+	--ui-bg-elevated: var(--ui-color-neutral-800);
+	--ui-bg-accented: var(--ui-color-beige-500);
+	--ui-bg-inverted: var(--ui-color-beige-50);
+
+	/* borders */
+	--ui-border: var(--ui-color-neutral-800);
+	--ui-border-muted: var(--ui-color-neutral-700);
+	--ui-border-accented: var(--ui-color-primary-700);
+	--ui-border-inverted: var(--ui-color-beige-50);
+
+	/* page-only tokens */
+	--app-background-image: linear-gradient(-135deg, #191c1d 0%, #090a0a 100%);
+}
+
+@layer base {
+	html {
+		@apply h-full;
+	}
+
+	body {
+		@apply min-h-full antialiased text-default bg-default;
+		background-image: var(--app-background-image);
+		background-attachment: fixed;
+	}
+
+	#__nuxt {
+		@apply min-h-full;
+	}
+
+	::selection {
+		background: color-mix(in srgb, var(--ui-color-primary-400) 24%, transparent);
+		color: var(--ui-text-highlighted);
+	}
+}

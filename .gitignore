@@ -1,20 +1,23 @@
-/node_modules
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
 
-/dist
-/.vscode
+# Node dependencies
+node_modules
 
-/package-lock.json
+# Logs
+logs
+*.log
 
-.env
+# Misc
+.DS_Store
+.fleet
+.idea
 
-# server
-/**/node_modules
-/**/dist
-/server/*.log
-/database/backup
-
-/database/functions/pinpc*.json
-/database/functions/lib
-
-/secret
-.firebase
+# Local env files
+.env.local
+!.env.example

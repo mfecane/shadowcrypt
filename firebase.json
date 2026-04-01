@@ -1,6 +1,0 @@
-{
-	"hosting": {
-		"site": "shadowcrypt",
-		"public": "frontend/dist"
-	}
-}

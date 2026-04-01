@@ -1,0 +1,13 @@
+# Cursor ignoring common heavy directories and sensitive files
+node_modules/
+**/node_modules/**
+
+# Build artifacts
+.nuxt/
+
+# Caches and temp
+.cache/
+tmp/
+*.log
+
+.env.local

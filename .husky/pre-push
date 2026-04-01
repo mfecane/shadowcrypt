@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+echo "Running pre-push checks (frontend)..."
+
+set -a
+. ./.env.local
+set +a
+
+npm run check

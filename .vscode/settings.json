@@ -1,0 +1,64 @@
+{
+	// Ignore whitespace changes in diff editor (matches global setting)
+	"diffEditor.ignoreTrimWhitespace": true,
+	// Show diff editor side by side (matches global setting)
+	"diffEditor.renderSideBySide": true,
+	// Automatically fix issues and organize imports on save
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "explicit",
+		"source.organizeImports": "always"
+	},
+	// Enable smooth cursor animation (default: "off")
+	"editor.cursorSmoothCaretAnimation": "on",
+	// Disable automatic indentation detection, use fixed tab size
+	"editor.detectIndentation": false,
+	// Increase scroll sensitivity for faster scrolling (default: 1)
+	"editor.fastScrollSensitivity": 5,
+	// Format code automatically when saving (default: false)
+	"editor.formatOnSave": true,
+	// Hide minimap in editor (default: true)
+	"editor.minimap.enabled": false,
+	// Show vertical ruler at 120 characters (matches global setting)
+	"editor.rulers": [120],
+	// Remove trailing whitespace from files when saving (default: false)
+	"files.trimTrailingWhitespace": true,
+	// Remove final newlines from files when saving (default: false)
+	"files.trimFinalNewlines": true,
+	// Exclude these directories from file watching to improve performance
+	"files.watcherExclude": {
+		"**/node_modules/**": true,
+		"**/.next/**": true,
+		"**/dist/**": true
+	},
+	// Automatically fetch from remote repository (default: false)
+	"git.autofetch": true,
+	// Enable smart commit (stages all changes if no staged changes exist) (default: false)
+	"git.enableSmartCommit": true,
+	// Use non-relative import paths for JavaScript (matches global setting)
+	"javascript.preferences.importModuleSpecifier": "non-relative",
+	// Respect ignore files (.gitignore, etc.) when searching (default: true)
+	"search.useIgnoreFiles": true,
+	// Use non-relative import paths for TypeScript (matches global setting)
+	"typescript.preferences.importModuleSpecifier": "non-relative",
+	// Workspace-specific window title
+	"window.title": "SHADOWCRYPT",
+	// Use custom title bar style (default: "native")
+	"window.titleBarStyle": "custom",
+	// Workspace-specific branding: custom title bar colors
+	"workbench.colorCustomizations": {
+		"titleBar.activeBackground": "#c69341",
+		"titleBar.activeForeground": "#ffffff",
+		"titleBar.inactiveBackground": "#9d7b0c",
+		"titleBar.inactiveForeground": "#ffffffcc"
+	},
+	// Disable preview mode - files open in permanent tabs (default: true)
+	"workbench.editor.enablePreview": false,
+	// Show indent guides in file tree (default: "on")
+	"workbench.tree.renderIndentGuides": "always",
+	"files.exclude": {
+		"**/.svn": true,
+		"**/.hg": true,
+		"**/.DS_Store": true,
+		"**/Thumbs.db": true
+	}
+}

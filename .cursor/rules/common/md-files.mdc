@@ -1,0 +1,11 @@
+---
+alwaysApply: false
+---
+
+- allowed
+  -- lists
+  -- heading
+  -- code blocks
+  -- horizontal lines
+- other formatting is prohibited
+- emojis are projibited

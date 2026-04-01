@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+- quick iteration mode
+- no commands run by agent, no checks
+- if something is needed to run - report to user
+- no long thinks, we are doing dead simple stuff
+- use Nuxt idiomatic approach only
