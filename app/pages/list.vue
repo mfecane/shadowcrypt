@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import ArchivedCollectionRow from '~/components/collection-list/ArchivedCollectionRow.vue'
+import ArchivedCollectionCard from '~/components/collection-list/ArchivedCollectionCard.vue'
 import ArchivedFolderRow from '~/components/collection-list/ArchivedFolderRow.vue'
 import CollectionListGrid from '~/components/collection-list/CollectionListGrid.vue'
 import CollectionsFolderHeading from '~/components/collection-list/CollectionsFolderHeading.vue'
@@ -33,7 +33,7 @@ function openFolderEdit(block: CollectionFolderBlock): void {
 }
 
 function openCollectionEdit(c: CollectionListItem): void {
-	collectionEdit.value = { id: c.id, pinned: c.pinned, archived: c.archived }
+	collectionEdit.value = { id: c.id, name: c.name, pinned: c.pinned, archived: c.archived }
 }
 
 const collectionExist = computed(() => {
@@ -61,72 +61,64 @@ const collectionExist = computed(() => {
 		<div class="mx-auto max-w-6xl px-5 pt-4 pb-24">
 			<p v-if="pending" class="text-muted text-sm">Loading collections…</p>
 
-			<template v-else-if="!collectionExist">
-				<p class="text-beige-400 text-lg font-medium">No collections</p>
-			</template>
-
 			<template v-else>
-				<section v-if="pinnedCollections.length" class="mb-12">
-					<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Pinned</h2>
-					<CollectionListGrid :items="pinnedCollections" key-prefix="pinned" @edit="openCollectionEdit" />
-				</section>
+				<template v-if="!collectionExist">
+					<p class="text-beige-400 text-lg font-medium">No collections</p>
+				</template>
 
-				<template v-for="block in folderBlocks" :key="block.id">
-					<section class="mb-12">
-						<CollectionsFolderHeading
-							:folder-id="block.id"
-							:name="block.name"
-							@edit="openFolderEdit(block)"
-						/>
-						<CollectionListGrid
-							v-if="block.collections.length"
-							:items="block.collections"
-							:key-prefix="`folder-${block.id}`"
-							@edit="openCollectionEdit"
-						/>
-						<p v-else-if="block.archivedCollections.length === 0" class="text-muted text-sm">
-							No collections in this folder.
-						</p>
-						<section
-							v-if="block.archivedCollections.length"
-							class="border-muted mt-8 border-t border-dashed pt-6"
-						>
-							<h3 class="text-muted mb-3 text-xs font-semibold uppercase tracking-wider">
-								Archived in this folder
-							</h3>
-							<div class="space-y-2">
-								<ArchivedCollectionRow
+				<template v-else>
+					<section v-if="pinnedCollections.length" class="mb-12">
+						<CollectionsFolderHeading name="Pinned" :link="null" icon="i-lucide-pin" />
+						<CollectionListGrid :items="pinnedCollections" key-prefix="pinned" @edit="openCollectionEdit" />
+					</section>
+
+					<template v-for="block in folderBlocks" :key="block.id">
+						<section class="mb-12">
+							<CollectionsFolderHeading
+								:link="`/folder/${block.id}`"
+								:name="block.name"
+								@edit="openFolderEdit(block)"
+								:editable="true"
+							/>
+							<CollectionListGrid
+								v-if="block.collections.length"
+								:items="block.collections"
+								:key-prefix="`folder-${block.id}`"
+								@edit="openCollectionEdit"
+							/>
+							<p v-else-if="block.archivedCollections.length === 0" class="text-muted text-sm">
+								No collections in this folder.
+							</p>
+							<section v-if="block.archivedCollections.length" class="grid grid-cols-3 gap-4">
+								<ArchivedCollectionCard
 									v-for="c in block.archivedCollections"
 									:key="`arch-${block.id}-${c.id}`"
 									:collection="c"
 								/>
-							</div>
+							</section>
 						</section>
+					</template>
+
+					<section v-if="ungroupedCollections.length" class="mb-12">
+						<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Without folder</h2>
+						<CollectionListGrid
+							:items="ungroupedCollections"
+							key-prefix="ungrouped"
+							@edit="openCollectionEdit"
+						/>
+					</section>
+
+					<section v-if="archivedFolders.length" class="mb-12">
+						<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Archived folders</h2>
+						<div class="space-y-2">
+							<ArchivedFolderRow v-for="f in archivedFolders" :key="`af-${f.id}`" :folder="f" />
+						</div>
+					</section>
+
+					<section v-if="archivedUngrouped.length" class="grid grid-cols-3 gap-4">
+						<ArchivedCollectionCard v-for="c in archivedUngrouped" :key="`au-${c.id}`" :collection="c" />
 					</section>
 				</template>
-
-				<section v-if="ungroupedCollections.length" class="mb-12">
-					<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Without folder</h2>
-					<CollectionListGrid
-						:items="ungroupedCollections"
-						key-prefix="ungrouped"
-						@edit="openCollectionEdit"
-					/>
-				</section>
-
-				<section v-if="archivedFolders.length" class="mb-12">
-					<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Archived folders</h2>
-					<div class="space-y-2">
-						<ArchivedFolderRow v-for="f in archivedFolders" :key="`af-${f.id}`" :folder="f" />
-					</div>
-				</section>
-
-				<section v-if="archivedUngrouped.length">
-					<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Archived (no folder)</h2>
-					<div class="space-y-2">
-						<ArchivedCollectionRow v-for="c in archivedUngrouped" :key="`au-${c.id}`" :collection="c" />
-					</div>
-				</section>
 			</template>
 		</div>
 	</div>

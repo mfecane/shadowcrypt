@@ -23,5 +23,11 @@ export default defineAppConfig({
 				},
 			},
 		},
+		switch: {
+			slots: {
+				base: 'data-[state=unchecked]:bg-neutral-900',
+				thumb: 'bg-neutral-500',
+			},
+		},
 	},
 })

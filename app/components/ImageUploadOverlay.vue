@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import type {
-	CollectionImageUploadResponse,
-	CollectionListItem,
-	CollectionsListResponse,
-} from '~/types/collections'
+import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/collectionImageUploadConstants'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
@@ -72,6 +68,8 @@ function dataTransferHasImage(dt: DataTransfer | null): boolean {
 		return false
 	}
 	for (const item of dt.items) {
+		console.log('item.kind', item.kind)
+		console.log('item', item)
 		if (item.kind === 'file' && item.type.startsWith('image/')) {
 			return true
 		}
@@ -154,11 +152,20 @@ const collectionIdFromRoute = computed(() => {
 	const m = /^\/collections\/([^/]+)$/.exec(route.path)
 	return m?.[1] ?? null
 })
+
+/** When on `/list/:folderId`, new collections are created inside that folder. */
+const folderIdFromRoute = computed(() => {
+	const m = /^\/list\/([^/]+)$/.exec(route.path)
+	return m?.[1] ?? null
+})
+
 const file = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 const uploading = ref(false)
 const selectedCollectionId = ref<string | null>(null)
+const newCollectionName = ref('')
+const creatingCollection = ref(false)
 
 const { data: collectionsData, isPending: collectionsPending } = useQuery({
 	queryKey: ['collections'],
@@ -180,6 +187,10 @@ watch(
 		const fromRoute = collectionIdFromRoute.value
 		if (fromRoute !== null && flatCollections.value.some((c) => c.id === fromRoute)) {
 			selectedCollectionId.value = fromRoute
+			return
+		}
+		const current = selectedCollectionId.value
+		if (current !== null && flatCollections.value.some((c) => c.id === current)) {
 			return
 		}
 		const first = flatCollections.value[0]
@@ -208,6 +219,32 @@ function close(): void {
 	setFile(null)
 	uploading.value = false
 	error.value = null
+	newCollectionName.value = ''
+	creatingCollection.value = false
+}
+
+async function createCollection(): Promise<void> {
+	const n = newCollectionName.value.trim()
+	if (n.length === 0) {
+		error.value = 'Enter a name for the new collection.'
+		return
+	}
+	creatingCollection.value = true
+	error.value = null
+	try {
+		const res = await $fetch<{ collection: { id: string } }>('/api/collections', {
+			method: 'POST',
+			body: { name: n, folderId: folderIdFromRoute.value },
+		})
+		newCollectionName.value = ''
+		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: ['folder'] })
+		selectedCollectionId.value = res.collection.id
+	} catch (e: unknown) {
+		error.value = fetchErrorMessage(e)
+	} finally {
+		creatingCollection.value = false
+	}
 }
 
 watch(open, (v) => {
@@ -342,8 +379,8 @@ onBeforeUnmount(() => {
 		document.removeEventListener('keydown', onGlobalKeydown, { capture: true })
 	}
 })
+// TODO prevent scroll if opened
 </script>
-
 <template>
 	<Teleport to="body">
 		<Transition name="imgupload-fade">
@@ -364,76 +401,87 @@ onBeforeUnmount(() => {
 					<div class="border-muted flex items-start justify-between border-b px-4 py-3">
 						<div>
 							<p class="text-muted text-xs font-medium tracking-wide uppercase">Add image</p>
-							<p class="text-muted mt-1 text-xs">Drop, paste, then pick a collection and upload.</p>
+							<p class="text-muted mt-1 text-xs">
+								Drop, paste, pick or create a collection, then upload.
+							</p>
 						</div>
-						<button
-							type="button"
-							class="text-muted hover:text-default rounded-md px-2 py-1 text-lg leading-none transition-colors"
-							aria-label="Close"
-							@click="close"
-						>
-							×
-						</button>
+						<UButton variant="ghost" aria-label="Close" @click="close">
+							<Icon name="i-lucide-x" class="h-4 w-4" aria-hidden="true" />
+						</UButton>
 					</div>
 
 					<div class="flex flex-col gap-4 px-4 py-4">
 						<div>
 							<label class="text-muted mb-1.5 block text-xs font-medium uppercase">Collection</label>
 							<p v-if="collectionsPending" class="text-muted text-sm">Loading collections…</p>
-							<p v-else-if="flatCollections.length === 0" class="text-beige-400 text-sm">
-								No collections — create one first.
-							</p>
-							<select
-								v-else
-								v-model="selectedCollectionId"
-								class="border-muted bg-muted/40 text-default focus:ring-beige-500/40 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
-							>
-								<template v-for="g in collectionGroups" :key="g.label">
-									<optgroup :label="g.label">
-										<option v-for="o in g.options" :key="o.id" :value="o.id">
-											{{ o.name }}
-										</option>
-									</optgroup>
-								</template>
-							</select>
+							<template v-else>
+								<select
+									v-if="flatCollections.length > 0"
+									v-model="selectedCollectionId"
+									class="border-muted bg-muted/40 text-default focus:ring-beige-500/40 mb-3 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
+								>
+									<template v-for="g in collectionGroups" :key="g.label">
+										<optgroup :label="g.label">
+											<option v-for="o in g.options" :key="o.id" :value="o.id">
+												{{ o.name }}
+											</option>
+										</optgroup>
+									</template>
+								</select>
+								<p v-else class="text-muted mb-2 text-sm">No collections yet — add one below.</p>
+								<div>
+									<label
+										class="text-muted mb-1 block text-[11px] font-medium uppercase tracking-wide"
+									>
+										New collection
+									</label>
+									<div class="flex gap-2">
+										<input
+											v-model="newCollectionName"
+											type="text"
+											class="border-muted bg-muted/40 text-default focus:ring-beige-500/40 min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
+											placeholder="Name"
+											autocomplete="off"
+											:disabled="creatingCollection"
+											@keydown.enter.prevent="createCollection"
+										/>
+										<UButton
+											:disabled="creatingCollection || newCollectionName.trim().length === 0"
+											@click="createCollection"
+										>
+											<Icon name="i-lucide-plus" class="h-4 w-4" aria-hidden="true" />
+											{{ creatingCollection ? '…' : 'Create' }}
+										</UButton>
+									</div>
+								</div>
+							</template>
 						</div>
 
 						<div
-							class="border-muted bg-muted/25 flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed px-4 py-6 text-center"
+							class="border-muted bg-muted/25 flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed px-4 py-6 text-center"
 						>
 							<img
 								v-if="previewUrl !== null"
 								:src="previewUrl"
 								alt=""
 								class="max-h-48 max-w-full rounded-md object-contain"
-							>
-							<p v-else class="text-muted text-sm">Drop an image here or paste from clipboard (⌘V / Ctrl+V).</p>
+							/>
+							<p v-else class="text-muted text-sm">
+								Drop an image here or paste from clipboard (⌘V / Ctrl+V).
+							</p>
 						</div>
 
 						<p v-if="error !== null" class="text-red-400 text-sm">{{ error }}</p>
 
 						<div class="flex justify-end gap-2">
-							<button
-								type="button"
-								class="text-muted hover:bg-muted/60 rounded-lg px-3 py-2 text-sm transition-colors"
-								:disabled="uploading"
-								@click="close"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								class="bg-beige-600 hover:bg-beige-500 disabled:bg-muted rounded-lg px-4 py-2 text-sm font-medium text-neutral-950 transition-colors disabled:cursor-not-allowed"
-								:disabled="
-									uploading ||
-									file === null ||
-									selectedCollectionId === null ||
-									flatCollections.length === 0
-								"
+							<UButton variant="soft" :disabled="uploading" @click="close"> Cancel </UButton>
+							<UButton
+								:disabled="uploading || file === null || selectedCollectionId === null"
 								@click="submitUpload"
 							>
+								<Icon name="i-lucide-upload" class="h-4 w-4" aria-hidden="true" />
 								{{ uploading ? 'Uploading…' : 'Upload' }}
-							</button>
+							</UButton>
 						</div>
 					</div>
 				</div>

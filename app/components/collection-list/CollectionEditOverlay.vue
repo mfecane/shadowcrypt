@@ -5,6 +5,7 @@ const target = useCollectionEditOverlayState()
 const queryClient = useQueryClient()
 
 const pinned = ref(false)
+const name = ref('')
 const archived = ref(false)
 const error = ref<string | null>(null)
 const saving = ref(false)
@@ -13,6 +14,7 @@ watch(
 	() => target.value,
 	(t) => {
 		if (t !== null) {
+			name.value = t.name
 			pinned.value = t.pinned
 			archived.value = t.archived
 			error.value = null
@@ -32,12 +34,17 @@ async function save(): Promise<void> {
 	if (t === null) {
 		return
 	}
+	const n = name.value.trim()
+	if (n.length === 0) {
+		error.value = 'Name is required'
+		return
+	}
 	saving.value = true
 	error.value = null
 	try {
 		await $fetch(`/api/collections/${t.id}`, {
 			method: 'PATCH',
-			body: { pinned: pinned.value, archived: archived.value },
+			body: { name: name.value, pinned: pinned.value, archived: archived.value },
 		})
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', t.id] })
@@ -48,6 +55,10 @@ async function save(): Promise<void> {
 	} finally {
 		saving.value = false
 	}
+}
+
+async function deleteCollection(): Promise<void> {
+	throw new Error('Not implemented')
 }
 
 function onGlobalKeydown(e: KeyboardEvent): void {
@@ -81,36 +92,29 @@ onBeforeUnmount(() => {
 				@click.self="close"
 			>
 				<div
-					class="border-muted bg-elevated text-default w-full max-w-md rounded-xl border p-5 shadow-2xl"
+					class="border-muted bg-elevated text-default w-full max-w-md rounded-xl border p-5 shadow-2xl flex flex-col gap-4"
 					@click.stop
 				>
-					<p class="text-muted mb-4 text-xs font-medium tracking-wide uppercase">Edit collection</p>
-					<label class="text-default mb-3 flex cursor-pointer items-center gap-2 text-sm">
-						<input v-model="pinned" type="checkbox" class="accent-beige-500 rounded">
-						Pinned
-					</label>
-					<label class="text-default mb-4 flex cursor-pointer items-center gap-2 text-sm">
-						<input v-model="archived" type="checkbox" class="accent-beige-500 rounded">
-						Archived
-					</label>
+					<p class="text-muted text-sm font-medium tracking-wide uppercase">Edit collection</p>
+
+					<UInput v-model="name" type="text" autocomplete="off" class="self-stretch" />
+
+					<USwitch v-model="pinned" :label="pinned ? 'Pinned' : 'Unpinned'" />
+
+					<USwitch v-model="archived" :label="archived ? 'Archived' : 'Unarchived'" />
+
 					<p v-if="error !== null" class="text-red-400 mb-3 text-sm">{{ error }}</p>
-					<div class="flex justify-end gap-2">
-						<button
-							type="button"
-							class="text-muted hover:bg-muted/60 rounded-lg px-3 py-2 text-sm"
-							:disabled="saving"
-							@click="close"
-						>
-							Cancel
-						</button>
-						<button
-							type="button"
-							class="bg-beige-600 hover:bg-beige-500 disabled:bg-muted rounded-lg px-4 py-2 text-sm font-medium text-neutral-950 disabled:cursor-not-allowed"
-							:disabled="saving"
-							@click="save"
-						>
-							{{ saving ? 'Saving…' : 'Save' }}
-						</button>
+
+					<div class="flex justify-between gap-2">
+						<UButton color="error" size="sm" icon="i-lucide-trash" @click="deleteCollection">
+							Delete
+						</UButton>
+						<div class="flex justify-end gap-2">
+							<UButton variant="soft" :disabled="saving" @click="close"> Cancel </UButton>
+							<UButton icon="i-lucide-save" :disabled="saving" @click="save">
+								{{ saving ? 'Saving…' : 'Save' }}
+							</UButton>
+						</div>
 					</div>
 				</div>
 			</div>

@@ -1,27 +1,42 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ folderId: string; name: string; linkable?: boolean }>(), { linkable: true })
+withDefaults(
+	defineProps<{
+		name: string
+		link: string | null
+		editable?: boolean
+		icon?: string
+	}>(),
+	{ link: null, editable: false, icon: 'i-lucide-folder' }
+)
 
 const emit = defineEmits<{ edit: [] }>()
 </script>
 
 <template>
-	<div class="mb-4 flex min-w-0 flex-wrap items-center gap-2">
+	<div class="mb-4 flex min-w-0 flex-wrap items-center gap-4">
 		<NuxtLink
-			v-if="linkable"
-			:to="`/list/${folderId}`"
-			class="hover:text-beige-300 min-w-0 flex-1 text-left transition-colors"
+			v-if="link"
+			:to="link"
+			class="text-toned hover:text-beige-300 min-w-0 text-left transition-colors flex items-center gap-2"
 		>
-			<h2 class="text-muted truncate text-sm font-semibold uppercase tracking-wider">{{ name }}</h2>
+			<Icon :name="icon" class="h-4 w-4 text-muted" />
+			<h2 class="truncate text-lg font-semibold uppercase tracking-wider">{{ name }}</h2>
 		</NuxtLink>
-		<h2 v-else class="text-muted min-w-0 flex-1 truncate text-sm font-semibold uppercase tracking-wider">
-			{{ name }}
-		</h2>
-		<button
-			type="button"
-			class="text-muted hover:text-highlighted shrink-0 rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wide transition-colors"
-			@click="emit('edit')"
+		<h2
+			v-else
+			class="text-toned min-w-0 truncate text-lg font-semibold uppercase tracking-wider flex items-center gap-2"
 		>
-			Edit
-		</button>
+			<Icon :name="icon" class="h-4 w-4 text-muted" />{{ name }}
+		</h2>
+		<UButton
+			v-if="editable"
+			variant="ghost"
+			color="neutral"
+			size="sm"
+			@click="emit('edit')"
+			class="rounded-sm h-6 w-6 p-1 border border-muted text-muted hover:text-highlighted hover:border-highlighted"
+		>
+			<Icon name="i-lucide-pencil" class="h-4 w-4" />
+		</UButton>
 	</div>
 </template>

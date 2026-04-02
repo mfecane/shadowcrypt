@@ -30,20 +30,13 @@ async function unarchive(): Promise<void> {
 </script>
 
 <template>
-	<div
-		class="border-muted bg-muted/20 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed px-4 py-3"
-	>
-		<span class="text-muted truncate text-sm">{{ collection.name }}</span>
-		<div class="flex items-center gap-2">
-			<span v-if="error !== null" class="text-red-400 text-xs">{{ error }}</span>
-			<button
-				type="button"
-				class="bg-beige-600/80 hover:bg-beige-500 disabled:bg-muted rounded-md px-3 py-1.5 text-xs font-medium text-neutral-950 transition-colors disabled:cursor-not-allowed"
-				:disabled="pending"
-				@click="unarchive"
-			>
-				{{ pending ? '…' : 'Unarchive' }}
-			</button>
-		</div>
+	<div class="flex flex-col gap-2 border border-muted bg-elevated p-4 rounded-lg items-start">
+		<span class="text-muted text-xs font-medium uppercase tracking-wide">Archived</span>
+		<span class="truncate text-base font-medium text-highlighted">{{ collection.name }}</span>
+		<div class="text-beige-500 text-xs font-medium">{{ collection.imageCount }} items</div>
+		<span v-if="error !== null" class="text-red-400 text-xs">{{ error }}</span>
+		<UButton variant="soft" :disabled="pending" @click="unarchive" icon="i-lucide-archive-restore" size="sm">
+			{{ pending ? '…' : 'Unarchive' }}
+		</UButton>
 	</div>
 </template>

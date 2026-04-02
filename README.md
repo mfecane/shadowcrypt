@@ -8,6 +8,7 @@
 - user avatar
 - collection view tracking
 - move to password login
+- delete collection
 
 localhost:3000 - dev
 localhost:8025 - mailpit

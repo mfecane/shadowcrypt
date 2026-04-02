@@ -3,7 +3,7 @@ export function useFolderEditOverlayState() {
 }
 
 export function useCollectionEditOverlayState() {
-	return useState<{ id: string; pinned: boolean; archived: boolean } | null>(
+	return useState<{ id: string; name: string; pinned: boolean; archived: boolean } | null>(
 		'collection-edit-overlay',
 		() => null
 	)

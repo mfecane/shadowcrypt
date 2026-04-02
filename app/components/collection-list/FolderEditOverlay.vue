@@ -85,39 +85,19 @@ onBeforeUnmount(() => {
 				@click.self="close"
 			>
 				<div
-					class="border-muted bg-elevated text-default w-full max-w-md rounded-xl border p-5 shadow-2xl"
+					class="border-muted bg-elevated text-default w-full max-w-md rounded-xl border p-5 shadow-2xl flex flex-col gap-4"
 					@click.stop
 				>
-					<p class="text-muted mb-4 text-xs font-medium tracking-wide uppercase">Edit folder</p>
-					<label class="text-muted mb-1.5 block text-xs font-medium uppercase">Name</label>
-					<input
-						v-model="name"
-						type="text"
-						class="border-muted bg-muted/40 text-default mb-4 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-beige-500/40"
-						autocomplete="off"
-					>
-					<label class="text-default mb-4 flex cursor-pointer items-center gap-2 text-sm">
-						<input v-model="archived" type="checkbox" class="accent-beige-500 rounded">
-						Archived
-					</label>
-					<p v-if="error !== null" class="text-red-400 mb-3 text-sm">{{ error }}</p>
+					<p class="text-muted text-xs font-medium tracking-wide uppercase">Edit folder</p>
+					<label class="text-muted text-xs font-medium uppercase" for="folder-name-input">Name</label>
+					<UInput id="folder-name-input" v-model="name" type="text" autocomplete="off" class="self-stretch" />
+					<USwitch v-model="archived" :label="archived ? 'Archived' : 'Unarchived'" />
+					<p v-if="error !== null" class="text-red-400 text-sm">{{ error }}</p>
 					<div class="flex justify-end gap-2">
-						<button
-							type="button"
-							class="text-muted hover:bg-muted/60 rounded-lg px-3 py-2 text-sm"
-							:disabled="saving"
-							@click="close"
-						>
-							Cancel
-						</button>
-						<button
-							type="button"
-							class="bg-beige-600 hover:bg-beige-500 disabled:bg-muted rounded-lg px-4 py-2 text-sm font-medium text-neutral-950 disabled:cursor-not-allowed"
-							:disabled="saving"
-							@click="save"
-						>
+						<UButton variant="soft" size="sm" :disabled="saving" @click="close"> Cancel </UButton>
+						<UButton type="button" icon="i-lucide-save" :disabled="saving" @click="save">
 							{{ saving ? 'Saving…' : 'Save' }}
-						</button>
+						</UButton>
 					</div>
 				</div>
 			</div>

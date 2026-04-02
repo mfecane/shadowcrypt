@@ -1,27 +1,77 @@
 <script setup lang="ts">
 import type { CollectionListItem } from '~/types/collections'
 
-withDefaults(
-	defineProps<{ collection: CollectionListItem; big?: boolean; size: 'large' | 'compact'; showEdit?: boolean }>(),
-	{ big: false, showEdit: true }
+const props = withDefaults(
+	defineProps<{ collection: CollectionListItem; size: 'big' | 'medium' | 'smol'; showEdit?: boolean }>(),
+	{
+		showEdit: true,
+	}
 )
 
 const emit = defineEmits<{ edit: [] }>()
+
+const itemWrapperClass = computed(() => {
+	switch (props.size) {
+		case 'big':
+		case 'medium':
+			return 'h-full min-h-[380px]'
+		case 'smol':
+			return 'h-[220px]'
+		default:
+			throw new Error(`Unreachable code`)
+	}
+})
+
+const itemGridClass = computed(() => {
+	switch (props.size) {
+		case 'big':
+			return 'grid-cols-[repeat(2,2fr)_3fr] grid-rows-[3fr_1fr_2fr]'
+		case 'medium':
+			return 'grid-cols-[3fr_2fr] grid-rows-2'
+		case 'smol':
+			return ['grid-cols-2', 'grid-rows-2']
+		default:
+			throw new Error(`Unreachable code`)
+	}
+})
+
+const imageClassByIndex = (index: number) => {
+	if (props.size === 'big' && index === 0) {
+		return ['col-span-2', 'row-span-2']
+	}
+	if (props.size === 'big' && index === 2) {
+		return ['row-span-2']
+	}
+	// if (props.size === 'big' && index === 4) {
+	// 	return ['row-span-2']
+	// }
+	if ((props.size === 'medium' || props.size === 'smol') && index === 0) {
+		return ['row-span-2']
+	}
+	return []
+}
+
+const displayImages = computed(() => {
+	if (props.size === 'big') {
+		return props.collection.images.slice(0, 5)
+	}
+	return props.collection.images.slice(0, 3)
+})
 </script>
 
 <template>
 	<div
-		class="border-muted bg-elevated relative flex min-h-0 flex-col overflow-hidden rounded-lg border shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)]"
-		:class="size === 'large' ? 'h-full min-h-[380px]' : 'h-[220px]'"
+		class="border-muted bg-elevated relative flex min-h-0 flex-col overflow-hidden rounded-md border shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)] group"
+		:class="itemWrapperClass"
 	>
-		<button
-			v-if="showEdit"
-			type="button"
-			class="text-muted hover:text-highlighted absolute top-1.5 right-1.5 z-10 rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wide transition-colors"
-			@click.stop="emit('edit')"
+		<UButton
+			variant="ghost"
+			size="sm"
+			class="border-muted border absolute top-1.5 right-1.5 z-10 size-6 p-1 group-hover:opacity-100 opacity-0"
+			@click="emit('edit')"
 		>
-			Edit
-		</button>
+			<Icon name="i-lucide-pencil" class="h-4 w-4" />
+		</UButton>
 		<NuxtLink
 			:to="`/collections/${collection.id}`"
 			class="text-beige-400 hover:text-beige-300 flex h-full min-h-0 flex-col p-1.5"
@@ -32,78 +82,22 @@ const emit = defineEmits<{ edit: [] }>()
 					<div class="text-beige-500 pl-0.5 text-xs font-medium">{{ collection.imageCount }} items</div>
 				</div>
 			</div>
-			<div class="item__wrapper bg-muted/80 relative min-h-0 flex-1 rounded-sm p-1.5">
-				<div
-					v-if="collection.images.length"
-					class="item__grid h-full min-h-0"
-					:class="big ? 'big' : 'small'"
-				>
-					<div v-for="img in collection.images" :key="img.id" class="min-h-0 overflow-hidden">
-						<img :src="img.url" class="item__image" alt="" @dragstart.prevent>
+			<div
+				v-if="displayImages.length"
+				class="w-full flex items-stretch justify-center bg-muted/80 relative min-h-0 flex-1 p-0.5"
+			>
+				<div class="w-full h-full min-h-0 grid gap-0.5" :class="itemGridClass">
+					<div
+						v-for="(img, index) in displayImages"
+						:key="img.id"
+						class="min-h-0 overflow-hidden"
+						:class="imageClassByIndex(index)"
+					>
+						<img :src="img.url" class="w-full h-full object-cover" alt="" @dragstart.prevent />
 					</div>
 				</div>
-				<div v-else class="empty">Nothing</div>
 			</div>
+			<div v-else class="w-full h-full flex items-center justify-center">No images</div>
 		</NuxtLink>
 	</div>
 </template>
-
-<style scoped>
-.item__wrapper:has(.empty) {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.item__grid {
-	height: 100%;
-	display: grid;
-	gap: 1px;
-	transition: 200ms ease-out all;
-}
-
-.item__grid.big {
-	grid-template-columns: repeat(2, 2fr) 3fr;
-	grid-template-rows: 3fr 1fr 2fr;
-}
-
-.item__grid.big > *:first-child {
-	grid-column: span 2;
-	grid-row: span 2;
-}
-
-.item__grid.big > *:nth-child(3) {
-	grid-row: span 2;
-}
-
-.item__grid.big > *:nth-child(n + 6) {
-	display: none;
-}
-
-.item__grid.small {
-	grid-template-columns: 3fr 2fr;
-	grid-template-rows: 1fr 1fr;
-}
-
-.item__grid.small > *:first-child {
-	grid-row: span 2;
-}
-
-.item__grid.small > *:nth-child(n + 4) {
-	display: none;
-}
-
-.item__image {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-}
-
-.empty {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 120px;
-	color: var(--ui-color-neutral-400);
-}
-</style>

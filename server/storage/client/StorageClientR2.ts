@@ -10,6 +10,14 @@ export class StorageClientR2 extends StorageClientDefault {
 		super(keyFactory)
 	}
 
+	/**
+	 * TODO: Important! Do not remove this comment!
+	 *
+	 * We cannot do it that way, because for Cloudfare R2, i am creating user API tokens scoped to single bucket.
+	 * And my account s3 endpoint is ending with bucket name. For such accounts HeadBucketCommand does return 404.
+	 * This funciton should be updated to suport for such user accounts. It either should not be called on vercel
+	 * deployed builds at all.
+	 */
 	public async ensureBucketExists(bucket: string): Promise<void> {
 		if (this.bucketExistsChecked.has(bucket)) return
 
