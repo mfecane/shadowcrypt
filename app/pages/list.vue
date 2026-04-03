@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import ArchivedCollectionCard from '~/components/collection-list/ArchivedCollectionCard.vue'
-import ArchivedFolderRow from '~/components/collection-list/ArchivedFolderRow.vue'
-import CollectionListGrid from '~/components/collection-list/CollectionListGrid.vue'
-import CollectionsFolderHeading from '~/components/collection-list/CollectionsFolderHeading.vue'
-import type { CollectionFolderBlock, CollectionListItem, CollectionsListResponse } from '~/types/collections'
+import CollectionListArchived from '~/components/collection-list/CollectionListArchived.vue'
+import CollectionListFilters from '~/components/collection-list/CollectionListFilters.vue'
+import CollectionListFolders from '~/components/collection-list/CollectionListFolders.vue'
+import CollectionListRecent from '~/components/collection-list/CollectionListRecent.vue'
+import type {
+	CollectionFolderBlock,
+	CollectionListFilter,
+	CollectionListItem,
+	CollectionsListResponse,
+} from '~/types/collections'
 
 useHead({
 	title: 'Collection list',
@@ -12,6 +17,43 @@ useHead({
 
 const folderEdit = useFolderEditOverlayState()
 const collectionEdit = useCollectionEditOverlayState()
+
+const route = useRoute()
+const router = useRouter()
+
+function parseTab(q: unknown): CollectionListFilter {
+	const v = Array.isArray(q) ? q[0] : q
+	if (v === 'recent' || v === 'folders' || v === 'archived') {
+		return v
+	}
+	return 'recent'
+}
+
+const filter = ref<CollectionListFilter>(parseTab(route.query.tab))
+
+watch(
+	() => route.query.tab,
+	(t) => {
+		filter.value = parseTab(t)
+	}
+)
+
+watch(filter, (f) => {
+	if (parseTab(route.query.tab) !== f) {
+		router.replace({ path: '/list', query: { tab: f } })
+	}
+})
+
+watch(
+	() => [filter.value, route.hash] as const,
+	async () => {
+		if (filter.value !== 'folders' || route.hash !== '#no-folder') {
+			return
+		}
+		await nextTick()
+		document.getElementById('no-folder')?.scrollIntoView({ behavior: 'smooth' })
+	}
+)
 
 const { data, isPending: pending } = useQuery({
 	queryKey: ['collections'],
@@ -27,6 +69,31 @@ const ungroupedCollections = computed(() => data.value?.ungrouped ?? [])
 const archivedFolders = computed(() => data.value?.archivedFolders ?? [])
 
 const archivedUngrouped = computed(() => data.value?.archivedUngrouped ?? [])
+
+/** Pinned + folder collections + ungrouped, excluding pinned from the main grid; sorted by recency. */
+const recentMainItems = computed(() => {
+	const pinnedIds = new Set(pinnedCollections.value.map((c) => c.id))
+	const fromFolders = folderBlocks.value.flatMap((b) => b.collections)
+	const merged = [...fromFolders, ...ungroupedCollections.value]
+	const seen = new Set<string>()
+	const out: CollectionListItem[] = []
+	for (const c of merged) {
+		if (pinnedIds.has(c.id)) {
+			continue
+		}
+		if (seen.has(c.id)) {
+			continue
+		}
+		seen.add(c.id)
+		out.push(c)
+	}
+	out.sort((a, b) => {
+		const ta = a.lastSeenAt ?? a.updatedAt
+		const tb = b.lastSeenAt ?? b.updatedAt
+		return tb.localeCompare(ta)
+	})
+	return out
+})
 
 function openFolderEdit(block: CollectionFolderBlock): void {
 	folderEdit.value = { id: block.id, name: block.name, archived: false }
@@ -59,6 +126,7 @@ const collectionExist = computed(() => {
 	}
 	return false
 })
+
 </script>
 
 <template>
@@ -74,57 +142,29 @@ const collectionExist = computed(() => {
 				</template>
 
 				<template v-else>
-					<section v-if="pinnedCollections.length" class="mb-12">
-						<CollectionsFolderHeading name="Pinned" :link="null" icon="i-lucide-pin" />
-						<CollectionListGrid :items="pinnedCollections" key-prefix="pinned" @edit="openCollectionEdit" />
-					</section>
+					<CollectionListFilters v-model="filter" />
 
-					<template v-for="block in folderBlocks" :key="block.id">
-						<section class="mb-12">
-							<CollectionsFolderHeading
-								:link="`/folder/${block.id}`"
-								:name="block.name"
-								@edit="openFolderEdit(block)"
-								:editable="true"
-							/>
-							<CollectionListGrid
-								v-if="block.collections.length"
-								:items="block.collections"
-								:key-prefix="`folder-${block.id}`"
-								@edit="openCollectionEdit"
-							/>
-							<p v-else-if="block.archivedCollections.length === 0" class="text-muted text-sm">
-								No collections in this folder.
-							</p>
-							<section v-if="block.archivedCollections.length" class="grid grid-cols-3 gap-4">
-								<ArchivedCollectionCard
-									v-for="c in block.archivedCollections"
-									:key="`arch-${block.id}-${c.id}`"
-									:collection="c"
-								/>
-							</section>
-						</section>
-					</template>
+					<CollectionListRecent
+						v-if="filter === 'recent'"
+						:pinned="pinnedCollections"
+						:items="recentMainItems"
+						@edit="openCollectionEdit"
+					/>
 
-					<section v-if="ungroupedCollections.length" class="mb-12">
-						<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Without folder</h2>
-						<CollectionListGrid
-							:items="ungroupedCollections"
-							key-prefix="ungrouped"
-							@edit="openCollectionEdit"
-						/>
-					</section>
+					<CollectionListFolders
+						v-if="filter === 'folders'"
+						:blocks="folderBlocks"
+						:ungrouped="ungroupedCollections"
+						@edit-collection="openCollectionEdit"
+						@edit-folder="openFolderEdit"
+					/>
 
-					<section v-if="archivedFolders.length" class="mb-12">
-						<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">Archived folders</h2>
-						<div class="space-y-2">
-							<ArchivedFolderRow v-for="f in archivedFolders" :key="`af-${f.id}`" :folder="f" />
-						</div>
-					</section>
-
-					<section v-if="archivedUngrouped.length" class="grid grid-cols-3 gap-4">
-						<ArchivedCollectionCard v-for="c in archivedUngrouped" :key="`au-${c.id}`" :collection="c" />
-					</section>
+					<CollectionListArchived
+						v-if="filter === 'archived'"
+						:archived-folders="archivedFolders"
+						:folder-blocks="folderBlocks"
+						:archived-ungrouped="archivedUngrouped"
+					/>
 				</template>
 			</template>
 		</div>

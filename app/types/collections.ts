@@ -34,6 +34,8 @@ export interface ArchivedFolderSummary {
 	updatedAt: string
 }
 
+export type CollectionListFilter = 'recent' | 'folders' | 'archived'
+
 export interface CollectionsListResponse {
 	pinned: CollectionListItem[]
 	folders: CollectionFolderBlock[]

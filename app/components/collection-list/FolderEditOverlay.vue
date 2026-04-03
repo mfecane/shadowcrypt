@@ -130,13 +130,8 @@ onBeforeUnmount(() => {
 					<UInput id="folder-name-input" v-model="name" type="text" autocomplete="off" class="self-stretch" />
 					<USwitch v-model="archived" :label="archived ? 'Archived' : 'Unarchived'" />
 					<p v-if="error !== null && !confirmDeleteOpen" class="text-red-400 text-sm">{{ error }}</p>
-					<div class="flex justify-end gap-2">
-						<UButton
-							color="error"
-							size="sm"
-							:disabled="saving || deleting"
-							@click="openDeleteConfirm"
-						>
+					<div class="flex justify-between gap-2">
+						<UButton color="error" size="sm" :disabled="saving || deleting" @click="openDeleteConfirm">
 							<template #icon>
 								<Icon name="i-lucide-trash" class="h-4 w-4" />
 							</template>
@@ -144,11 +139,7 @@ onBeforeUnmount(() => {
 						</UButton>
 						<div class="flex justify-end gap-2">
 							<UButton variant="soft" size="sm" :disabled="saving" @click="close"> Cancel </UButton>
-							<UButton type="button" :disabled="saving" @click="save">
-								<template #icon>
-									<Icon v-if="saving" name="i-lucide-loader-circle" class="h-4 w-4 animate-spin" />
-									<Icon v-else name="i-lucide-save" class="h-4 w-4" />
-								</template>
+							<UButton icon="i-lucide-save" type="button" :disabled="saving" @click="save">
 								{{ saving ? 'Saving…' : 'Save' }}
 							</UButton>
 						</div>

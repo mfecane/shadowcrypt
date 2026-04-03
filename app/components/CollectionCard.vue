@@ -2,7 +2,13 @@
 import type { CollectionListItem } from '~/types/collections'
 
 const props = withDefaults(
-	defineProps<{ collection: CollectionListItem; size: 'big' | 'medium' | 'smol'; showEdit?: boolean }>(),
+	defineProps<{
+		collection: CollectionListItem
+		size: 'big' | 'medium' | 'smol'
+		showEdit?: boolean
+		folderName?: string
+		folderId?: string
+	}>(),
 	{
 		showEdit: true,
 	}
@@ -10,13 +16,17 @@ const props = withDefaults(
 
 const emit = defineEmits<{ edit: [] }>()
 
+const colletionLink = computed(() => {
+	return `/collections/${props.collection.id}`
+})
+
 const itemWrapperClass = computed(() => {
 	switch (props.size) {
 		case 'big':
 		case 'medium':
-			return 'h-full min-h-[380px]'
+			return 'h-full min-h-[420px]'
 		case 'smol':
-			return 'h-[220px]'
+			return 'h-[320px]'
 		default:
 			throw new Error(`Unreachable code`)
 	}
@@ -42,9 +52,6 @@ const imageClassByIndex = (index: number) => {
 	if (props.size === 'big' && index === 2) {
 		return ['row-span-2']
 	}
-	// if (props.size === 'big' && index === 4) {
-	// 	return ['row-span-2']
-	// }
 	if ((props.size === 'medium' || props.size === 'smol') && index === 0) {
 		return ['row-span-2']
 	}
@@ -61,26 +68,21 @@ const displayImages = computed(() => {
 
 <template>
 	<div
-		class="border-muted bg-elevated relative flex min-h-0 flex-col overflow-hidden rounded-md border shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)] group"
+		class="border-muted bg-elevated flex min-h-0 flex-col overflow-hidden rounded-md border shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)] p-1 relative"
 		:class="itemWrapperClass"
 	>
 		<UButton
 			variant="ghost"
 			size="sm"
-			class="border-muted border absolute top-1.5 right-1.5 z-10 size-6 p-1 group-hover:opacity-100 opacity-0"
+			class="border-muted text-muted border absolute top-1 right-1 z-10 size-6 p-1 pt-1.5"
 			@click="emit('edit')"
 		>
 			<Icon name="i-lucide-pencil" class="h-4 w-4" />
 		</UButton>
-		<NuxtLink
-			:to="`/collections/${collection.id}`"
-			class="text-beige-400 hover:text-beige-300 flex h-full min-h-0 flex-col p-1.5"
-		>
-			<div class="mb-1 flex shrink-0 items-start justify-between gap-2 px-0.5">
-				<div class="min-w-0 flex-1 pr-10">
-					<div class="truncate pl-0.5 text-base font-medium text-highlighted">{{ collection.name }}</div>
-					<div class="text-beige-500 pl-0.5 text-xs font-medium">{{ collection.imageCount }} items</div>
-				</div>
+		<NuxtLink :to="colletionLink" class="flex h-full min-h-0 flex-col gap-1">
+			<div class="flex flex-col shrink-0 items-start justify-between gap-0.5 px-0.5">
+				<div class="truncate text-base font-medium text-highlighted">{{ collection.name }}</div>
+				<div class="text-beige-500 text-xs font-medium">{{ collection.imageCount }} items</div>
 			</div>
 			<div
 				v-if="displayImages.length"
@@ -99,5 +101,16 @@ const displayImages = computed(() => {
 			</div>
 			<div v-else class="w-full h-full flex items-center justify-center">No images</div>
 		</NuxtLink>
+		<UButton
+			v-if="folderName && folderId"
+			:to="`/folder/${folderId}`"
+			variant="soft"
+			size="sm"
+			color="neutral"
+			class="self-start mt-1 bg-neutral-900 hover:bg-neutral-800 text-muted hover:text-highlighted p-1 px-2"
+		>
+			<Icon name="i-lucide-folder" class="h-3 w-3" />
+			<span class="text-xs font-medium">{{ folderName }}</span>
+		</UButton>
 	</div>
 </template>

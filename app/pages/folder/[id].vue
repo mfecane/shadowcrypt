@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/vue-query'
 import ArchivedCollectionCard from '~/components/collection-list/ArchivedCollectionCard.vue'
 import ArchivedFolderRow from '~/components/collection-list/ArchivedFolderRow.vue'
-import CollectionListGrid from '~/components/collection-list/CollectionListGrid.vue'
+import CollectionListEmphasizedGrid from '~/components/collection-list/CollectionListEmphasizedGrid.vue'
 import CollectionsFolderHeading from '~/components/collection-list/CollectionsFolderHeading.vue'
 import type { CollectionListItem, FolderDetailResponse } from '~/types/collections'
 
@@ -89,11 +89,9 @@ const archivedFolderSummary = computed(() => {
 		<CollectionsListHeader />
 
 		<div class="mx-auto max-w-6xl px-5 pt-4 pb-24">
-			<div class="mb-6">
-				<NuxtLink to="/list" class="text-muted hover:text-highlighted text-sm transition-colors">
-					← All collections
-				</NuxtLink>
-			</div>
+			<UButton variant="ghost" color="neutral" class="items-center gap-2 mb-4 inline-flex" to="/list">
+				<Icon name="i-lucide-arrow-left" class="h-4 w-4" /> <span class="text-sm">All collections</span>
+			</UButton>
 
 			<p v-if="pending" class="text-muted text-sm">Loading folder…</p>
 
@@ -127,11 +125,12 @@ const archivedFolderSummary = computed(() => {
 				</template>
 
 				<template v-else-if="data !== undefined">
-					<CollectionListGrid
+					<CollectionListEmphasizedGrid
 						v-if="collectionsInFolder.length"
 						:items="collectionsInFolder"
 						:key-prefix="`folder-page-${folder.id}`"
 						@edit="openCollectionEdit"
+						:show-folder="false"
 					/>
 					<section v-if="archivedInFolder.length" class="border-muted mt-8 border-t border-dashed pt-6">
 						<h3 class="text-muted mb-3 text-xs font-semibold uppercase tracking-wider">
