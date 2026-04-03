@@ -1,15 +1,9 @@
 # TODO
 
-- update package.json
-    - update version
-    - update git repo
 - auto layout
-- folders
-- user avatar
 - collection view tracking
 - move to password login
-- delete collection
-- move collection to folder
+- add demo read only user
 
 localhost:3000 - dev
 localhost:8025 - mailpit

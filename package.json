@@ -5,6 +5,7 @@
 	"license": "MIT",
 	"version": "0.0.1",
 	"description": "Yet another moodboard application",
+	"url": "https://shadowcrypt-eight.vercel.app/list",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/mfecane/shadowcrypt"

@@ -25,7 +25,8 @@ export class CollectionAutosave {
 	public constructor(
 		private readonly board: Board,
 		private readonly bridge: BoardVueBridge,
-		private readonly collectionId: string
+		private readonly collectionId: string,
+		private readonly onPersistSuccess?: () => void
 	) {}
 
 	private async patchImageLayout(imageId: string, body: LayoutPatchBody): Promise<void> {
@@ -35,20 +36,13 @@ export class CollectionAutosave {
 			body: JSON.stringify(body),
 		})
 
-		// TODO: Remove this
-		await new Promise((resolve) => setTimeout(resolve, 500))
-
 		if (!res.ok) {
 			const text = await res.text()
 			throw new Error(text || `Save failed (${res.status})`)
 		}
 	}
 
-	private async patchCollectionViewport(body: {
-		centerX: number
-		centerY: number
-		zoom: number
-	}): Promise<void> {
+	private async patchCollectionViewport(body: { centerX: number; centerY: number; zoom: number }): Promise<void> {
 		const res = await fetch(`/api/collections/${this.collectionId}`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
@@ -120,12 +114,8 @@ export class CollectionAutosave {
 				tasks.push(this.patchCollectionViewport(viewport))
 			}
 			await Promise.all(tasks)
-			if (viewport !== null) {
-				this.board.setCollectionViewportSnapshot(
-					{ x: viewport.centerX, y: viewport.centerY },
-					viewport.zoom
-				)
-			}
+			this.board.afterSuccessfulPersist(viewport, layouts)
+			this.onPersistSuccess?.()
 			if (this.disposed) {
 				return
 			}

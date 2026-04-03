@@ -13,9 +13,13 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 			this.loading = true
 		},
 
-		async createBoard(mountEl: HTMLElement, collection: CollectionDetail): Promise<Board> {
+		async createBoard(
+			mountEl: HTMLElement,
+			collection: CollectionDetail,
+			onPersistSuccess?: () => void
+		): Promise<Board> {
 			this.destroyBoard()
-			const b = new Board(mountEl, collection)
+			const b = new Board(mountEl, collection, onPersistSuccess)
 			this.board = b
 			await b.init()
 			return b

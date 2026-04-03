@@ -33,7 +33,14 @@ function openFolderEdit(block: CollectionFolderBlock): void {
 }
 
 function openCollectionEdit(c: CollectionListItem): void {
-	collectionEdit.value = { id: c.id, name: c.name, pinned: c.pinned, archived: c.archived }
+	collectionEdit.value = {
+		id: c.id,
+		name: c.name,
+		pinned: c.pinned,
+		archived: c.archived,
+		folderId: c.folderId,
+		folder: c.folder,
+	}
 }
 
 const collectionExist = computed(() => {

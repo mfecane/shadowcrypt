@@ -43,7 +43,14 @@ function openFolderEditFromPage(): void {
 }
 
 function openCollectionEdit(c: CollectionListItem): void {
-	collectionEdit.value = { id: c.id, name: c.name, pinned: c.pinned, archived: c.archived }
+	collectionEdit.value = {
+		id: c.id,
+		name: c.name,
+		pinned: c.pinned,
+		archived: c.archived,
+		folderId: c.folderId,
+		folder: c.folder,
+	}
 }
 
 /** Only show rows that belong to this folder (same id as the route). */

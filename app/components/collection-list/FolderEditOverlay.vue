@@ -9,6 +9,7 @@ const archived = ref(false)
 const error = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
+const confirmDeleteOpen = ref(false)
 
 watch(
 	() => target.value,
@@ -25,6 +26,7 @@ watch(
 const open = computed(() => target.value !== null)
 
 function close(): void {
+	confirmDeleteOpen.value = false
 	target.value = null
 }
 
@@ -61,12 +63,42 @@ function onGlobalKeydown(e: KeyboardEvent): void {
 	}
 	if (e.key === 'Escape') {
 		e.preventDefault()
-		close()
+		if (confirmDeleteOpen.value) {
+			cancelDeleteConfirm()
+		} else {
+			close()
+		}
 	}
 }
 
-function deleteFolder(): void {
-	throw new Error('Not implemented')
+function openDeleteConfirm(): void {
+	error.value = null
+	confirmDeleteOpen.value = true
+}
+
+function cancelDeleteConfirm(): void {
+	confirmDeleteOpen.value = false
+}
+
+async function performDelete(): Promise<void> {
+	const t = target.value
+	if (t === null) {
+		return
+	}
+	deleting.value = true
+	error.value = null
+	try {
+		await $fetch(`/api/folders/${t.id}`, { method: 'DELETE' })
+		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: ['folder'] })
+		await queryClient.invalidateQueries({ queryKey: ['folder', t.id] })
+		confirmDeleteOpen.value = false
+		close()
+	} catch {
+		error.value = 'Delete failed'
+	} finally {
+		deleting.value = false
+	}
 }
 
 onMounted(() => {
@@ -97,25 +129,66 @@ onBeforeUnmount(() => {
 					<label class="text-muted text-xs font-medium uppercase" for="folder-name-input">Name</label>
 					<UInput id="folder-name-input" v-model="name" type="text" autocomplete="off" class="self-stretch" />
 					<USwitch v-model="archived" :label="archived ? 'Archived' : 'Unarchived'" />
-					<p v-if="error !== null" class="text-red-400 text-sm">{{ error }}</p>
+					<p v-if="error !== null && !confirmDeleteOpen" class="text-red-400 text-sm">{{ error }}</p>
 					<div class="flex justify-end gap-2">
-						<UButton color="error" size="sm" icon="i-lucide-trash" @click="deleteFolder">
+						<UButton
+							color="error"
+							size="sm"
+							:disabled="saving || deleting"
+							@click="openDeleteConfirm"
+						>
 							<template #icon>
-								<Icon v-if="deleting" name="i-lucide-loader-circle" class="h-4 w-4" />
-								<Icon v-if="deleting" name="i-lucide-trash" class="h-4 w-4" />
+								<Icon name="i-lucide-trash" class="h-4 w-4" />
 							</template>
-							{{ deleting ? 'Deleting…' : 'Delete' }}
+							Delete
 						</UButton>
 						<div class="flex justify-end gap-2">
 							<UButton variant="soft" size="sm" :disabled="saving" @click="close"> Cancel </UButton>
 							<UButton type="button" :disabled="saving" @click="save">
 								<template #icon>
-									<Icon v-if="saving" name="i-lucide-loader-circle" class="h-4 w-4" />
-									<Icon v-if="saving" name="i-lucide-save" class="h-4 w-4" />
+									<Icon v-if="saving" name="i-lucide-loader-circle" class="h-4 w-4 animate-spin" />
+									<Icon v-else name="i-lucide-save" class="h-4 w-4" />
 								</template>
 								{{ saving ? 'Saving…' : 'Save' }}
 							</UButton>
 						</div>
+					</div>
+				</div>
+			</div>
+		</Transition>
+
+		<Transition name="folder-edit-fade">
+			<div
+				v-if="open && confirmDeleteOpen"
+				class="fixed inset-0 z-230 flex items-center justify-center bg-black/50 p-3 backdrop-blur-[2px]"
+				role="alertdialog"
+				aria-modal="true"
+				aria-labelledby="folder-delete-confirm-title"
+				@click.self="cancelDeleteConfirm"
+			>
+				<div
+					class="border-muted bg-elevated text-default w-full max-w-sm rounded-xl border p-5 shadow-2xl"
+					@click.stop
+				>
+					<p id="folder-delete-confirm-title" class="text-default mb-2 text-sm font-medium">
+						Delete this folder?
+					</p>
+					<p class="text-muted mb-4 text-sm">
+						“{{ name.trim() || 'Untitled' }}” will be removed. Collections inside it stay; they move to
+						<strong class="text-default font-medium">None</strong> (ungrouped).
+					</p>
+					<p v-if="error !== null" class="text-red-400 mb-3 text-sm">{{ error }}</p>
+					<div class="flex justify-end gap-2">
+						<UButton variant="soft" size="sm" :disabled="deleting" @click="cancelDeleteConfirm">
+							Cancel
+						</UButton>
+						<UButton color="error" size="sm" :disabled="deleting" @click="performDelete">
+							<template #icon>
+								<Icon v-if="deleting" name="i-lucide-loader-circle" class="h-4 w-4 animate-spin" />
+								<Icon v-else name="i-lucide-trash" class="h-4 w-4" />
+							</template>
+							{{ deleting ? 'Deleting…' : 'Delete' }}
+						</UButton>
 					</div>
 				</div>
 			</div>

@@ -7,6 +7,7 @@ import {
 } from '../collectionViewer/commands/ImageTransformCommand'
 import { BoardImage, type BoardRect } from './BoardImage'
 import { BoardVueBridge } from './BoardVueBridge'
+import { CollectionBoardModel } from './CollectionBoardModel'
 import { CollectionAutosave, type CollectionLayoutRow } from './CollectionAutosave'
 import { EventPreprocessor } from './interaction/EventPreprocessor'
 import { EventRouter } from './interaction/EventRouter'
@@ -39,23 +40,43 @@ export class Board {
 
 	private readonly images = new Map<string, BoardImage>()
 
+	private readonly model: CollectionBoardModel
+
 	public constructor(
 		private readonly mountEl: HTMLElement,
-		private collection: CollectionDetail
+		detail: CollectionDetail,
+		onPersistSuccess?: () => void
 	) {
-		this.autosave = new CollectionAutosave(this, this.bridge, this.collection.id)
-		this.bridge.setCollection(this.collection.id, this.collection.name)
-		this.bridge.setImageCount(this.collection.images.length)
+		this.model = CollectionBoardModel.fromDetail(detail)
+		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id, onPersistSuccess)
+		this.bridge.setCollection(this.model.id, this.model.name)
+		this.bridge.setImageCount(this.model.images.length)
 	}
 
 	public setCollectionName(name: string): void {
-		this.collection.name = name
-		this.bridge.setCollection(this.collection.id, name)
+		this.model.setName(name)
+		this.bridge.setCollection(this.model.id, name)
 	}
 
-	public setCollectionViewportSnapshot(center: { x: number; y: number }, zoom: number): void {
-		this.collection.viewportCenter = { x: center.x, y: center.y }
-		this.collection.viewportZoom = zoom
+	/** Updates the in-memory model after a successful server persist (viewport + image layouts). */
+	public afterSuccessfulPersist(
+		viewport: { centerX: number; centerY: number; zoom: number } | null,
+		layouts: CollectionLayoutRow[]
+	): void {
+		if (viewport !== null) {
+			this.model.setViewportSnapshot(
+				{ x: viewport.centerX, y: viewport.centerY },
+				viewport.zoom
+			)
+		}
+		for (const l of layouts) {
+			this.model.syncImageLayout(l.imageId, {
+				x: l.layoutX,
+				y: l.layoutY,
+				w: l.layoutW,
+				h: l.layoutH,
+			})
+		}
 	}
 
 	public removeImage(imageId: string): void {
@@ -75,11 +96,11 @@ export class Board {
 			this.spriteById.delete(imageId)
 		}
 		this.images.delete(imageId)
-		this.collection.images = this.collection.images.filter((it) => it.id !== imageId)
+		this.model.removeImage(imageId)
 		this.commandController.clearStacks()
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
-		this.bridge.setImageCount(this.collection.images.length)
+		this.bridge.setImageCount(this.model.images.length)
 		this.fitWorldToView()
 	}
 
@@ -281,10 +302,10 @@ export class Board {
 
 	private async buildPixi(): Promise<void> {
 		this.teardownPixi()
-		this.bridge.setCollection(this.collection.id, this.collection.name)
+		this.bridge.setCollection(this.model.id, this.model.name)
 		this.bridge.setReady(false)
 
-		const items = this.collection.images
+		const items = this.model.images
 		if (items.length === 0) {
 			this.bridge.setImageCount(0)
 			this.bridge.setReady(true)
@@ -393,8 +414,8 @@ export class Board {
 		}
 
 		this.selectImage(null)
-		const v = this.collection.viewportCenter
-		const vz = this.collection.viewportZoom
+		const v = this.model.viewportCenter
+		const vz = this.model.viewportZoom
 		if (v !== null && vz !== null) {
 			this.navigationTool.setViewportFromSaved(v, vz)
 		} else {
