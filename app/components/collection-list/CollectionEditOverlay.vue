@@ -9,6 +9,7 @@ const name = ref('')
 const archived = ref(false)
 const error = ref<string | null>(null)
 const saving = ref(false)
+const deleting = ref(false)
 
 watch(
 	() => target.value,
@@ -58,7 +59,24 @@ async function save(): Promise<void> {
 }
 
 async function deleteCollection(): Promise<void> {
-	throw new Error('Not implemented')
+	try {
+		const t = target.value
+		if (t === null) {
+			return
+		}
+		deleting.value = true
+		await $fetch(`/api/collections/${t.id}`, {
+			method: 'DELETE',
+			body: { id: t.id },
+		})
+		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: ['collection', t.id] })
+		close()
+	} catch {
+		error.value = 'Delete failed'
+	} finally {
+		deleting.value = false
+	}
 }
 
 function onGlobalKeydown(e: KeyboardEvent): void {

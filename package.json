@@ -43,7 +43,7 @@
 		"typescript-optional": "^3.0.0-alpha.3",
 		"vue": "^3.5.30",
 		"vue-router": "^5.0.4",
-		"zod": "^3.24.0"
+		"zod": "^4.1.13"
 	},
 	"devDependencies": {
 		"@types/nodemailer": "^6.4.17",

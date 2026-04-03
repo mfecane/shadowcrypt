@@ -1,11 +1,11 @@
 import { and, desc, eq } from 'drizzle-orm'
+import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
 import { collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
 import { refreshFolderLastSeen } from '~~/server/utils/refreshFolderLastSeen'
-import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
 
 const storageKeyFactory = new StorageKeyFactory(new EnvironmentResolver())
 
@@ -38,11 +38,7 @@ export default defineEventHandler(async (event) => {
 		await refreshFolderLastSeen(db, col.folderId, sub)
 	}
 
-	const imageRows = await db
-		.select()
-		.from(images)
-		.where(eq(images.collectionId, id))
-		.orderBy(desc(images.updatedAt))
+	const imageRows = await db.select().from(images).where(eq(images.collectionId, id)).orderBy(desc(images.updatedAt))
 
 	const layoutById = mergeImageLayouts(
 		imageRows.map((img) => ({
@@ -56,10 +52,7 @@ export default defineEventHandler(async (event) => {
 		}))
 	)
 
-	const hasViewport =
-		col.viewportCenterX !== null &&
-		col.viewportCenterY !== null &&
-		col.viewportZoom !== null
+	const hasViewport = col.viewportCenterX !== null && col.viewportCenterY !== null && col.viewportZoom !== null
 
 	return {
 		collection: {
@@ -70,9 +63,7 @@ export default defineEventHandler(async (event) => {
 			folderId: col.folderId,
 			lastSeenAt: seenAt.toISOString(),
 			updatedAt: col.updatedAt.toISOString(),
-			viewportCenter: hasViewport
-				? { x: col.viewportCenterX!, y: col.viewportCenterY! }
-				: null,
+			viewportCenter: hasViewport ? { x: col.viewportCenterX!, y: col.viewportCenterY! } : null,
 			viewportZoom: hasViewport ? col.viewportZoom! : null,
 			images: imageRows.map((img) => {
 				const layout = layoutById.get(img.id)

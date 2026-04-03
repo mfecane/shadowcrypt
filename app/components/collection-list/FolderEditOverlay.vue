@@ -8,6 +8,7 @@ const name = ref('')
 const archived = ref(false)
 const error = ref<string | null>(null)
 const saving = ref(false)
+const deleting = ref(false)
 
 watch(
 	() => target.value,
@@ -64,6 +65,10 @@ function onGlobalKeydown(e: KeyboardEvent): void {
 	}
 }
 
+function deleteFolder(): void {
+	throw new Error('Not implemented')
+}
+
 onMounted(() => {
 	document.addEventListener('keydown', onGlobalKeydown, { capture: true })
 })
@@ -94,10 +99,23 @@ onBeforeUnmount(() => {
 					<USwitch v-model="archived" :label="archived ? 'Archived' : 'Unarchived'" />
 					<p v-if="error !== null" class="text-red-400 text-sm">{{ error }}</p>
 					<div class="flex justify-end gap-2">
-						<UButton variant="soft" size="sm" :disabled="saving" @click="close"> Cancel </UButton>
-						<UButton type="button" icon="i-lucide-save" :disabled="saving" @click="save">
-							{{ saving ? 'Saving…' : 'Save' }}
+						<UButton color="error" size="sm" icon="i-lucide-trash" @click="deleteFolder">
+							<template #icon>
+								<Icon v-if="deleting" name="i-lucide-loader-circle" class="h-4 w-4" />
+								<Icon v-if="deleting" name="i-lucide-trash" class="h-4 w-4" />
+							</template>
+							{{ deleting ? 'Deleting…' : 'Delete' }}
 						</UButton>
+						<div class="flex justify-end gap-2">
+							<UButton variant="soft" size="sm" :disabled="saving" @click="close"> Cancel </UButton>
+							<UButton type="button" :disabled="saving" @click="save">
+								<template #icon>
+									<Icon v-if="saving" name="i-lucide-loader-circle" class="h-4 w-4" />
+									<Icon v-if="saving" name="i-lucide-save" class="h-4 w-4" />
+								</template>
+								{{ saving ? 'Saving…' : 'Save' }}
+							</UButton>
+						</div>
 					</div>
 				</div>
 			</div>

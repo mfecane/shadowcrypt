@@ -9,6 +9,7 @@
 - collection view tracking
 - move to password login
 - delete collection
+- move collection to folder
 
 localhost:3000 - dev
 localhost:8025 - mailpit
