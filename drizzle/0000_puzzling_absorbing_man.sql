@@ -1,5 +1,5 @@
 CREATE TYPE "public"."upload_status" AS ENUM('tmp', 'final');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('client', 'artist', 'admin', 'moderator');--> statement-breakpoint
+CREATE TYPE "public"."user_role" AS ENUM('user', 'demo', 'admin', 'moderator');--> statement-breakpoint
 CREATE TABLE "collections" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE "users" (
 	"email" text NOT NULL,
 	"name" text,
 	"image" text,
-	"roles" "user_role"[] DEFAULT ARRAY['client']::user_role[] NOT NULL,
+	"roles" "user_role"[] DEFAULT ARRAY['user']::user_role[] NOT NULL,
 	"email_verified" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,

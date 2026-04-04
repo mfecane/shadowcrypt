@@ -28,46 +28,39 @@ const full: CrudPermission = {
 	delete: true,
 }
 
+const readOnly: CrudPermission = {
+	create: false,
+	read: true,
+	update: false,
+	delete: false,
+}
+
+const templateUser = {
+	user: {
+		readSelf: true,
+		updateSelf: true,
+	},
+	folders: full,
+	collections: full,
+	images: full,
+}
+
 const permissions: Record<UserRole, PermissionsRecord> = {
 	demo: {
 		user: {
 			readSelf: true,
 			updateSelf: false,
 		},
-		folders: { create: false, read: true, update: false, delete: false },
-		collections: { create: false, read: true, update: false, delete: false },
-		images: { create: false, read: true, update: false, delete: false },
+		folders: readOnly,
+		collections: readOnly,
+		images: readOnly,
 	},
 
-	user: {
-		user: {
-			readSelf: true,
-			updateSelf: true,
-		},
-		folders: full,
-		collections: full,
-		images: full,
-	},
+	user: templateUser,
 
-	moderator: {
-		user: {
-			readSelf: true,
-			updateSelf: false,
-		},
-		folders: full,
-		collections: full,
-		images: full,
-	},
+	moderator: templateUser,
 
-	admin: {
-		user: {
-			readSelf: true,
-			updateSelf: true,
-		},
-		folders: full,
-		collections: full,
-		images: full,
-	},
+	admin: templateUser,
 }
 
 function hasCrudPermission(role: UserRole, resource: Resource, action: CrudAction): boolean {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
-import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/collectionImageUploadConstants'
+import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
@@ -40,12 +40,12 @@ function groupedCollectionOptions(
 		return { id: c.id, name: c.name }
 	}
 	const groups: { label: string; options: { id: string; name: string }[] }[] = []
-	if (res.pinned.length > 0) {
-		const options = res.pinned.map(take).filter((o): o is { id: string; name: string } => o !== null)
-		if (options.length > 0) {
-			groups.push({ label: 'Pinned', options })
-		}
-	}
+	// if (res.pinned.length > 0) {
+	// 	const options = res.pinned.map(take).filter((o): o is { id: string; name: string } => o !== null)
+	// 	if (options.length > 0) {
+	// 		groups.push({ label: 'Pinned', options })
+	// 	}
+	// }
 	for (const f of res.folders) {
 		if (f.collections.length === 0) {
 			continue
@@ -165,6 +165,7 @@ const flatCollections = computed(() =>
 	collectionsData.value !== undefined ? flattenCollectionsDeduped(collectionsData.value) : []
 )
 
+// remote pinned from here
 const collectionGroups = computed(() =>
 	collectionsData.value !== undefined ? groupedCollectionOptions(collectionsData.value) : []
 )
@@ -432,7 +433,7 @@ onBeforeUnmount(() => {
 											autocomplete="off"
 											:disabled="creatingCollection"
 											@keydown.enter.prevent="createCollection"
-										>
+										/>
 										<UButton
 											:disabled="creatingCollection || newCollectionName.trim().length === 0"
 											@click="createCollection"
@@ -453,7 +454,7 @@ onBeforeUnmount(() => {
 								:src="previewUrl"
 								alt=""
 								class="max-h-48 max-w-full rounded-md object-contain"
-							>
+							/>
 							<p v-else class="text-muted text-sm">
 								Drop an image here or paste from clipboard (⌘V / Ctrl+V).
 							</p>

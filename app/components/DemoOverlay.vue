@@ -30,12 +30,12 @@ onMounted(() => {
 <template>
 	<Teleport v-if="showOverlay" to="body">
 		<div
-			class="fixed bottom-8 right-1/2 translate-x-1/2 bg-black/50 z-50 backdrop-blur-[2px] p-3 rounded-md flex flex-col gap-4"
+			class="fixed bottom-8 right-1/2 translate-x-1/2 bg-neutral-950/50 z-50 backdrop-blur-[5px] p-4 rounded-md flex flex-col gap-4 max-w-md border border-neutral-800"
 		>
 			<p class="text-muted">
 				This is a demo mode. You can use the app as a guest, but you will not be able to save your changes.
 			</p>
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-2 mx-auto">
 				<UButton
 					class="self-start inline-flex items-center gap-2"
 					icon="i-lucide-user"

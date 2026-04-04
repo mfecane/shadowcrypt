@@ -1,5 +1,5 @@
 {
-  "id": "bef97c7a-8aa6-40b8-85d9-989222132367",
+  "id": "be362ee9-d297-43aa-b36f-0cd9a2bd77b5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -485,7 +485,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "ARRAY['client']::user_role[]"
+          "default": "ARRAY['user']::user_role[]"
         },
         "email_verified": {
           "name": "email_verified",
@@ -538,8 +538,8 @@
       "name": "user_role",
       "schema": "public",
       "values": [
-        "client",
-        "artist",
+        "user",
+        "demo",
         "admin",
         "moderator"
       ]

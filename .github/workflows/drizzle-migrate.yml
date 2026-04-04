@@ -5,22 +5,30 @@ on:
         branches:
             - master
             - dev
-    workflow_dispatch:
+        paths:
+            - 'drizzle/**'
+            - 'server/db/schema.ts'
+            - 'scripts/migrate.ts'
 
 jobs:
     migrate:
+        name: Run DB migrations
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v6
+            - name: Checkout code
+              uses: actions/checkout@v5
 
-            - uses: actions/setup-node@v6
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
               with:
                   node-version: 24
                   cache: npm
 
-            - run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-            - run: npm run db:migrate
+            - name: Run migrations
               env:
                   NUXT_DATABASE_URL: ${{ secrets.NUXT_DATABASE_URL }}
+              run: npm run db:migrate:prod

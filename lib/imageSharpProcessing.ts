@@ -3,12 +3,7 @@
  */
 
 import sharp from 'sharp'
-import { COLLECTION_IMAGE_MAX_STORED_EDGE_PX } from './collectionImageUploadConstants'
-
-const FULL_IMAGE_WIDTH = COLLECTION_IMAGE_MAX_STORED_EDGE_PX
-const PREVIEW_IMAGE_WIDTH = 400
-const FULL_IMAGE_QUALITY = 0.9
-const SMALL_IMAGE_QUALITY = 0.75
+import { FULL_IMAGE_QUALITY, FULL_IMAGE_WIDTH, PREVIEW_IMAGE_WIDTH, SMALL_IMAGE_QUALITY } from './config/image'
 
 export async function processImageToWebP(
 	inputPath: string | Buffer,
