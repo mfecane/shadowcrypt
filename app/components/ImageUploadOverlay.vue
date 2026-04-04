@@ -68,8 +68,6 @@ function dataTransferHasImage(dt: DataTransfer | null): boolean {
 		return false
 	}
 	for (const item of dt.items) {
-		console.log('item.kind', item.kind)
-		console.log('item', item)
 		if (item.kind === 'file' && item.type.startsWith('image/')) {
 			return true
 		}

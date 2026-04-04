@@ -1,3 +1,5 @@
+import type { BoardVueBridge } from '~~/lib/board/BoardVueBridge'
+
 export interface Command {
 	readonly id: string
 	execute(): void
@@ -5,6 +7,8 @@ export interface Command {
 }
 
 export class ImageCommandController {
+	public constructor(private readonly bridge: BoardVueBridge) {}
+
 	private undoStack: Command[] = []
 	private redoStack: Command[] = []
 
@@ -21,6 +25,7 @@ export class ImageCommandController {
 		}
 		cmd.undo()
 		this.redoStack.push(cmd)
+		this.bridge.setCanUndo(this.canUndo())
 	}
 
 	public redo(): void {
@@ -30,6 +35,7 @@ export class ImageCommandController {
 		}
 		cmd.execute()
 		this.undoStack.push(cmd)
+		this.bridge.setCanRedo(this.canRedo())
 	}
 
 	public canUndo(): boolean {

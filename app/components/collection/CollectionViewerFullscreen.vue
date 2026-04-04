@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { useCollectionViewerStore } from '~/stores/collectionViewer'
-import { useBoardBridgeState } from '~/components/collection/useBoardBridgeState'
+import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 
-const store = useCollectionViewerStore()
-const { state } = useBoardBridgeState()
+const { fullscreenImage, bridge } = storeToRefs(useCollectionViewerStore())
 
 const fitClass = computed(() => {
-	const im = state.fullscreenImage
+	const im = fullscreenImage.value
 	if (!im) {
 		return 'fit-vertically'
 	}
@@ -16,13 +14,13 @@ const fitClass = computed(() => {
 
 function close(event: Event): void {
 	event.preventDefault()
-	store.board?.bridge.closeFullscreen()
+	bridge.value?.closeFullscreen()
 }
 
 function onPointerMove(event: PointerEvent): void {
 	if (event.pointerType === 'touch') {
 		event.preventDefault()
-		store.board?.bridge.closeFullscreen()
+		bridge.value?.closeFullscreen()
 	}
 }
 </script>
@@ -30,7 +28,7 @@ function onPointerMove(event: PointerEvent): void {
 <template>
 	<div class="fullscreen" @click="close" @pointermove="onPointerMove" @touchmove="close">
 		<Transition>
-			<img v-if="state.fullscreenImage" :src="state.fullscreenImage.src" :class="fitClass" alt="">
+			<img v-if="fullscreenImage" :src="fullscreenImage.src" :class="fitClass" alt="" />
 		</Transition>
 	</div>
 </template>

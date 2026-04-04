@@ -1,6 +1,28 @@
+import type { NavigationTool } from '~~/lib/board/interaction/tools/NavigationTool'
+import type { ImageCommandController } from '~~/lib/collectionViewer/commands/ImageCommandController'
 import type { BoardImage } from './BoardImage'
 
 export type CollectionSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+export interface BoardBridgeState {
+	selectedImageId: string | null
+	canUndo: boolean
+	canRedo: boolean
+	collectionId: string | null
+	collectionName: string
+	fullscreenImage: BoardImage | null
+	collectionSaveStatus: CollectionSaveStatus
+	collectionSaveError: string | null
+	imageCount: number
+	ready: boolean
+}
+
+interface BoardForBridge {
+	commandController: ImageCommandController
+	navigationTool: NavigationTool | null
+	removeImage: (imageId: string) => void
+	setCollectionName: (name: string) => void
+}
 
 export class BoardVueBridge {
 	public canUndo = false
@@ -24,14 +46,44 @@ export class BoardVueBridge {
 
 	private readonly subscribers = new Set<() => void>()
 
+	private readonly onPersistSuccessSubscribers = new Set<() => void>()
+
+	public constructor(private readonly board: BoardForBridge) {}
+
 	public subscribe(callback: () => void): () => void {
 		this.subscribers.add(callback)
 		return () => this.subscribers.delete(callback)
 	}
 
+	public subscribeOnPersistSuccess(callback: () => void): () => void {
+		this.onPersistSuccessSubscribers.add(callback)
+		return () => this.onPersistSuccessSubscribers.delete(callback)
+	}
+
 	public notify(): void {
 		for (const callback of this.subscribers) {
 			callback()
+		}
+	}
+
+	public notifyOnPersistSuccess(): void {
+		for (const callback of this.onPersistSuccessSubscribers) {
+			callback()
+		}
+	}
+
+	public getState(): BoardBridgeState {
+		return {
+			selectedImageId: this.selectedImageId,
+			canUndo: this.canUndo,
+			canRedo: this.canRedo,
+			collectionId: this.collectionId,
+			collectionName: this.collectionName,
+			fullscreenImage: this.fullscreenImage,
+			collectionSaveStatus: this.collectionSaveStatus,
+			collectionSaveError: this.collectionSaveError,
+			imageCount: this.imageCount,
+			ready: this.ready,
 		}
 	}
 
@@ -91,6 +143,31 @@ export class BoardVueBridge {
 	public setReady(v: boolean): void {
 		if (this.ready === v) return
 		this.ready = v
+		this.notify()
+	}
+
+	public undo(): void {
+		this.board.commandController.undo()
+		this.notify()
+	}
+
+	public redo(): void {
+		this.board.commandController.redo()
+		this.notify()
+	}
+
+	public fitWorldToView(): void {
+		this.board.navigationTool?.fitWorldToView()
+		this.notify()
+	}
+
+	public removeImage(imageId: string): void {
+		this.board.removeImage(imageId)
+		this.notify()
+	}
+
+	public setCollectionName(name: string): void {
+		this.board.setCollectionName(name)
 		this.notify()
 	}
 }

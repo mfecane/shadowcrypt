@@ -25,7 +25,7 @@ function restRows(items: CollectionListItem[]): CollectionListItem[] {
 	<template v-if="props.items.length">
 		<div
 			v-if="firstRow(props.items).length"
-			class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-[3fr_2fr_2fr] sm:grid-rows-[420px]"
+			class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-[4fr_3fr_3fr] sm:grid-rows-[420px]"
 		>
 			<CollectionCard
 				v-for="(c, index) in firstRow(props.items)"

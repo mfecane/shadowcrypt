@@ -1,5 +1,6 @@
 import type { Container, Renderer } from 'pixi.js'
 import { Point } from 'pixi.js'
+import type { Board } from '~~/lib/board/Board'
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
@@ -35,19 +36,14 @@ export class NavigationTool implements Tool {
 		private readonly worldContainer: Container,
 		private readonly canvas: HTMLCanvasElement,
 		private readonly renderer: Renderer,
-		private readonly getViewportSize: () => { w: number; h: number },
-		private readonly getWorldSize: () => { w: number; h: number },
-		/** After any camera change (including resize / fit). */
-		private readonly onTransformSync: () => void,
-		/** Only after user-driven pan/zoom (for persisting viewport). */
-		private readonly onUserViewportChange: () => void
+		private readonly board: Board
 	) {}
 
 	public destroy(): void {}
 
 	/** Applies {@link centerWorld} and {@link zoom} to the world container (rotation cleared). */
 	public applyViewport(): void {
-		const { w: vw, h: vh } = this.getViewportSize()
+		const { w: vw, h: vh } = this.board.getViewportSize()
 		const vx = vw / 2
 		const vy = vh / 2
 		const z = this.zoom
@@ -55,7 +51,7 @@ export class NavigationTool implements Tool {
 		this.worldContainer.scale.set(z)
 		this.worldContainer.position.x = vx - this.centerWorld.x * z
 		this.worldContainer.position.y = vy - this.centerWorld.y * z
-		this.onTransformSync()
+		this.board.syncTransformWidgetFromParentSprite()
 	}
 
 	/** Restores saved viewport; clamps zoom to [{@link ZOOM_MIN}, {@link ZOOM_MAX}]. */
@@ -75,8 +71,8 @@ export class NavigationTool implements Tool {
 	}
 
 	public fitWorldToView(): void {
-		const { w: vw, h: vh } = this.getViewportSize()
-		const { w: ww, h: wh } = this.getWorldSize()
+		const { w: vw, h: vh } = this.board.getViewportSize()
+		const { w: ww, h: wh } = this.board.getWorldSize()
 		let s = 1
 		if (ww !== 0) {
 			s = Math.min(vw / ww, vh / (wh + TOP_GUTTER))
@@ -92,11 +88,11 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.y = (vh - scaledH) / 2 + TOP_GUTTER
 		this.zoom = s
 		this.syncStateFromWorld()
-		this.onTransformSync()
+		this.board.syncTransformWidgetFromParentSprite()
 	}
 
 	private syncStateFromWorld(): void {
-		const { w: vw, h: vh } = this.getViewportSize()
+		const { w: vw, h: vh } = this.board.getViewportSize()
 		const screenCenter = new Point(vw / 2, vh / 2)
 		const local = this.worldContainer.toLocal(screenCenter)
 		this.centerWorld.copyFrom(local)
@@ -143,13 +139,13 @@ export class NavigationTool implements Tool {
 			if ((raw.buttons & 4) !== 0) {
 				return true
 			}
-			if ((raw.buttons & 1) !== 0 && k === HitKind.none) {
+			if (((raw.buttons & 1) !== 0 && k === HitKind.none) || k === HitKind.sprite) {
 				return true
 			}
 			return false
 		}
 		if (raw.pointerType === 'touch') {
-			return k === HitKind.none
+			return k === HitKind.none || k === HitKind.sprite
 		}
 		return false
 	}
@@ -169,10 +165,7 @@ export class NavigationTool implements Tool {
 		const wheel = event.raw as WheelEvent
 
 		const modifierZoom = wheel.ctrlKey || wheel.metaKey
-		const mouseWheelZoom =
-			!modifierZoom &&
-			wheel.deltaX === 0 &&
-			wheel.deltaMode === WheelEvent.DOM_DELTA_LINE
+		const mouseWheelZoom = !modifierZoom && wheel.deltaX === 0 && wheel.deltaMode === WheelEvent.DOM_DELTA_LINE
 
 		if (modifierZoom || mouseWheelZoom) {
 			this.zoom += 1 - 2 ** (wheel.deltaY * 0.005)
@@ -180,8 +173,8 @@ export class NavigationTool implements Tool {
 			const focal = this.wheelFocalInRenderSpace(wheel)
 			this.applyScaleAtRendererPoint(this.zoom, focal.x, focal.y)
 			this.syncStateFromWorld()
-			this.onTransformSync()
-			this.onUserViewportChange()
+			this.board.syncTransformWidgetFromParentSprite()
+			this.board.autosave.schedule()
 			r.setHandled()
 			return r
 		}
@@ -195,8 +188,8 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.x -= dx
 		this.worldContainer.position.y -= dy
 		this.syncStateFromWorld()
-		this.onTransformSync()
-		this.onUserViewportChange()
+		this.board.syncTransformWidgetFromParentSprite()
+		this.board.autosave.schedule()
 		r.setHandled()
 		return r
 	}
@@ -216,8 +209,8 @@ export class NavigationTool implements Tool {
 			this.worldContainer.rotation += rotDelta
 		}
 		this.syncStateFromWorld()
-		this.onTransformSync()
-		this.onUserViewportChange()
+		this.board.syncTransformWidgetFromParentSprite()
+		this.board.autosave.schedule()
 		r.setHandled()
 		return r
 	}
@@ -243,8 +236,8 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.x += event.dx
 		this.worldContainer.position.y += event.dy
 		this.syncStateFromWorld()
-		this.onTransformSync()
-		this.onUserViewportChange()
+		this.board.syncTransformWidgetFromParentSprite()
+		this.board.autosave.schedule()
 		r.setHandled()
 		return r
 	}

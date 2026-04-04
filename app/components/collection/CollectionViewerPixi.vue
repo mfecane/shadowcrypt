@@ -1,32 +1,42 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
+import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 import type { CollectionDetail } from '~/types/collections'
-import { useCollectionViewerStore } from '~/stores/collectionViewer'
+
+const { createBoard, unsubscribe } = useBoard()
 
 const props = defineProps<{ collection: CollectionDetail }>()
 
 const store = useCollectionViewerStore()
+
+const state = storeToRefs(store)
+
 const queryClient = useQueryClient()
 
 const containerEl = ref<HTMLDivElement>()
-onMounted(() => {
-	const el = containerEl.value
-	if (!el) {
-		return
-	}
-	const cid = props.collection.id
-	void store
-		.createBoard(el, props.collection, () => {
+
+let unsubscribePersist: (() => void) | null = null
+
+watch(state.board, (b) => {
+	unsubscribePersist =
+		b?.bridge.subscribeOnPersistSuccess(() => {
+			const cid = props.collection.id
 			void queryClient.invalidateQueries({ queryKey: ['collection', cid] })
 			void queryClient.invalidateQueries({ queryKey: ['collections'] })
-		})
-		.then(() => {
-			store.setLoading(false)
-		})
+		}) ?? null
+})
+
+onMounted(() => {
+	const el = containerEl.value
+	if (!el) return
+	createBoard(el, props.collection)
 })
 
 onBeforeUnmount(() => {
-	store.destroyBoard()
+	state.board.value?.destroy()
+	store.reset()
+	unsubscribe?.()
+	unsubscribePersist?.()
 })
 </script>
 

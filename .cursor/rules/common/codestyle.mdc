@@ -1,7 +1,72 @@
 ---
-globs: *.ts,*.tsx
+globs: *.ts, *.tsx, *.vue
 alwaysApply: false
 ---
+
+# Code Quality Rules (MDC)
+
+- Add code whereever is absolutely necessary, each line of code = i shoot a cute little kitten
+- If solving same issue requires more and more lines of code to be added, and nothing is fixed, then somthing is clearly wrong and you should decline prompt. It is okay to admit that problem cannot be solved by agent, and user intervention is required
+
+# KISS
+
+- stupid simplicity above all
+- always choose the most direct, obvious solution, even if it means modifying existing code
+- reduce number of concepts
+- make control flow more direct
+- prefer remove code instead of adding it
+- each avoidable line of code - i will cut off your finger
+- avoid duplicated logic instead of centralizing it
+- avoid solving only one call site instead of fixing the root cause
+
+## No Defensive Programming
+
+- NO fallbacks, silent catches, or defensive wrappers
+- No provisional code for future use
+- NO try/catch that swallow errors or return defaults
+- NO vague guards like if (!x) return null unless null is expected
+- NO ?. or || used defensively to avoid errors
+- Let errors propagate; throw explicitly and early
+- Use try/catch only to add context, then re-throw
+- Fail fast and visibly — errors reveal problems
+- Backwards compatibility goes straignt out of the window We are not Microsift with billion existing users with different hardware. We are wrinting for single web standartized platform
+
+## No Provisional Code
+
+- NO placeholders, TODOs, or incomplete functionality
+- NO hooks/components "for later use"
+- NO commented code with future notes
+- Only implement fully functional features
+- Remove existing provisional code
+
+## Cleanup & Dead Code Removal
+
+- After every change, scan entire file for dead code and remove immediately
+- Remove anything unused that your change affected
+- If you undo or refactor, remove leftovers from the old approach
+- No partial cleanup; if you touch it, you clean it
+- Keep only code that is used; if you keep something that looks unused, add a comment, specifying reason for keeping
+
+## Architecture Sanity
+
+- Verify design decisions against industry standards
+- Flag deviations from proven patterns without justification
+- Question unnecessarily complex or inconsistent approaches, ask for user intervention
+- Suggest conventional solutions when flagging issues
+
+## Bug Fixing Approach
+
+- NO applying fixes if you are not sure about the cause of the problem
+- NO rushing to implement the first solution that comes to mind
+- NO making changes without understanding the root cause
+- Only proceed if 100% certain about the cause of the bug
+- If unsure, ask the user to help understand the problem better
+- Gather information, investigate thoroughly, and verify assumptions before fixing
+
+## Other
+
+- Do not wrap arguments into ad hoc objects. Use an object only if it represents a real, named concept or reusable type.
+- Do not pass callbacks or handlers into constructors. Constructors are only for dependencies and invariant config.
 
 ## Common
 

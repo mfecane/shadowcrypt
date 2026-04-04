@@ -43,7 +43,7 @@ onUnmounted(() => {
 					class="text-highlighted hover:text-beige-300 shrink-0 transition-colors"
 					aria-label="Home"
 				>
-					<AppLogo />
+					<AppLogo collapsible />
 				</NuxtLink>
 				<div class="min-w-[200px] max-w-[600px] flex-1 cursor-pointer">
 					<UInput

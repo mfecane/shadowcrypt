@@ -1,4 +1,5 @@
 import { Application, Assets, Container, Rectangle, Sprite } from 'pixi.js'
+import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidget'
 import type { CollectionDetail } from '../../app/types/collections'
 import { ImageCommandController } from '../collectionViewer/commands/ImageCommandController'
 import {
@@ -7,8 +8,9 @@ import {
 } from '../collectionViewer/commands/ImageTransformCommand'
 import { BoardImage, type BoardRect } from './BoardImage'
 import { BoardVueBridge } from './BoardVueBridge'
-import { CollectionBoardModel } from './CollectionBoardModel'
 import { CollectionAutosave, type CollectionLayoutRow } from './CollectionAutosave'
+import { CollectionBoardModel } from './CollectionBoardModel'
+import { CollectionBoardModelFactory } from './CollectionBoardModelFactory'
 import { EventPreprocessor } from './interaction/EventPreprocessor'
 import { EventRouter } from './interaction/EventRouter'
 import { PixiInteractionContext } from './interaction/PixiInteractionContext'
@@ -17,19 +19,19 @@ import { HoverTool } from './interaction/tools/HoverTool'
 import { NavigationTool } from './interaction/tools/NavigationTool'
 import { SelectTool } from './interaction/tools/SelectTool'
 import { TransformTool } from './interaction/tools/TransformTool'
-import { TransformWidget } from './interaction/widgets/TransformWidget'
 
 export class Board {
-	public readonly bridge = new BoardVueBridge()
+	public readonly bridge: BoardVueBridge = new BoardVueBridge(this)
 
-	private readonly commandController = new ImageCommandController()
-	private readonly autosave: CollectionAutosave
+	public readonly commandController: ImageCommandController = new ImageCommandController(this.bridge)
+
+	public readonly autosave: CollectionAutosave
 
 	private app: Application | null = null
 	private worldContainer: Container | null = null
 	private preprocessor: EventPreprocessor | null = null
 	private router: EventRouter | null = null
-	private navigationTool: NavigationTool | null = null
+	public navigationTool: NavigationTool | null = null
 	private interactionContext: PixiInteractionContext | null = null
 	private resizeObserver: ResizeObserver | null = null
 
@@ -42,13 +44,14 @@ export class Board {
 
 	private readonly model: CollectionBoardModel
 
+	private static readonly defaultViewportZoom = 1
+
 	public constructor(
 		private readonly mountEl: HTMLElement,
-		detail: CollectionDetail,
-		onPersistSuccess?: () => void
+		detail: CollectionDetail
 	) {
-		this.model = CollectionBoardModel.fromDetail(detail)
-		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id, onPersistSuccess)
+		this.model = new CollectionBoardModelFactory().create(detail)
+		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id)
 		this.bridge.setCollection(this.model.id, this.model.name)
 		this.bridge.setImageCount(this.model.images.length)
 	}
@@ -64,10 +67,7 @@ export class Board {
 		layouts: CollectionLayoutRow[]
 	): void {
 		if (viewport !== null) {
-			this.model.setViewportSnapshot(
-				{ x: viewport.centerX, y: viewport.centerY },
-				viewport.zoom
-			)
+			this.model.setViewportSnapshot({ x: viewport.centerX, y: viewport.centerY }, viewport.zoom)
 		}
 		for (const l of layouts) {
 			this.model.syncImageLayout(l.imageId, {
@@ -79,6 +79,7 @@ export class Board {
 		}
 	}
 
+	// TODO: not undoable
 	public removeImage(imageId: string): void {
 		if (!this.images.has(imageId)) {
 			return
@@ -137,8 +138,6 @@ export class Board {
 		}
 		return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
 	}
-
-	private static readonly defaultViewportZoom = 1
 
 	public async init(): Promise<void> {
 		await this.buildPixi()
@@ -208,7 +207,7 @@ export class Board {
 		this.bridge.openFullscreen(im)
 	}
 
-	private getViewportSize(): { w: number; h: number } {
+	public getViewportSize(): { w: number; h: number } {
 		const r = this.mountEl.getBoundingClientRect()
 		return { w: r.width || 800, h: r.height || 600 }
 	}
@@ -266,6 +265,10 @@ export class Board {
 		return rows
 	}
 
+	public getBridge(): BoardVueBridge {
+		return this.bridge
+	}
+
 	public viewportForSave(): { centerX: number; centerY: number; zoom: number } | null {
 		return this.navigationTool?.getViewportStateForSave() ?? null
 	}
@@ -300,6 +303,16 @@ export class Board {
 		this.bridge.setSelectedImageId(this.selectedImageId)
 	}
 
+	public getWorldSize(): { w: number; h: number } {
+		const rects = Array.from(this.images.values()).map((i) => i.rect)
+		const { width: ww, height: wh } = Board.worldBounds(rects)
+		return { w: ww, h: wh }
+	}
+
+	public syncTransformWidgetFromParentSprite(): void {
+		this.transformWidget?.syncFromParentSprite()
+	}
+
 	private async buildPixi(): Promise<void> {
 		this.teardownPixi()
 		this.bridge.setCollection(this.model.id, this.model.name)
@@ -318,7 +331,6 @@ export class Board {
 		}
 
 		const rects = items.map((i) => i.layout)
-		const { width: ww, height: wh } = Board.worldBounds(rects)
 
 		const viewport = this.getViewportSize()
 
@@ -350,20 +362,9 @@ export class Board {
 		this.transformWidget = new TransformWidget()
 		this.transformWidget.hide()
 
-		this.navigationTool = new NavigationTool(
-			this.worldContainer,
-			canvas,
-			this.app.renderer,
-			() => this.getViewportSize(),
-			() => ({ w: ww, h: wh }),
-			() => {
-				this.transformWidget?.syncFromParentSprite()
-			},
-			() => {
-				this.autosave.schedule()
-			}
-		)
+		this.navigationTool = new NavigationTool(this.worldContainer, canvas, this.app.renderer, this)
 
+		// Jesus, this guy loves callbacks!!
 		this.router = new EventRouter([
 			new HoverTool(canvas),
 			new FullscreenTool((id) => this.openFullscreenById(id)),
@@ -419,10 +420,7 @@ export class Board {
 		if (v !== null && vz !== null) {
 			this.navigationTool.setViewportFromSaved(v, vz)
 		} else {
-			this.navigationTool.setViewportFromSaved(
-				Board.worldBoundsCenter(rects),
-				Board.defaultViewportZoom
-			)
+			this.navigationTool.setViewportFromSaved(Board.worldBoundsCenter(rects), Board.defaultViewportZoom)
 		}
 		this.setupResizeObserver()
 		this.bridge.setCanUndo(this.commandController.canUndo())

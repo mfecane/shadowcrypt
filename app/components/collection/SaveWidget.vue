@@ -3,13 +3,13 @@
 		<Transition name="save-widget" mode="out-in">
 			<div
 				v-if="expanded"
-				:key="state.collectionSaveStatus"
+				:key="collectionSaveStatus"
 				class="inline-flex min-w-0 items-center gap-1 p-2 text-xs"
 				:class="rowClass"
 			>
 				<UTooltip
 					v-if="isError"
-					:text="state.collectionSaveError ?? 'Save failed'"
+					:text="collectionSaveError ?? 'Save failed'"
 					:content="{ side: 'bottom', align: 'start' }"
 				>
 					<Icon :name="icon" class="h-4 w-4 shrink-0 cursor-default" />
@@ -21,18 +21,16 @@
 </template>
 
 <script setup lang="ts">
-import { useBoardBridgeState } from '~/components/collection/useBoardBridgeState'
+const { collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
 
-const { state } = useBoardBridgeState()
+const expanded = computed(() => collectionSaveStatus.value !== 'idle')
 
-const expanded = computed(() => state.collectionSaveStatus !== 'idle')
+const isError = computed(() => collectionSaveStatus.value === 'error')
 
-const isError = computed(() => state.collectionSaveStatus === 'error')
-
-const iconSpin = computed(() => state.collectionSaveStatus === 'saving')
+const iconSpin = computed(() => collectionSaveStatus.value === 'saving')
 
 const rowClass = computed((): string => {
-	const s = state.collectionSaveStatus
+	const s = collectionSaveStatus.value
 	if (s === 'saving') {
 		return 'text-primary'
 	}
@@ -46,7 +44,7 @@ const rowClass = computed((): string => {
 })
 
 const icon = computed((): string => {
-	const s = state.collectionSaveStatus
+	const s = collectionSaveStatus.value
 	if (s === 'saving') {
 		return 'i-lucide-loader-2'
 	}

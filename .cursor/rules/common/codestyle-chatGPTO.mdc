@@ -1,0 +1,134 @@
+---
+globs: *.ts,*.tsx
+alwaysApply: false
+---
+
+# TypeScript Rules
+
+## Core
+
+Stupid simplicity above all.
+
+Prefer deleting or changing existing code over adding new code.
+Every new line must justify itself.
+If a solution adds more code than it removes, it is likely wrong.
+Fix root causes, not one call site.
+If complexity keeps growing, stop and report the issue instead of continuing.
+
+## Stop Conditions
+
+If the task reveals missing design decisions, unclear constraints, bad API shape, unknown root cause, or conflicting requirements, stop and report it.
+
+Do not guess.
+Do not brute-force through ambiguity with more code.
+Do not patch missing design with wrappers, flags, guards, or ad hoc parameters.
+
+Return with:
+
+1. what is unclear
+2. why it blocks a clean solution
+3. what decision or user input is needed
+
+More code is not progress.
+
+## Hard Bans
+
+Do not add:
+
+- ad hoc wrapper objects with no real domain meaning
+- constructor callbacks, handlers, or listeners
+- static methods
+- compatibility layers or dual behavior
+- fallbacks, silent guards, or defensive wrappers
+- provisional code, placeholders, TODO stubs, commented-out code
+- abstractions that exist only to avoid touching existing code
+
+Break old APIs and update usages directly when needed.
+
+## Fail Fast
+
+Do not hide errors.
+
+Forbidden:
+
+- try/catch that swallows errors or returns defaults
+- fallback values used to mask missing data
+- vague guards for impossible states
+- optional chaining or nullish fallbacks used defensively
+
+Required:
+
+- validate at boundaries
+- throw early on invalid state
+- let errors propagate
+- use try/catch only to add context and rethrow
+
+Crashing is better than silently continuing with invalid data.
+
+## API Shape
+
+Constructors are only for dependencies and invariant config.
+
+Prefer:
+
+- plain parameters over one-off object bags
+- direct calls over indirection
+- plain functions over stateless class helpers
+- centralizing duplicated logic
+- modifying existing APIs over adding layers
+
+Use object parameters only when the object is a real named concept, stable reusable type, or real boundary.
+
+Do not invent `{ options, params, config, handlers }` bags without semantic meaning.
+
+If logic does not use instance state, make it a plain function.
+
+## Cleanup
+
+After every change:
+
+- remove dead code, unused imports, leftovers, and obsolete branches
+- keep only code that is used
+
+Do not add obvious comments.
+Do not remove existing comments.
+
+## OOP
+
+Class order:
+
+1. constants
+2. public fields
+3. private fields
+4. constructor
+5. public methods
+6. private methods
+
+Required:
+
+- explicit access modifiers
+- explicit field types
+- explicit method return types
+- readonly where applicable
+
+No static methods.
+Private static readonly constants are allowed.
+
+Do not use class names ending with `Manager`.
+
+## Project Rules
+
+Apply `@.editorconfig`.
+Prefer absolute imports from `@`.
+Do not use `.cursorrules`; use `.cursor/rules/*.mdc`.
+
+## Final Check
+
+Before adding code, ask:
+
+- can I delete code instead?
+- can I modify existing code instead?
+- can I simplify the API instead?
+- can I remove a layer instead?
+
+If not, stop and report the design gap instead of adding glue.

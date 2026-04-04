@@ -20,13 +20,12 @@ export class CollectionAutosave {
 	private saving = false
 	private pending = false
 
-	private static readonly DEBOUNCE_MSEC = 600
+	private static readonly DEBOUNCE_MSEC = 2_000
 
 	public constructor(
 		private readonly board: Board,
 		private readonly bridge: BoardVueBridge,
-		private readonly collectionId: string,
-		private readonly onPersistSuccess?: () => void
+		private readonly collectionId: string
 	) {}
 
 	private async patchImageLayout(imageId: string, body: LayoutPatchBody): Promise<void> {
@@ -115,7 +114,9 @@ export class CollectionAutosave {
 			}
 			await Promise.all(tasks)
 			this.board.afterSuccessfulPersist(viewport, layouts)
-			this.onPersistSuccess?.()
+
+			this.bridge.notifyOnPersistSuccess()
+
 			if (this.disposed) {
 				return
 			}

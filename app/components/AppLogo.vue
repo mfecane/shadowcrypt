@@ -1,3 +1,20 @@
+<script setup lang="ts">
+interface Props {
+	collapsible?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+	collapsible: false,
+})
+
+const textClass = computed(() => {
+	if (props.collapsible) {
+		return 'hidden md:inline'
+	}
+	return ''
+})
+</script>
+
 <template>
 	<div class="flex items-center gap-1">
 		<svg class="size-6 shrink-0" viewBox="0 0 81.3 85.88" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -10,6 +27,6 @@
 				fill="currentColor"
 			/>
 		</svg>
-		<span class="text-lg font-semibold uppercase md:text-xl">Shadowcrypt</span>
+		<span class="text-lg font-semibold uppercase md:text-xl" :class="textClass">Shadowcrypt</span>
 	</div>
 </template>

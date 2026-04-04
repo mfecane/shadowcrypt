@@ -4,7 +4,10 @@ import { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import type { PixiInteractionContext } from '~~/lib/board/interaction/PixiInteractionContext'
 
 export class EventPreprocessor {
-	private static readonly DOUBLE_CLICK_SHIFT = 2
+	/**
+	 * The minimum distance in pixels between two pointer events to be considered a double click.
+	 */
+	private static readonly DOUBLE_CLICK_SHIFT = 10
 
 	private static readonly SINGLE_CLICK_DELAY_MS = 200
 
@@ -370,14 +373,7 @@ export class EventPreprocessor {
 
 	private async onWheel(event: WheelEvent): Promise<void> {
 		event.preventDefault()
-		await this.dispatch(
-			CanvasEventType.Wheel,
-			event.clientX,
-			event.clientY,
-			event.deltaX,
-			event.deltaY,
-			event
-		)
+		await this.dispatch(CanvasEventType.Wheel, event.clientX, event.clientY, event.deltaX, event.deltaY, event)
 		await this.dispatch(CanvasEventType.Hover, event.clientX, event.clientY, 0, 0, event)
 	}
 }

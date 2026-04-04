@@ -2,22 +2,13 @@
 import { useQueryClient } from '@tanstack/vue-query'
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 import SaveWidget from '~/components/collection/SaveWidget.vue'
-import { useBoardBridgeState } from '~/components/collection/useBoardBridgeState'
-import { useCollectionViewerStore } from '~/stores/collectionViewer'
-import type { CollectionDetail } from '~/types/collections'
+import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 import { nn } from '~~/lib/collectionViewer/viewerUtils'
 
-const props = defineProps<{ detail: CollectionDetail }>()
+const { collectionId, collectionName, selectedImageId, canUndo, canRedo, bridge } =
+	storeToRefs(useCollectionViewerStore())
 
-const store = useCollectionViewerStore()
-
-const { state } = useBoardBridgeState()
-
-const collectionId = computed(() => state.collectionId ?? props.detail.id)
-const collectionName = computed(() => state.collectionName || props.detail.name)
-const selected = computed(() => state.selectedImageId)
-const canUndo = computed(() => state.canUndo)
-const canRedo = computed(() => state.canRedo)
+const selected = computed(() => selectedImageId.value)
 
 const router = useRouter()
 const queryClient = useQueryClient()
@@ -44,7 +35,7 @@ async function saveEdit(): Promise<void> {
 			method: 'PATCH',
 			body: { name },
 		})
-		store.board?.setCollectionName(name)
+		bridge.value?.setCollectionName(name)
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		editOpen.value = false
@@ -67,7 +58,7 @@ async function confirmDeleteImage(): Promise<void> {
 		await $fetch(`/api/collections/${collectionId.value}/images/${imageId}`, {
 			method: 'DELETE',
 		})
-		store.board?.removeImage(imageId)
+		bridge.value?.removeImage(imageId)
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		deleteOpen.value = false
@@ -95,21 +86,21 @@ async function confirmDeleteImage(): Promise<void> {
 			:icon="'i-lucide-undo'"
 			aria-label="Undo"
 			:disabled="!canUndo"
-			@click="store.board?.undo()"
+			@click="bridge?.undo()"
 		/>
 
 		<CollectionToolbarButton
 			:icon="'i-lucide-redo'"
 			aria-label="Redo"
 			:disabled="!canRedo"
-			@click="store.board?.redo()"
+			@click="bridge?.redo()"
 		/>
 
 		<CollectionToolbarButton
 			:icon="'i-lucide-scan-search'"
 			aria-label="Fit all images to view"
-			:disabled="store.board === null"
-			@click="store.board?.fitWorldToView()"
+			:disabled="bridge === null"
+			@click="bridge?.fitWorldToView()"
 		/>
 
 		<CollectionToolbarButton
