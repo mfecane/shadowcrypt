@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 const target = useFolderEditOverlayState()
 const queryClient = useQueryClient()
@@ -50,8 +51,8 @@ async function save(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['folder', t.id] })
 		close()
-	} catch {
-		error.value = 'Save failed'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Save failed')
 	} finally {
 		saving.value = false
 	}
@@ -94,8 +95,8 @@ async function performDelete(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['folder', t.id] })
 		confirmDeleteOpen.value = false
 		close()
-	} catch {
-		error.value = 'Delete failed'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Delete failed')
 	} finally {
 		deleting.value = false
 	}

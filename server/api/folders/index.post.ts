@@ -1,6 +1,8 @@
 import { z } from 'zod'
+import { assertAllowed, canCreateResourceRoles } from '~~/server/auth/permissions'
 import { folders } from '~~/server/db/schema'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 
 const bodySchema = z.object({
 	name: z
@@ -11,7 +13,8 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCreateResourceRoles(roles, 'folders'))
 	const parsed = bodySchema.parse(await readBody(event))
 	const db = useDb()
 

@@ -11,5 +11,6 @@
 			<CollectionListEditOverlays />
 			<DevPanelOverlay />
 		</ClientOnly>
+		<DemoOverlay />
 	</UApp>
 </template>

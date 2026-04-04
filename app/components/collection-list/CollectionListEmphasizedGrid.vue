@@ -32,9 +32,9 @@ function restRows(items: CollectionListItem[]): CollectionListItem[] {
 				:key="`${props.keyPrefix}-${c.id}`"
 				:collection="c"
 				:size="index === 0 ? 'big' : 'medium'"
-				@edit="emit('edit', c)"
 				:folder-name="props.showFolder ? c.folder?.name : undefined"
 				:folder-id="props.showFolder ? c.folder?.id : undefined"
+				@edit="emit('edit', c)"
 			/>
 		</div>
 		<div
@@ -46,9 +46,9 @@ function restRows(items: CollectionListItem[]): CollectionListItem[] {
 				:key="`${props.keyPrefix}-${c.id}`"
 				:collection="c"
 				size="smol"
-				@edit="emit('edit', c)"
 				:folder-name="props.showFolder ? c.folder?.name : undefined"
 				:folder-id="props.showFolder ? c.folder?.id : undefined"
+				@edit="emit('edit', c)"
 			/>
 		</div>
 	</template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
 import type { ArchivedFolderSummary } from '~/types/collections'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 const props = defineProps<{ folder: ArchivedFolderSummary }>()
 
@@ -18,8 +19,8 @@ async function unarchive(): Promise<void> {
 		})
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['folder', props.folder.id] })
-	} catch {
-		error.value = 'Could not unarchive'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Could not unarchive')
 	} finally {
 		pending.value = false
 	}

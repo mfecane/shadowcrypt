@@ -2,15 +2,18 @@ import { createHash } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { readMultipartFormData } from 'h3'
 import { processImageToWebP } from '~~/lib/imageSharpProcessing'
+import { assertAllowed, canAccessOwnUserRoles } from '~~/server/auth/permissions'
 import { users } from '~~/server/db/schema'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { useStorageClient } from '~~/server/utils/storage'
 
 const AVATAR_MAX_PX = 512
 const MAX_BYTES = 8 * 1024 * 1024
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canAccessOwnUserRoles(roles, 'updateSelf'))
 
 	const parts = await readMultipartFormData(event)
 	const file = parts?.find((p) => p.name === 'file' || p.name === 'avatar')

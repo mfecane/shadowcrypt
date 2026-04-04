@@ -129,8 +129,8 @@ const archivedFolderSummary = computed(() => {
 						v-if="collectionsInFolder.length"
 						:items="collectionsInFolder"
 						:key-prefix="`folder-page-${folder.id}`"
-						@edit="openCollectionEdit"
 						:show-folder="false"
+						@edit="openCollectionEdit"
 					/>
 					<section v-if="archivedInFolder.length" class="border-muted mt-8 border-t border-dashed pt-6">
 						<h3 class="text-muted mb-3 text-xs font-semibold uppercase tracking-wider">

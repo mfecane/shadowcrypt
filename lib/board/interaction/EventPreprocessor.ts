@@ -3,6 +3,13 @@ import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import type { PixiInteractionContext } from '~~/lib/board/interaction/PixiInteractionContext'
 
+interface PinchData {
+	distSq: number
+	angle: number
+	cx: number
+	cy: number
+}
+
 export class EventPreprocessor {
 	/**
 	 * The minimum distance in pixels between two pointer events to be considered a double click.
@@ -37,12 +44,7 @@ export class EventPreprocessor {
 
 	private gestureActive = false
 
-	private prevPinch: {
-		distSq: number
-		angle: number
-		cx: number
-		cy: number
-	} | null = null
+	private prevPinch: PinchData | null = null
 
 	private lastPointerDownPosition: { x: number; y: number } | null = null
 

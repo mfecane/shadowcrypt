@@ -1,16 +1,19 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { refreshFolderLastSeen } from '~~/server/utils/refreshFolderLastSeen'
 
 const storageKeyFactory = new StorageKeyFactory(new EnvironmentResolver())
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCrudOwnResourceRoles(roles, 'collections', 'read', sub, sub))
 
 	const id = getRouterParam(event, 'id')
 	if (typeof id !== 'string' || id === '') {

@@ -5,16 +5,19 @@ import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/collectionImageUploadConstants'
 import { getCollectionImageStoredDimensions } from '~~/lib/imageSharpProcessing'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
+import { assertAllowed, canCreateResourceRoles } from '~~/server/auth/permissions'
 import { collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { useStorageClient } from '~~/server/utils/storage'
 
 const storageKeyFactory = new StorageKeyFactory(new EnvironmentResolver())
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCreateResourceRoles(roles, 'images'))
 
 	const collectionId = getRouterParam(event, 'id')
 	if (typeof collectionId !== 'string' || collectionId === '') {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
 import type { CollectionListItem } from '~/types/collections'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 const props = defineProps<{ collection: CollectionListItem }>()
 
@@ -21,8 +22,8 @@ async function unarchive(): Promise<void> {
 		if (props.collection.folderId !== null) {
 			await queryClient.invalidateQueries({ queryKey: ['folder', props.collection.folderId] })
 		}
-	} catch {
-		error.value = 'Could not unarchive'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Could not unarchive')
 	} finally {
 		pending.value = false
 	}
@@ -35,7 +36,7 @@ async function unarchive(): Promise<void> {
 		<span class="truncate text-base font-medium text-highlighted">{{ collection.name }}</span>
 		<div class="text-beige-500 text-xs font-medium">{{ collection.imageCount }} items</div>
 		<span v-if="error !== null" class="text-red-400 text-xs">{{ error }}</span>
-		<UButton variant="soft" :disabled="pending" @click="unarchive" icon="i-lucide-archive-restore" size="sm">
+		<UButton variant="soft" icon="i-lucide-archive-restore" size="sm" :disabled="pending" @click="unarchive">
 			{{ pending ? '…' : 'Unarchive' }}
 		</UButton>
 	</div>

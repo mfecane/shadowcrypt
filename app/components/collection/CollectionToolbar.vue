@@ -4,6 +4,7 @@ import CollectionToolbarButton from '~/components/collection/CollectionToolbarBu
 import SaveWidget from '~/components/collection/SaveWidget.vue'
 import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 import { nn } from '~~/lib/collectionViewer/viewerUtils'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 const { collectionId, collectionName, selectedImageId, canUndo, canRedo, bridge } =
 	storeToRefs(useCollectionViewerStore())
@@ -16,11 +17,14 @@ const queryClient = useQueryClient()
 const editOpen = ref(false)
 const deleteOpen = ref(false)
 const editName = ref('')
+const editError = ref<string | null>(null)
+const deleteError = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
 
 function openEdit(): void {
 	editName.value = collectionName.value
+	editError.value = null
 	editOpen.value = true
 }
 
@@ -30,6 +34,7 @@ async function saveEdit(): Promise<void> {
 		return
 	}
 	saving.value = true
+	editError.value = null
 	try {
 		await $fetch(`/api/collections/${collectionId.value}`, {
 			method: 'PATCH',
@@ -39,6 +44,8 @@ async function saveEdit(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		editOpen.value = false
+	} catch (e: unknown) {
+		editError.value = fetchFormErrorMessage(e, 'Save failed')
 	} finally {
 		saving.value = false
 	}
@@ -48,12 +55,14 @@ function openDeleteImage(): void {
 	if (selected.value === null) {
 		return
 	}
+	deleteError.value = null
 	deleteOpen.value = true
 }
 
 async function confirmDeleteImage(): Promise<void> {
 	const imageId = nn(selected.value)
 	deleting.value = true
+	deleteError.value = null
 	try {
 		await $fetch(`/api/collections/${collectionId.value}/images/${imageId}`, {
 			method: 'DELETE',
@@ -63,6 +72,8 @@ async function confirmDeleteImage(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		deleteOpen.value = false
 		// Board owns selection; no-op here.
+	} catch (e: unknown) {
+		deleteError.value = fetchFormErrorMessage(e, 'Delete failed')
 	} finally {
 		deleting.value = false
 	}
@@ -113,7 +124,7 @@ async function confirmDeleteImage(): Promise<void> {
 		<SaveWidget />
 	</div>
 
-	<CollectionEditModal v-model:open="editOpen" v-model:name="editName" :saving="saving" @save="saveEdit" />
+	<CollectionEditModal v-model:open="editOpen" v-model:name="editName" :saving="saving" :error="editError" @save="saveEdit" />
 
 	<Teleport to="body">
 		<div
@@ -123,7 +134,8 @@ async function confirmDeleteImage(): Promise<void> {
 		>
 			<div class="bg-elevated border-muted w-full max-w-md rounded-lg border p-6 shadow-xl">
 				<h2 class="text-highlighted mb-4 text-lg font-semibold">Delete image?</h2>
-				<p class="text-muted mb-6 text-sm">This cannot be undone.</p>
+				<p class="text-muted mb-4 text-sm">This cannot be undone.</p>
+				<p v-if="deleteError !== null" class="text-red-400 mb-4 text-sm">{{ deleteError }}</p>
 				<div class="flex justify-end gap-2">
 					<button
 						type="button"

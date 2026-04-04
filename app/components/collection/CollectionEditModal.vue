@@ -2,7 +2,7 @@
 const open = defineModel<boolean>('open', { required: true })
 const name = defineModel<string>('name', { required: true })
 
-defineProps<{ saving: boolean }>()
+defineProps<{ saving: boolean; error?: string | null }>()
 
 const emit = defineEmits<{ save: [] }>()
 </script>
@@ -21,10 +21,11 @@ const emit = defineEmits<{ save: [] }>()
 					id="collection-name-input"
 					v-model="name"
 					type="text"
-					class="border-muted bg-muted mb-6 w-full rounded border px-3 py-2 text-highlighted"
+					class="border-muted bg-muted mb-2 w-full rounded border px-3 py-2 text-highlighted"
 					@keydown.enter="emit('save')"
 				>
-				<div class="flex justify-end gap-2">
+				<p v-if="error" class="text-red-400 mb-4 text-sm">{{ error }}</p>
+				<div class="mt-4 flex justify-end gap-2">
 					<button
 						type="button"
 						class="text-muted hover:text-highlighted rounded px-4 py-2 text-sm"

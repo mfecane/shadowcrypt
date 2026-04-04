@@ -1,13 +1,16 @@
 import { and, eq } from 'drizzle-orm'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, folders } from '~~/server/db/schema'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 
 /**
  * Deletes the folder and moves its collections to “no folder” (`folder_id` null).
  * DB FK also uses ON DELETE SET NULL; we unparent explicitly first for a clear, auditable flow.
  */
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCrudOwnResourceRoles(roles, 'folders', 'delete', sub, sub))
 
 	const id = getRouterParam(event, 'id')
 	if (typeof id !== 'string' || id === '') {

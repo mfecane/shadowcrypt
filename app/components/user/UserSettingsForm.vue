@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
+
 const { user, fetch: fetchSession } = useUserSession()
 
 const name = ref('')
@@ -30,7 +32,7 @@ async function onSubmit(): Promise<void> {
 		await fetchSession()
 		message.value = 'Profile updated.'
 	} catch (e: unknown) {
-		error.value = e instanceof Error ? e.message : 'Update failed'
+		error.value = fetchFormErrorMessage(e, 'Update failed')
 	}
 	loading.value = false
 }
@@ -56,7 +58,7 @@ async function onAvatarFileChange(event: Event): Promise<void> {
 		await fetchSession()
 		message.value = 'Profile picture updated.'
 	} catch (e: unknown) {
-		error.value = e instanceof Error ? e.message : 'Upload failed'
+		error.value = fetchFormErrorMessage(e, 'Upload failed')
 	} finally {
 		avatarUploading.value = false
 	}
@@ -71,7 +73,7 @@ async function deleteAvatar(): Promise<void> {
 		await fetchSession()
 		message.value = 'Profile picture removed.'
 	} catch (e: unknown) {
-		error.value = e instanceof Error ? e.message : 'Remove failed'
+		error.value = fetchFormErrorMessage(e, 'Remove failed')
 	} finally {
 		avatarDeleting.value = false
 	}

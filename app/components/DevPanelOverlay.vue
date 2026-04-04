@@ -102,7 +102,7 @@ function close(): void {
 							aria-label="Close"
 							@click="close"
 						>
-							<span class="i-lucide-x h-5 w-5" />
+							<Icon name="i-lucide-x" class="h-5 w-5" />
 						</button>
 					</div>
 					<ul class="space-y-1">

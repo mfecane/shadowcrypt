@@ -1,13 +1,16 @@
 import { and, eq } from 'drizzle-orm'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { useStorageClient } from '~~/server/utils/storage'
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCrudOwnResourceRoles(roles, 'images', 'delete', sub, sub))
 
 	const collectionId = getRouterParam(event, 'id')
 	const imageId = getRouterParam(event, 'imageId')

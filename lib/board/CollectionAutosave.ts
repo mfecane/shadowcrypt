@@ -1,3 +1,4 @@
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 import type { Board } from './Board'
 import type { BoardVueBridge } from './BoardVueBridge'
 
@@ -137,7 +138,7 @@ export class CollectionAutosave {
 			if (this.disposed) {
 				return
 			}
-			const msg = e instanceof Error ? e.message : String(e)
+			const msg = fetchFormErrorMessage(e, 'Save failed')
 			this.bridge.setCollectionSaveState('error', msg)
 		} finally {
 			this.saving = false

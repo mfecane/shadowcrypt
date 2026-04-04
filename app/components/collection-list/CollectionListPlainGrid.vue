@@ -23,9 +23,9 @@ const emit = defineEmits<{ edit: [item: CollectionListItem] }>()
 			:key="`${props.keyPrefix}-${c.id}`"
 			:collection="c"
 			size="smol"
-			@edit="emit('edit', c)"
 			:folder-name="props.showFolder ? c.folder?.name : undefined"
 			:folder-id="props.showFolder ? c.folder?.id : undefined"
+			@edit="emit('edit', c)"
 		/>
 	</div>
 </template>

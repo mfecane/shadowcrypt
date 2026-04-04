@@ -2,6 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/collectionImageUploadConstants'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
 	const seen = new Set<string>()
@@ -126,17 +127,6 @@ function firstImageFromClipboard(cb: DataTransfer | null): File | null {
 	return null
 }
 
-function fetchErrorMessage(e: unknown): string {
-	if (e !== null && typeof e === 'object' && 'data' in e) {
-		const d = (e as { data?: { statusMessage?: string; message?: string } }).data
-		const m = d?.statusMessage ?? d?.message
-		if (typeof m === 'string' && m.length > 0) {
-			return m
-		}
-	}
-	return 'Upload failed'
-}
-
 const route = useRoute()
 const queryClient = useQueryClient()
 const { open, openOverlay, closeOverlay: closeOverlayState } = useImageUploadOverlay()
@@ -239,7 +229,7 @@ async function createCollection(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['folder'] })
 		selectedCollectionId.value = res.collection.id
 	} catch (e: unknown) {
-		error.value = fetchErrorMessage(e)
+		error.value = fetchFormErrorMessage(e, 'Could not create collection')
 	} finally {
 		creatingCollection.value = false
 	}
@@ -349,7 +339,7 @@ async function submitUpload(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['collection', cid] })
 		close()
 	} catch (e: unknown) {
-		error.value = fetchErrorMessage(e)
+		error.value = fetchFormErrorMessage(e, 'Upload failed')
 	} finally {
 		uploading.value = false
 	}
@@ -442,7 +432,7 @@ onBeforeUnmount(() => {
 											autocomplete="off"
 											:disabled="creatingCollection"
 											@keydown.enter.prevent="createCollection"
-										/>
+										>
 										<UButton
 											:disabled="creatingCollection || newCollectionName.trim().length === 0"
 											@click="createCollection"
@@ -463,7 +453,7 @@ onBeforeUnmount(() => {
 								:src="previewUrl"
 								alt=""
 								class="max-h-48 max-w-full rounded-md object-contain"
-							/>
+							>
 							<p v-else class="text-muted text-sm">
 								Drop an image here or paste from clipboard (⌘V / Ctrl+V).
 							</p>

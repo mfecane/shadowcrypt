@@ -31,6 +31,9 @@ config({ path: resolve(rootDir, '.env.local') })
 /** Change this to your preferred test email. */
 const SEED_USER_EMAIL = 'aaliapkin@gmail.com'
 
+const DEMO_USER_EMAIL = process.env.NUXT_DEMO_USER ?? 'demo@shadowcrypt.app'
+const DEMO_USER_NAME = 'Demo User'
+
 const SEED_USER_NAME = 'Aleksei Aliapkin'
 
 /** Original baseline was 10; seed ~30% more. */
@@ -271,6 +274,27 @@ async function main(): Promise<void> {
 	}
 
 	console.info(`[seed] done (${result.user.id})`)
+
+	const [existingDemo] = await db.select().from(users).where(eq(users.email, DEMO_USER_EMAIL)).limit(1)
+	if (existingDemo === undefined) {
+		const [demoUser] = await db
+			.insert(users)
+			.values({
+				email: DEMO_USER_EMAIL,
+				name: DEMO_USER_NAME,
+				roles: ['demo'],
+				emailVerified: now,
+			})
+			.returning()
+		if (demoUser === undefined) {
+			throw new Error('[seed] insert demo user returned no row')
+		}
+		await db.insert(userProfiles).values({ userId: demoUser.id })
+		console.info(`[seed] demo user ${demoUser.email} (${demoUser.id})`)
+	} else {
+		console.info(`[seed] demo user already exists (${DEMO_USER_EMAIL})`)
+	}
+
 	await pool.end()
 }
 

@@ -11,6 +11,8 @@ const props = withDefaults(
 	}>(),
 	{
 		showEdit: true,
+		folderName: undefined,
+		folderId: undefined,
 	}
 )
 
@@ -95,7 +97,7 @@ const displayImages = computed(() => {
 						class="min-h-0 overflow-hidden"
 						:class="imageClassByIndex(index)"
 					>
-						<img :src="img.url" class="w-full h-full object-cover" alt="" @dragstart.prevent />
+						<img :src="img.url" class="w-full h-full object-cover" alt="" @dragstart.prevent >
 					</div>
 				</div>
 			</div>

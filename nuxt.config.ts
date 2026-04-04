@@ -17,6 +17,7 @@ export default defineNuxtConfig({
 		auth: {
 			emailNoncePepper: '',
 		},
+		demoUser: process.env.NUXT_DEMO_USER ?? '',
 		oauth: {
 			google: {
 				clientId: '',
@@ -26,6 +27,7 @@ export default defineNuxtConfig({
 		public: {
 			s3PublicUrl: '',
 			seedKey: '',
+			demo: process.env.NUXT_DEMO === 'true',
 		},
 	},
 	app: {

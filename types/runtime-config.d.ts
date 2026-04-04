@@ -14,10 +14,13 @@ declare module 'nuxt/schema' {
 				clientSecret: string
 			}
 		}
+		demo: boolean
+		demoUser: string
 	}
 	interface PublicRuntimeConfig {
 		s3PublicUrl: string
 		seedKey: string
+		demo: boolean
 	}
 }
 

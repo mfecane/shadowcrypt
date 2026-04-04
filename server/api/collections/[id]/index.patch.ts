@@ -1,7 +1,9 @@
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, folders } from '~~/server/db/schema'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { refreshFolderLastSeen } from '~~/server/utils/refreshFolderLastSeen'
 
 const patchBodySchema = z
@@ -45,7 +47,8 @@ const patchBodySchema = z
 	})
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCrudOwnResourceRoles(roles, 'collections', 'update', sub, sub))
 
 	const id = getRouterParam(event, 'id')
 	if (typeof id !== 'string' || id === '') {

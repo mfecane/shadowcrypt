@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { CollectionsListResponse } from '~/types/collections'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
 const target = useCollectionEditOverlayState()
 const queryClient = useQueryClient()
@@ -91,8 +92,8 @@ async function save(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['collection', t.id] })
 		await queryClient.invalidateQueries({ queryKey: ['folder'] })
 		close()
-	} catch {
-		error.value = 'Save failed'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Save failed')
 	} finally {
 		saving.value = false
 	}
@@ -124,8 +125,8 @@ async function createFolder(): Promise<void> {
 		selectedFolderIdStr.value = res.folder.id
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['folder'] })
-	} catch {
-		error.value = 'Could not create folder'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Could not create folder')
 	} finally {
 		creatingFolder.value = false
 	}
@@ -148,8 +149,8 @@ async function performDelete(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['folder'] })
 		confirmDeleteOpen.value = false
 		close()
-	} catch {
-		error.value = 'Delete failed'
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Delete failed')
 	} finally {
 		deleting.value = false
 	}

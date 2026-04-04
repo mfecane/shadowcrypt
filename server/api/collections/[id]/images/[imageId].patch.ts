@@ -1,7 +1,9 @@
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, images } from '~~/server/db/schema'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 
 const layoutSchema = z.object({
 	layoutX: z.number().finite(),
@@ -11,7 +13,8 @@ const layoutSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCrudOwnResourceRoles(roles, 'images', 'update', sub, sub))
 
 	const collectionId = getRouterParam(event, 'id')
 	const imageId = getRouterParam(event, 'imageId')

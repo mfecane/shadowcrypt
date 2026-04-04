@@ -6,7 +6,7 @@ declare module '#auth-utils' {
 		/** DB value: S3 content hash, external URL (OAuth / legacy), or null when no photo */
 		avatarRef: string | null
 		hasCustomAvatar: boolean
-		roles: ('client' | 'artist' | 'admin' | 'moderator')[]
+		roles: ('user' | 'demo' | 'admin' | 'moderator')[]
 		isAdmin: boolean
 	}
 }

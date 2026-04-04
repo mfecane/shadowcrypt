@@ -1,7 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { boolean, doublePrecision, integer, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
-export const userRole = pgEnum('user_role', ['client', 'artist', 'admin', 'moderator'])
+export const userRole = pgEnum('user_role', ['user', 'demo', 'admin', 'moderator'])
 
 export type UserRole = (typeof userRole.enumValues)[number]
 
@@ -13,7 +13,7 @@ export const users = pgTable('users', {
 	roles: userRole('roles')
 		.array()
 		.notNull()
-		.default(sql`ARRAY['client']::user_role[]`),
+		.default(sql`ARRAY['user']::user_role[]`),
 	emailVerified: timestamp('email_verified', { withTimezone: true }),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

@@ -8,6 +8,13 @@
       "when": 1775139873874,
       "tag": "0000_dear_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775312013066,
+      "tag": "0001_misty_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }

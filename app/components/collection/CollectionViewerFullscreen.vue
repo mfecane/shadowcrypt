@@ -28,7 +28,7 @@ function onPointerMove(event: PointerEvent): void {
 <template>
 	<div class="fullscreen" @click="close" @pointermove="onPointerMove" @touchmove="close">
 		<Transition>
-			<img v-if="fullscreenImage" :src="fullscreenImage.src" :class="fitClass" alt="" />
+			<img v-if="fullscreenImage" :src="fullscreenImage.src" :class="fitClass" alt="" >
 		</Transition>
 	</div>
 </template>

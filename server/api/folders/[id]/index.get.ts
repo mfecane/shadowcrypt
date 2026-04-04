@@ -1,9 +1,11 @@
 import { and, eq } from 'drizzle-orm'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, folders } from '~~/server/db/schema'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { buildCollectionListItemMap } from '~~/server/utils/collectionListItems'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 
 const storageKeyFactory = new StorageKeyFactory(new EnvironmentResolver())
 
@@ -25,7 +27,8 @@ function compareByLastSeenThenUpdated<
 }
 
 export default defineEventHandler(async (event) => {
-	const sub = await requireSessionUserId(event)
+	const { userId: sub, roles } = await requireSessionUserRoles(event)
+	assertAllowed(canCrudOwnResourceRoles(roles, 'folders', 'read', sub, sub))
 
 	const id = getRouterParam(event, 'id')
 	if (typeof id !== 'string' || id === '') {

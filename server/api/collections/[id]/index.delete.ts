@@ -2,11 +2,13 @@ import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { container } from '~~/lib/di/container'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
+import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { collections, images } from '~~/server/db/schema'
 import type { StorageClient } from '~~/server/storage/client/StorageClient'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
+import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 
 const bodySchema = z.object({
 	id: z.string().uuid(),
@@ -14,7 +16,8 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
 	try {
-		const userId = await requireSessionUserId(event)
+		const { userId, roles } = await requireSessionUserRoles(event)
+		assertAllowed(canCrudOwnResourceRoles(roles, 'collections', 'delete', userId, userId))
 
 		const parsed = bodySchema.parse(await readBody(event))
 
