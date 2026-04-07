@@ -4,4 +4,5 @@ export const enum ServiceAlias {
 	EnvironmentResolver = 'EnvironmentResolver',
 	StorageKeyFactory = 'StorageKeyFactory',
 	EmailNonceService = 'EmailNonceService',
+	LogPanel = 'LogPanel',
 }

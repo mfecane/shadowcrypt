@@ -28,6 +28,7 @@ export default defineNuxtConfig({
 			s3PublicUrl: '',
 			seedKey: '',
 			demo: process.env.NUXT_DEMO === 'true',
+			debugPixiCanvas: process.env.DEBUG_PIXI_CANVAS === 'true',
 		},
 	},
 	app: {

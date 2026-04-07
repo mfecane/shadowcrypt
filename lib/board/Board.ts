@@ -1,5 +1,8 @@
 import { Application, Assets, Container, Rectangle, Sprite } from 'pixi.js'
+import type { LogPanel } from '~~/lib/LogPanel'
 import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidget'
+import { ServiceAlias } from '~~/lib/di/ServiceAlias'
+import { container } from '~~/lib/di/container'
 import type { CollectionDetail } from '../../app/types/collections'
 import { ImageCommandController } from '../collectionViewer/commands/ImageCommandController'
 import {
@@ -34,6 +37,8 @@ export class Board {
 	public navigationTool: NavigationTool | null = null
 	private interactionContext: PixiInteractionContext | null = null
 	private resizeObserver: ResizeObserver | null = null
+	private debugOverlayEl: HTMLDivElement | null = null
+	private debugLines: string[] = []
 
 	private readonly spriteById = new Map<string, Sprite>()
 	private transformWidget: TransformWidget | null = null
@@ -45,6 +50,8 @@ export class Board {
 	private readonly model: CollectionBoardModel
 
 	private static readonly defaultViewportZoom = 1
+
+	private readonly logger = container.resolve<LogPanel>(ServiceAlias.LogPanel)
 
 	public constructor(
 		private readonly mountEl: HTMLElement,
@@ -172,6 +179,11 @@ export class Board {
 			this.app.destroy(true)
 			this.app = null
 		}
+		if (this.debugOverlayEl !== null) {
+			this.debugOverlayEl.remove()
+			this.debugOverlayEl = null
+		}
+		this.debugLines = []
 		this.bridge.setSelectedImageId(this.selectedImageId)
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
@@ -317,9 +329,11 @@ export class Board {
 		this.teardownPixi()
 		this.bridge.setCollection(this.model.id, this.model.name)
 		this.bridge.setReady(false)
+		this.logger.log(`start collection=${this.model.id} images=${this.model.images.length}`)
 
 		const items = this.model.images
 		if (items.length === 0) {
+			this.logger.log('no images, marking board ready')
 			this.bridge.setImageCount(0)
 			this.bridge.setReady(true)
 			return
@@ -329,20 +343,29 @@ export class Board {
 			const r: BoardRect = { ...im.layout }
 			this.images.set(im.id, new BoardImage(im.id, im.url, r))
 		}
+		this.logger.log(`seeded image map entries=${this.images.size}`)
 
 		const rects = items.map((i) => i.layout)
 
 		const viewport = this.getViewportSize()
+		this.logger.log(`viewport ${Math.round(viewport.w)}x${Math.round(viewport.h)}`)
 
 		this.app = new Application()
-		await this.app.init({
-			width: viewport.w,
-			height: viewport.h,
-			backgroundAlpha: 0,
-			antialias: true,
-			resolution: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
-			autoDensity: true,
-		})
+		this.logger.log('initializing pixi application')
+		try {
+			await this.app.init({
+				width: viewport.w,
+				height: viewport.h,
+				backgroundAlpha: 0,
+				antialias: true,
+				resolution: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
+				autoDensity: true,
+			})
+		} catch (error) {
+			this.logger.log(`app.init failed: ${error instanceof Error ? error.message : String(error)}`)
+			throw error
+		}
+		this.logger.log('pixi application initialized')
 
 		const canvas = this.app.canvas as HTMLCanvasElement
 		canvas.style.display = 'block'
@@ -350,6 +373,7 @@ export class Board {
 		canvas.style.height = '100%'
 		canvas.style.touchAction = 'none'
 		this.mountEl.appendChild(canvas)
+		this.logger.log('canvas attached to mount element')
 
 		this.worldContainer = new Container()
 		this.app.stage.addChild(this.worldContainer)
@@ -394,25 +418,40 @@ export class Board {
 			this.router!.dispatch(e)
 		)
 		this.preprocessor.attach()
+		this.logger.log('interaction stack attached')
 
-		for (const im of items) {
-			const texture = await Assets.load(im.url)
-			const bi = this.images.get(im.id)
-			if (bi) {
-				bi.width = texture.width
-				bi.height = texture.height
+		for (const [index, im] of items.entries()) {
+			this.logger.log(`loading image ${index + 1}/${items.length} id=${im.id}`)
+			try {
+				const texture = await Assets.load(im.url)
+				const bi = this.images.get(im.id)
+				if (bi) {
+					bi.width = texture.width
+					bi.height = texture.height
+				}
+				const sprite = new Sprite(texture)
+				const L = im.layout
+				sprite.x = L.x
+				sprite.y = L.y
+				sprite.width = L.w
+				sprite.height = L.h
+				sprite.eventMode = 'static'
+				sprite.cursor = 'pointer'
+				this.worldContainer.addChild(sprite)
+				this.spriteById.set(im.id, sprite)
+				this.logger.log(
+					`image ready ${index + 1}/${items.length} id=${im.id} tex=${texture.width}x${texture.height}`
+				)
+			} catch (error) {
+				this.logger.log(
+					`image failed ${index + 1}/${items.length} id=${im.id}: ${
+						error instanceof Error ? error.message : String(error)
+					}`
+				)
+				throw error
 			}
-			const sprite = new Sprite(texture)
-			const L = im.layout
-			sprite.x = L.x
-			sprite.y = L.y
-			sprite.width = L.w
-			sprite.height = L.h
-			sprite.eventMode = 'static'
-			sprite.cursor = 'pointer'
-			this.worldContainer.addChild(sprite)
-			this.spriteById.set(im.id, sprite)
 		}
+		this.logger.log(`all sprites created count=${this.spriteById.size}`)
 
 		this.selectImage(null)
 		const v = this.model.viewportCenter
@@ -422,10 +461,13 @@ export class Board {
 		} else {
 			this.navigationTool.setViewportFromSaved(Board.worldBoundsCenter(rects), Board.defaultViewportZoom)
 		}
+		this.logger.log('viewport initialized')
 		this.setupResizeObserver()
+		this.logger.log('resize observer attached')
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.bridge.setImageCount(items.length)
 		this.bridge.setReady(true)
+		this.logger.log('build complete, board ready')
 	}
 }

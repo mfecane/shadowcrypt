@@ -1,5 +1,6 @@
 import { registerClientServices } from '~~/lib/di/registerClientServices'
 
 export default defineNuxtPlugin(() => {
-	registerClientServices()
+	const config = useRuntimeConfig()
+	registerClientServices(config)
 })

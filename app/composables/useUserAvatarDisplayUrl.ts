@@ -8,9 +8,6 @@ export function useUserAvatarDisplayUrl(): ComputedRef<string> {
 		if (u === null) {
 			return ''
 		}
-		return getUserAvatarDisplayUrl(
-			{ id: u.id, avatarRef: u.avatarRef },
-			config.public
-		)
+		return getUserAvatarDisplayUrl({ id: u.id, avatarRef: u.avatarRef }, config.public)
 	})
 }

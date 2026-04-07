@@ -1,7 +1,21 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import type { CollectionListItem, CollectionsListResponse } from '~/types/collections'
+import type { CollectionFolderBlock, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { rankByFuzzyName } from '~~/lib/fuzzyMatchCollectionName'
+
+interface QuickFindCollectionResult extends CollectionListItem {
+	kind: 'collection'
+}
+
+interface QuickFindFolderResult {
+	kind: 'folder'
+	id: string
+	name: string
+	collectionCount: number
+	previewImages: CollectionListItem['images']
+}
+
+type QuickFindResult = QuickFindCollectionResult | QuickFindFolderResult
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
 	const seen = new Set<string>()
@@ -25,6 +39,16 @@ function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionList
 		push(c)
 	}
 	return out
+}
+
+function flattenFolders(res: CollectionsListResponse): QuickFindFolderResult[] {
+	return res.folders.map((folder: CollectionFolderBlock) => ({
+		kind: 'folder',
+		id: folder.id,
+		name: folder.name,
+		collectionCount: folder.collections.length,
+		previewImages: folder.collections.flatMap((collection) => collection.images).slice(0, 3),
+	}))
 }
 
 const route = useRoute()
@@ -53,9 +77,17 @@ const { data, isPending } = useQuery({
 	enabled: computed(() => isTargetRoute.value),
 })
 
-const collections = computed(() => (data.value !== undefined ? flattenCollectionsDeduped(data.value) : []))
+const collections = computed<QuickFindCollectionResult[]>(() =>
+	data.value !== undefined
+		? flattenCollectionsDeduped(data.value).map((collection) => ({ ...collection, kind: 'collection' }))
+		: []
+)
 
-const ranked = computed(() => rankByFuzzyName(collections.value, query.value))
+const folders = computed<QuickFindFolderResult[]>(() => (data.value !== undefined ? flattenFolders(data.value) : []))
+
+const ranked = computed<QuickFindResult[]>(() =>
+	rankByFuzzyName<QuickFindResult>([...collections.value, ...folders.value], query.value)
+)
 
 watch([open, ranked], () => {
 	selectedIndex.value = 0
@@ -82,10 +114,19 @@ function goToCollection(id: string): void {
 	void router.push(`/collections/${id}`)
 }
 
+function goToFolder(id: string): void {
+	close()
+	void router.push(`/folder/${id}`)
+}
+
 function onSelectActive(): void {
 	const list = ranked.value
 	const item = list[selectedIndex.value]
 	if (item !== undefined) {
+		if (item.kind === 'folder') {
+			goToFolder(item.id)
+			return
+		}
 		goToCollection(item.id)
 	}
 }
@@ -195,10 +236,10 @@ watch(selectedIndex, (i) => {
 					<div ref="listRef" class="min-h-0 flex-1 overflow-y-auto px-2 py-2">
 						<p v-if="isPending" class="text-muted px-3 py-6 text-sm">Loading…</p>
 						<p v-else-if="ranked.length === 0" class="text-beige-400 px-3 py-6 text-sm">
-							No matching collections.
+							No matching collections or folders.
 						</p>
 						<ul v-else class="space-y-0.5">
-							<li v-for="(c, idx) in ranked" :key="c.id" :data-idx="idx">
+							<li v-for="(item, idx) in ranked" :key="`${item.kind}-${item.id}`" :data-idx="idx">
 								<button
 									type="button"
 									class="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors"
@@ -207,18 +248,28 @@ watch(selectedIndex, (i) => {
 											? 'bg-accented text-highlighted'
 											: 'hover:bg-accented/60 text-default'
 									"
-									@click="goToCollection(c.id)"
+									@click="item.kind === 'folder' ? goToFolder(item.id) : goToCollection(item.id)"
 								>
 									<div class="min-w-0 flex-1">
-										<div class="truncate font-medium">{{ c.name }}</div>
+										<div class="flex items-center gap-2">
+											<Icon
+												:name="item.kind === 'folder' ? 'i-lucide-folder' : 'i-lucide-layout-grid'"
+												class="text-muted h-4 w-4 shrink-0"
+											/>
+											<div class="truncate font-medium">{{ item.name }}</div>
+										</div>
 										<div class="text-muted mt-0.5 text-xs tabular-nums">
-											{{ c.imageCount }} items
+											{{
+												item.kind === 'folder'
+													? `${item.collectionCount} collections`
+													: `${item.imageCount} items`
+											}}
 										</div>
 									</div>
 									<div class="flex shrink-0 items-center gap-2">
-										<template v-if="c.images.length">
+										<template v-if="(item.kind === 'folder' ? item.previewImages : item.images).length">
 											<img
-												v-for="img in c.images.slice(0, 3)"
+												v-for="img in (item.kind === 'folder' ? item.previewImages : item.images).slice(0, 3)"
 												:key="img.id"
 												:src="img.url"
 												class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border object-cover"
