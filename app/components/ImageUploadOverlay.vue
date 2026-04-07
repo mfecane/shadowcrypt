@@ -42,12 +42,6 @@ function groupedCollectionOptions(
 		return { id: c.id, name: c.name }
 	}
 	const groups: { label: string; options: { id: string; name: string }[] }[] = []
-	if (res.pinned.length > 0) {
-		const options = res.pinned.map(take).filter((o): o is { id: string; name: string } => o !== null)
-		if (options.length > 0) {
-			groups.push({ label: 'Pinned', options })
-		}
-	}
 	for (const f of res.folders) {
 		if (f.collections.length === 0) {
 			continue

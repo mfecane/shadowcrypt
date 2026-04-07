@@ -15,3 +15,4 @@
 - need to preview what's inside archived
 - BUG: on android fullscreen double tap does not work for sume fucking dumb-ass google reason
 - fix data transfer by image url
+- revalidate queries on user relogin

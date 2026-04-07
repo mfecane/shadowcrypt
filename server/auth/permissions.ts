@@ -28,6 +28,13 @@ const full: CrudPermission = {
 	delete: true,
 }
 
+const readOnly: CrudPermission = {
+	create: false,
+	read: true,
+	update: false,
+	delete: false,
+}
+
 const templateUser = {
 	user: {
 		readSelf: true,
@@ -44,9 +51,9 @@ const permissions: Record<UserRole, PermissionsRecord> = {
 			readSelf: true,
 			updateSelf: false,
 		},
-		folders: full,
-		collections: full,
-		images: full,
+		folders: readOnly,
+		collections: readOnly,
+		images: readOnly,
 	},
 
 	user: templateUser,

@@ -22,6 +22,8 @@ import { createSeededIdGenerator, createSeededRandom } from '../lib/math/random'
 import { collections, folders, images, userProfiles, users } from '../server/db/schema'
 import type { StorageClient } from '../server/storage/client/StorageClient'
 
+const REQUEST_SEED = process.env.REQUEST_SEED === 'true'
+
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
 const seedImagesDir = fileURLToPath(new URL('images/collection', import.meta.url))
 
@@ -112,6 +114,11 @@ async function randomPreparedSourceImage(
 }
 
 async function main(): Promise<void> {
+	if (!REQUEST_SEED) {
+		console.info('[seed] request seed is not enabled')
+		return
+	}
+
 	const databaseUrl = process.env.NUXT_DATABASE_URL
 	if (databaseUrl === undefined || databaseUrl === '') {
 		throw new Error('NUXT_DATABASE_URL is not set')

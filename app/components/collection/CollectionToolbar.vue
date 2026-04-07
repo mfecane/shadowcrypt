@@ -81,7 +81,7 @@ async function confirmDeleteImage(): Promise<void> {
 </script>
 
 <template>
-	<div :class="['absolute left-2 top-2 z-100 flex flex-wrapp-2 transition-all duration-300 ease-in-out gap-2']">
+	<div :class="['absolute left-2 top-2 z-20 flex flex-wrap p-2 transition-all duration-300 ease-in-out gap-2']">
 		<div :class="['flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-2 ']">
 			<CollectionToolbarButton :icon="'i-lucide-chevron-left'" tooltip="Back" @click="router.push('/list')" />
 
