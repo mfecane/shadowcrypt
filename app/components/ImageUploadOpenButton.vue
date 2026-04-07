@@ -13,7 +13,7 @@ const show = computed(() => {
 	<div v-show="show">
 		<UButton
 			variant="ghost"
-			class="hover:border-neutral-100 hover:bg-muted/50 hover:text-neutral-100 hover:shadow-md hover:shadow-neutral-100/20 border-beige-400 text-beige-400 bg-muted/50 backdrop-blur-md fixed bottom-6 right-6 z-200 flex h-12 w-12 items-center justify-center rounded-full border shadow-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+			class="hover:border-neutral-100 hover:bg-muted/50 hover:text-neutral-100 hover:shadow-md hover:shadow-neutral-100/20 border-beige-400 text-beige-400 bg-muted/70 backdrop-blur-md fixed bottom-6 right-6 z-200 flex h-12 w-12 items-center justify-center rounded-full border shadow-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
 			aria-label="Add image to collection"
 			@click="openOverlay"
 		>

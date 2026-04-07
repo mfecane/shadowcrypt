@@ -1,7 +1,6 @@
 name: shadowcrypt
 
 services:
-    # PostgreSQL database
     postgres:
         image: postgres:16-alpine
         container_name: shadowcrypt-postgres
@@ -21,7 +20,6 @@ services:
             timeout: 3s
             retries: 10
 
-    # MinIO (S3-compatible storage)
     minio:
         image: minio/minio:latest
         container_name: shadowcrypt-minio
@@ -40,7 +38,6 @@ services:
             timeout: 3s
             retries: 10
 
-    # Adminer (Database management UI)
     adminer:
         image: adminer:latest
         container_name: shadowcrypt-adminer
@@ -60,13 +57,12 @@ services:
             - '1025:1025' # SMTP
             - '8025:8025' # Web UI
 
-    # One-shot: drizzle-kit push (schema). frontend + seed wait until this exits 0.
     migrate:
         image: node:22-alpine
         container_name: shadowcrypt-migrate
         working_dir: /app
         restart: 'no'
-        command: sh -c "npm install && npm run db:push"
+        command: sh -c "npm install && npm run db:migrate"
         depends_on:
             postgres:
                 condition: service_healthy

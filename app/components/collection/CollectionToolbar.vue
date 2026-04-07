@@ -81,50 +81,53 @@ async function confirmDeleteImage(): Promise<void> {
 </script>
 
 <template>
-	<div
-		:class="[
-			'absolute left-2 top-2 z-100 flex items-center rounded-lg bg-neutral-900/70 p-2 backdrop-blur-sm',
-			'transition-all duration-300 ease-in-out',
-		]"
-	>
-		<CollectionToolbarButton :icon="'i-lucide-chevron-left'" aria-label="Back" @click="router.push('/list')" />
+	<div :class="['absolute left-2 top-2 z-100 flex flex-wrapp-2 transition-all duration-300 ease-in-out gap-2']">
+		<div :class="['flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-2 ']">
+			<CollectionToolbarButton :icon="'i-lucide-chevron-left'" tooltip="Back" @click="router.push('/list')" />
 
-		<div class="mx-2 text-sm min-w-40 text-toned">{{ collectionName }}</div>
+			<div :class="['mx-2 text-sm min-w-0 text-toned sm:min-w-40']">{{ collectionName }}</div>
 
-		<CollectionToolbarButton :icon="'i-heroicons-pencil-square'" aria-label="Edit" @click="openEdit" />
+			<CollectionToolbarButton :icon="'i-heroicons-pencil-square'" tooltip="Edit" @click="openEdit" />
 
-		<CollectionToolbarButton
-			:icon="'i-lucide-undo'"
-			aria-label="Undo"
-			:disabled="!canUndo"
-			@click="bridge?.undo()"
-		/>
+			<CollectionToolbarButton
+				:icon="'i-lucide-undo'"
+				tooltip="Undo"
+				:disabled="!canUndo"
+				@click="bridge?.undo()"
+			/>
 
-		<CollectionToolbarButton
-			:icon="'i-lucide-redo'"
-			aria-label="Redo"
-			:disabled="!canRedo"
-			@click="bridge?.redo()"
-		/>
+			<CollectionToolbarButton
+				:icon="'i-lucide-redo'"
+				tooltip="Redo"
+				:disabled="!canRedo"
+				@click="bridge?.redo()"
+			/>
 
-		<CollectionToolbarButton
-			:icon="'i-lucide-scan-search'"
-			aria-label="Fit all images to view"
-			:disabled="bridge === null"
-			@click="bridge?.fitWorldToView()"
-		/>
+			<CollectionToolbarButton
+				:icon="'i-lucide-scan-search'"
+				tooltip="Fit all images to view"
+				:disabled="bridge === null"
+				@click="bridge?.fitWorldToView()"
+			/>
 
-		<CollectionToolbarButton
-			:icon="'i-lucide-trash'"
-			aria-label="Delete image"
-			:disabled="selected === null"
-			@click="openDeleteImage"
-		/>
+			<CollectionToolbarButton
+				:icon="'i-lucide-trash'"
+				tooltip="Delete image"
+				:disabled="selected === null"
+				@click="openDeleteImage"
+			/>
+		</div>
 
 		<SaveWidget />
 	</div>
 
-	<CollectionEditModal v-model:open="editOpen" v-model:name="editName" :saving="saving" :error="editError" @save="saveEdit" />
+	<CollectionEditModal
+		v-model:open="editOpen"
+		v-model:name="editName"
+		:saving="saving"
+		:error="editError"
+		@save="saveEdit"
+	/>
 
 	<Teleport to="body">
 		<div

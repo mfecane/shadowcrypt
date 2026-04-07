@@ -4,9 +4,7 @@
 - auto layout of collection viewer
 - collection view tracking
 - move to password login
-- add demo read only user
 - improve search by folders
-- double tap on ipad is not wokrdfs
 - store z index of an image, sort images by z
 - images culling
 - move image to collection
@@ -15,3 +13,5 @@
 - edit icon on hover is actually terrible ux for touch
 - batch update images
 - need to preview what's inside archived
+- BUG: on android fullscreen double tap does not work for sume fucking dumb-ass google reason
+- fix data transfer by image url

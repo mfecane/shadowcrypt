@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { readMultipartFormData } from 'h3'
 import { randomUUID } from 'node:crypto'
+import { Buffer } from 'node:buffer'
 import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
@@ -14,6 +15,15 @@ import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { useStorageClient } from '~~/server/utils/storage'
 
 const storageKeyFactory = new StorageKeyFactory(new EnvironmentResolver())
+
+function isHttpUrl(value: string): boolean {
+	try {
+		const url = new URL(value)
+		return url.protocol === 'http:' || url.protocol === 'https:'
+	} catch {
+		return false
+	}
+}
 
 export default defineEventHandler(async (event) => {
 	const { userId: sub, roles } = await requireSessionUserRoles(event)
@@ -36,21 +46,11 @@ export default defineEventHandler(async (event) => {
 	}
 
 	const parts = await readMultipartFormData(event)
-	const file = parts?.find((p) => p.name === 'file')
-	if (file === undefined || file.data.length === 0) {
-		throw createError({ statusCode: 400, statusMessage: 'Missing file' })
-	}
-	if (file.data.length > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
-		throw createError({ statusCode: 400, statusMessage: 'File too large' })
-	}
-	const mime = file.type ?? ''
-	if (!mime.startsWith('image/')) {
-		throw createError({ statusCode: 400, statusMessage: 'Not an image' })
-	}
+	const source = await readUploadSource(parts)
 
 	let dims: { width: number; height: number }
 	try {
-		dims = await getCollectionImageStoredDimensions(file.data)
+		dims = await getCollectionImageStoredDimensions(source.data)
 	} catch {
 		throw createError({ statusCode: 400, statusMessage: 'Invalid or unsupported image' })
 	}
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
 	let uploaded = false
 
 	try {
-		await storage.uploadCollectionImage(collectionId, hash, file.data)
+		await storage.uploadCollectionImage(collectionId, hash, source.data)
 		uploaded = true
 
 		const [inserted] = await db
@@ -134,6 +134,57 @@ export default defineEventHandler(async (event) => {
 		throw e
 	}
 })
+
+async function readUploadSource(
+	parts: Awaited<ReturnType<typeof readMultipartFormData>>
+): Promise<{ data: Buffer; mime: string | null }> {
+	const file = parts?.find((p) => p.name === 'file')
+	if (file !== undefined && file.data.length > 0) {
+		if (file.data.length > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
+			throw createError({ statusCode: 400, statusMessage: 'File too large' })
+		}
+		const mime = file.type ?? ''
+		if (!mime.startsWith('image/')) {
+			throw createError({ statusCode: 400, statusMessage: 'Not an image' })
+		}
+		return { data: file.data, mime }
+	}
+
+	const urlPart = parts?.find((p) => p.name === 'url')
+	const imageUrl = urlPart?.data.toString('utf8').trim() ?? ''
+	if (imageUrl.length === 0) {
+		throw createError({ statusCode: 400, statusMessage: 'Missing file or URL' })
+	}
+	if (!isHttpUrl(imageUrl)) {
+		throw createError({ statusCode: 400, statusMessage: 'Invalid image URL' })
+	}
+
+	let response: Response
+	try {
+		response = await fetch(imageUrl)
+	} catch {
+		throw createError({ statusCode: 400, statusMessage: 'Could not fetch image URL' })
+	}
+	if (!response.ok) {
+		throw createError({ statusCode: 400, statusMessage: 'Could not fetch image URL' })
+	}
+
+	const mime = response.headers.get('content-type')?.split(';')[0]?.trim() ?? null
+	if (mime !== null && mime !== '' && !mime.startsWith('image/')) {
+		throw createError({ statusCode: 400, statusMessage: 'URL does not point to an image' })
+	}
+
+	const arrayBuffer = await response.arrayBuffer()
+	const data = Buffer.from(arrayBuffer)
+	if (data.length === 0) {
+		throw createError({ statusCode: 400, statusMessage: 'Fetched image is empty' })
+	}
+	if (data.length > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
+		throw createError({ statusCode: 400, statusMessage: 'Fetched image is too large' })
+	}
+
+	return { data, mime }
+}
 
 async function deleteCollectionImageObjects(
 	storage: ReturnType<typeof useStorageClient>,

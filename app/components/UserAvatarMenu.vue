@@ -31,7 +31,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
 		<UButton
 			color="neutral"
 			variant="ghost"
-			class="shrink-0 p-0.5 background-none hover:background-none rounded-full border border-transparent hover:border-muted"
+			class="z-20 shrink-0 p-0.5 background-none hover:background-none rounded-full border border-transparent hover:border-muted"
 			:aria-label="`Account menu for ${user.email}`"
 		>
 			<UAvatar :src="avatarUrl || undefined" :alt="user.name ?? user.email" size="md" />

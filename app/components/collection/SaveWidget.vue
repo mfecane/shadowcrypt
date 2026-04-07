@@ -1,26 +1,6 @@
-<template>
-	<div>
-		<Transition name="save-widget" mode="out-in">
-			<div
-				v-if="expanded"
-				:key="collectionSaveStatus"
-				class="inline-flex min-w-0 items-center gap-1 p-2 text-xs"
-				:class="rowClass"
-			>
-				<UTooltip
-					v-if="isError"
-					:text="collectionSaveError ?? 'Save failed'"
-					:content="{ side: 'bottom', align: 'start' }"
-				>
-					<Icon :name="icon" class="h-4 w-4 shrink-0 cursor-default" />
-				</UTooltip>
-				<Icon v-else :name="icon" class="h-4 w-4 shrink-0" :class="{ 'animate-spin': iconSpin }" />
-			</div>
-		</Transition>
-	</div>
-</template>
-
 <script setup lang="ts">
+// TODO it flickers
+
 const { collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
 
 const expanded = computed(() => collectionSaveStatus.value !== 'idle')
@@ -57,6 +37,28 @@ const icon = computed((): string => {
 	return ''
 })
 </script>
+
+<template>
+	<div>
+		<Transition name="save-widget" mode="out-in">
+			<div
+				v-if="expanded"
+				:key="collectionSaveStatus"
+				class="inline-flex min-w-0 items-center justify-center gap-1 p-2 text-xs rounded-lg bg-neutral-900/70 backdrop-blur-sm w-12 h-12"
+				:class="rowClass"
+			>
+				<UTooltip
+					v-if="isError"
+					:text="collectionSaveError ?? 'Save failed'"
+					:content="{ side: 'bottom', align: 'start' }"
+				>
+					<Icon :name="icon" class="h-4 w-4 shrink-0 cursor-default" />
+				</UTooltip>
+				<Icon v-else :name="icon" class="h-4 w-4 shrink-0" :class="{ 'animate-spin': iconSpin }" />
+			</div>
+		</Transition>
+	</div>
+</template>
 
 <style scoped>
 .save-widget-enter-active,
