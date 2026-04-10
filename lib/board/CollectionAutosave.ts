@@ -7,6 +7,7 @@ export type LayoutPatchBody = {
 	layoutY: number
 	layoutW: number
 	layoutH: number
+	layoutZ: number
 }
 
 export type CollectionLayoutRow = {

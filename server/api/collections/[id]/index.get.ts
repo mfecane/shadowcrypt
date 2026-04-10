@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
 import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
@@ -41,7 +41,11 @@ export default defineEventHandler(async (event) => {
 		await refreshFolderLastSeen(db, col.folderId, sub)
 	}
 
-	const imageRows = await db.select().from(images).where(eq(images.collectionId, id)).orderBy(desc(images.updatedAt))
+	const imageRows = await db
+		.select()
+		.from(images)
+		.where(eq(images.collectionId, id))
+		.orderBy(asc(images.zIndex), asc(images.id))
 
 	const layoutById = mergeImageLayouts(
 		imageRows.map((img) => ({
@@ -80,7 +84,7 @@ export default defineEventHandler(async (event) => {
 						.getPublicUrl(),
 					width: img.width,
 					height: img.height,
-					layout,
+					layout: { ...layout, zIndex: img.zIndex },
 				}
 			}),
 		},

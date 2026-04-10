@@ -11,8 +11,8 @@ export class BoardImage {
 		public readonly id: string,
 		public readonly src: string,
 		public rect: BoardRect,
+		public zIndex: number = 0,
 		public width: number = 0,
 		public height: number = 0
 	) {}
 }
-

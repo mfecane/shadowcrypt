@@ -54,6 +54,7 @@ export class TransformTool implements Tool {
 		private readonly canvas: HTMLCanvasElement,
 		private readonly getWidget: () => TransformWidget | null,
 		private readonly onTransform: () => void,
+		private readonly onTouchImage: (imageId: string) => void,
 		private readonly onCommit: (imageId: string, before: ViewerSpriteSnapshot, after: ViewerSpriteSnapshot) => void
 	) {}
 
@@ -97,6 +98,7 @@ export class TransformTool implements Tool {
 		}
 		this.dragSprite = h.sprite
 		this.dragImageId = h.imageId
+		this.onTouchImage(h.imageId)
 		this.startSnapshot = { x: h.sprite.x, y: h.sprite.y, width: h.sprite.width, height: h.sprite.height }
 		const part = h.widgetPart
 		const raw = event.raw as PointerEvent

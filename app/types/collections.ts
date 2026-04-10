@@ -3,6 +3,7 @@ export interface CollectionImageLayout {
 	y: number
 	w: number
 	h: number
+	zIndex: number
 }
 
 export interface CollectionListItem {

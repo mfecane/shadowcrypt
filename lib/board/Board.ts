@@ -24,6 +24,8 @@ import { SelectTool } from './interaction/tools/SelectTool'
 import { TransformTool } from './interaction/tools/TransformTool'
 
 export class Board {
+	private static readonly MIN_IMAGE_Z_INDEX = 0
+
 	public readonly bridge: BoardVueBridge = new BoardVueBridge(this)
 
 	public readonly commandController: ImageCommandController = new ImageCommandController(this.bridge)
@@ -82,8 +84,10 @@ export class Board {
 				y: l.layoutY,
 				w: l.layoutW,
 				h: l.layoutH,
+				zIndex: l.layoutZ,
 			})
 		}
+		this.model.sortImagesByZIndex()
 	}
 
 	// TODO: not undoable
@@ -216,6 +220,7 @@ export class Board {
 	private openFullscreenById(imageId: string): void {
 		const im = this.images.get(imageId)
 		if (!im) return
+		this.touchImage(imageId)
 		this.bridge.openFullscreen(im)
 	}
 
@@ -259,19 +264,21 @@ export class Board {
 		if (bi) {
 			bi.rect = { x: s.x, y: s.y, w: s.width, h: s.height }
 		}
+		this.syncModelImage(imageId)
 		this.transformWidget?.syncFromParentSprite()
 	}
 
 	public layoutRowsForSave(): CollectionLayoutRow[] {
 		const rows: CollectionLayoutRow[] = []
-		for (const [id, bi] of this.images) {
+		for (const bi of this.normalizeImageZIndices()) {
 			const r = bi.rect
 			rows.push({
-				imageId: id,
+				imageId: bi.id,
 				layoutX: r.x,
 				layoutY: r.y,
 				layoutW: r.w,
 				layoutH: r.h,
+				layoutZ: bi.zIndex,
 			})
 		}
 		return rows
@@ -303,7 +310,6 @@ export class Board {
 			widget.hide()
 			return
 		}
-		world.setChildIndex(sp, world.children.length - 1)
 		sp.addChild(widget)
 		widget.show()
 		widget.syncFromParentSprite()
@@ -311,6 +317,9 @@ export class Board {
 
 	private selectImage(id: string | null): void {
 		this.selectedImageId = id
+		if (id !== null) {
+			this.touchImage(id)
+		}
 		this.syncTransformWidget()
 		this.bridge.setSelectedImageId(this.selectedImageId)
 	}
@@ -331,7 +340,7 @@ export class Board {
 		this.bridge.setReady(false)
 		this.logger.log(`start collection=${this.model.id} images=${this.model.images.length}`)
 
-		const items = this.model.images
+		const items = [...this.model.images].sort((a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id))
 		if (items.length === 0) {
 			this.logger.log('no images, marking board ready')
 			this.bridge.setImageCount(0)
@@ -341,7 +350,7 @@ export class Board {
 
 		for (const im of items) {
 			const r: BoardRect = { ...im.layout }
-			this.images.set(im.id, new BoardImage(im.id, im.url, r))
+			this.images.set(im.id, new BoardImage(im.id, im.url, r, im.layout.zIndex))
 		}
 		this.logger.log(`seeded image map entries=${this.images.size}`)
 
@@ -376,6 +385,7 @@ export class Board {
 		this.logger.log('canvas attached to mount element')
 
 		this.worldContainer = new Container()
+		this.worldContainer.sortableChildren = true
 		this.app.stage.addChild(this.worldContainer)
 
 		this.app.stage.eventMode = 'static'
@@ -397,6 +407,7 @@ export class Board {
 				canvas,
 				() => this.transformWidget,
 				() => {},
+				(imageId) => this.touchImage(imageId),
 				(imageId, before, after) => {
 					this.commandController.execute(
 						new ViewerImageTransformCommand(imageId, before, after, (id, s) => this.applySnapshot(id, s))
@@ -435,6 +446,7 @@ export class Board {
 				sprite.y = L.y
 				sprite.width = L.w
 				sprite.height = L.h
+				sprite.zIndex = L.zIndex
 				sprite.eventMode = 'static'
 				sprite.cursor = 'pointer'
 				this.worldContainer.addChild(sprite)
@@ -452,6 +464,7 @@ export class Board {
 			}
 		}
 		this.logger.log(`all sprites created count=${this.spriteById.size}`)
+		this.worldContainer.sortChildren()
 
 		this.selectImage(null)
 		const v = this.model.viewportCenter
@@ -469,5 +482,66 @@ export class Board {
 		this.bridge.setImageCount(items.length)
 		this.bridge.setReady(true)
 		this.logger.log('build complete, board ready')
+	}
+
+	private normalizeImageZIndices(): BoardImage[] {
+		const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
+		for (const [index, image] of ordered.entries()) {
+			this.setImageZIndex(image.id, Board.MIN_IMAGE_Z_INDEX + index, false)
+		}
+		this.syncRuntimeImageOrder()
+		return ordered
+	}
+
+	private touchImage(imageId: string): void {
+		if (!this.images.has(imageId)) {
+			return
+		}
+		this.setImageZIndex(imageId, this.getMaxImageZIndex() + 1)
+		this.autosave.schedule()
+	}
+
+	private getMaxImageZIndex(): number {
+		let max = Board.MIN_IMAGE_Z_INDEX - 1
+		for (const image of this.images.values()) {
+			max = Math.max(max, image.zIndex)
+		}
+		return max
+	}
+
+	private setImageZIndex(imageId: string, zIndex: number, syncOrder: boolean = true): void {
+		const bi = this.images.get(imageId)
+		if (bi === undefined) {
+			return
+		}
+		bi.zIndex = zIndex
+		const sp = this.spriteById.get(imageId)
+		if (sp !== undefined) {
+			sp.zIndex = zIndex
+		}
+		this.syncModelImage(imageId)
+		if (syncOrder) {
+			this.syncRuntimeImageOrder()
+		}
+	}
+
+	private syncModelImage(imageId: string): void {
+		const bi = this.images.get(imageId)
+		if (bi === undefined) {
+			return
+		}
+		this.model.syncImageLayout(imageId, {
+			x: bi.rect.x,
+			y: bi.rect.y,
+			w: bi.rect.w,
+			h: bi.rect.h,
+			zIndex: bi.zIndex,
+		})
+		this.model.sortImagesByZIndex()
+	}
+
+	private syncRuntimeImageOrder(): void {
+		this.worldContainer?.sortChildren()
+		this.model.sortImagesByZIndex()
 	}
 }

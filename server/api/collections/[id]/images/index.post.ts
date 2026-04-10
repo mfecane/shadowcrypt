@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { readMultipartFormData } from 'h3'
 import { randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
@@ -62,6 +62,13 @@ export default defineEventHandler(async (event) => {
 	try {
 		await storage.uploadCollectionImage(collectionId, hash, source.data)
 		uploaded = true
+		const [topImage] = await db
+			.select({ zIndex: images.zIndex })
+			.from(images)
+			.where(eq(images.collectionId, collectionId))
+			.orderBy(desc(images.zIndex))
+			.limit(1)
+		const nextZIndex = (topImage?.zIndex ?? -1) + 1
 
 		const [inserted] = await db
 			.insert(images)
@@ -71,6 +78,7 @@ export default defineEventHandler(async (event) => {
 				hash,
 				width: dims.width,
 				height: dims.height,
+				zIndex: nextZIndex,
 			})
 			.returning()
 
@@ -124,6 +132,7 @@ export default defineEventHandler(async (event) => {
 					y: layout.y,
 					w: layout.w,
 					h: layout.h,
+					zIndex: nextZIndex,
 				},
 			},
 		}

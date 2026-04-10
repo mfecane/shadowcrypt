@@ -69,6 +69,7 @@ export const images = pgTable('images', {
 	layoutY: doublePrecision('layout_y'),
 	layoutW: doublePrecision('layout_w'),
 	layoutH: doublePrecision('layout_h'),
+	zIndex: integer('z_index').notNull().default(0),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

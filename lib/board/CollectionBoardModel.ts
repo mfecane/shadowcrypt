@@ -43,7 +43,7 @@ export class CollectionBoardModel {
 				url: im.url,
 				width: im.width,
 				height: im.height,
-				layout: { x: im.layout.x, y: im.layout.y, w: im.layout.w, h: im.layout.h },
+				layout: { x: im.layout.x, y: im.layout.y, w: im.layout.w, h: im.layout.h, zIndex: im.layout.zIndex },
 			})),
 		}
 	}
@@ -64,7 +64,11 @@ export class CollectionBoardModel {
 	public syncImageLayout(imageId: string, layout: CollectionImageLayout): void {
 		const im = this.images.find((i) => i.id === imageId)
 		if (im !== undefined) {
-			im.layout = { x: layout.x, y: layout.y, w: layout.w, h: layout.h }
+			im.layout = { x: layout.x, y: layout.y, w: layout.w, h: layout.h, zIndex: layout.zIndex }
 		}
+	}
+
+	public sortImagesByZIndex(): void {
+		this.images.sort((a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id))
 	}
 }

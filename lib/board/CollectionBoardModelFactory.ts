@@ -13,14 +13,21 @@ export class CollectionBoardModelFactory {
 			detail.updatedAt,
 			{ x: detail.viewportCenter?.x ?? 0, y: detail.viewportCenter?.y ?? 0 },
 			detail.viewportZoom ?? 1,
-			detail.images.map((im) => ({
+			detail.images.map((im, index) => ({
 				id: im.id,
 				url: im.url,
 				width: im.width,
 				height: im.height,
-				layout: { x: im.layout.x, y: im.layout.y, w: im.layout.w, h: im.layout.h },
+				layout: {
+					x: im.layout.x,
+					y: im.layout.y,
+					w: im.layout.w,
+					h: im.layout.h,
+					zIndex: im.layout.zIndex ?? index,
+				},
 			}))
 		)
+		m.sortImagesByZIndex()
 		return m
 	}
 }

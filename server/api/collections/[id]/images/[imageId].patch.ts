@@ -10,6 +10,7 @@ const layoutSchema = z.object({
 	layoutY: z.number().finite(),
 	layoutW: z.number().finite().positive(),
 	layoutH: z.number().finite().positive(),
+	layoutZ: z.number().int().nonnegative(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -57,6 +58,7 @@ export default defineEventHandler(async (event) => {
 			layoutY: parsed.layoutY,
 			layoutW: parsed.layoutW,
 			layoutH: parsed.layoutH,
+			zIndex: parsed.layoutZ,
 			updatedAt: new Date(),
 		})
 		.where(eq(images.id, imageId))
