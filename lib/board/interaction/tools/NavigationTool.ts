@@ -74,7 +74,7 @@ export class NavigationTool implements Tool {
 
 	public fitWorldToView(): void {
 		const { w: vw, h: vh } = this.board.getViewportSize()
-		const { w: ww, h: wh } = this.board.getWorldSize()
+		const { minX, minY, w: ww, h: wh } = this.board.getWorldBounds()
 		let s = 1
 		if (ww !== 0) {
 			s = Math.min(vw / ww, vh / (wh + TOP_GUTTER))
@@ -84,10 +84,8 @@ export class NavigationTool implements Tool {
 		}
 		this.worldContainer.scale.set(s)
 		this.worldContainer.rotation = 0
-		const scaledW = ww * s
-		const scaledH = wh * s
-		this.worldContainer.position.x = (vw - scaledW) / 2
-		this.worldContainer.position.y = (vh - scaledH) / 2 + TOP_GUTTER
+		this.worldContainer.position.x = vw / 2 - (minX + ww / 2) * s
+		this.worldContainer.position.y = (vh + TOP_GUTTER) / 2 - (minY + wh / 2) * s
 		this.zoom = s
 		this.syncStateFromWorld()
 		this.board.syncTransformWidgetFromParentSprite()

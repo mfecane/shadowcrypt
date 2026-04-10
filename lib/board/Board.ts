@@ -117,16 +117,31 @@ export class Board {
 	}
 
 	private static worldBounds(rects: { x: number; y: number; w: number; h: number }[]): {
+		minX: number
+		minY: number
+		maxX: number
+		maxY: number
 		width: number
 		height: number
 	} {
-		let maxX = 8
-		let maxY = 8
-		for (const r of rects) {
-			maxX = Math.max(maxX, r.x + r.w + 8)
-			maxY = Math.max(maxY, r.y + r.h + 8)
+		if (rects.length === 0) {
+			return { minX: 0, minY: 0, maxX: 8, maxY: 8, width: 8, height: 8 }
 		}
-		return { width: maxX, height: maxY }
+		let minX = Infinity
+		let minY = Infinity
+		let maxX = -Infinity
+		let maxY = -Infinity
+		for (const r of rects) {
+			minX = Math.min(minX, r.x)
+			minY = Math.min(minY, r.y)
+			maxX = Math.max(maxX, r.x + r.w)
+			maxY = Math.max(maxY, r.y + r.h)
+		}
+		minX -= 8
+		minY -= 8
+		maxX += 8
+		maxY += 8
+		return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY }
 	}
 
 	/** World-space center of image layout bounds; used when no viewport is stored yet (not auto-fit). */
@@ -328,6 +343,19 @@ export class Board {
 		const rects = Array.from(this.images.values()).map((i) => i.rect)
 		const { width: ww, height: wh } = Board.worldBounds(rects)
 		return { w: ww, h: wh }
+	}
+
+	public getWorldBounds(): { minX: number; minY: number; maxX: number; maxY: number; w: number; h: number } {
+		const rects = Array.from(this.images.values()).map((i) => i.rect)
+		const bounds = Board.worldBounds(rects)
+		return {
+			minX: bounds.minX,
+			minY: bounds.minY,
+			maxX: bounds.maxX,
+			maxY: bounds.maxY,
+			w: bounds.width,
+			h: bounds.height,
+		}
 	}
 
 	public syncTransformWidgetFromParentSprite(): void {
