@@ -2,6 +2,8 @@ import type { Renderer } from 'pixi.js'
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import type { PixiInteractionContext } from '~~/lib/board/interaction/PixiInteractionContext'
+import { Vector2 } from '~~/lib/math/Vector2'
+import { normalizeAngleDelta } from '~~/lib/math/utils'
 
 interface PinchData {
 	distSq: number
@@ -27,17 +29,6 @@ export class EventPreprocessor {
 			meta: e.metaKey,
 			alt: e.altKey,
 		}
-	}
-
-	private static normalizeAngleDelta(prev: number, next: number): number {
-		let d = next - prev
-		while (d > Math.PI) {
-			d -= 2 * Math.PI
-		}
-		while (d < -Math.PI) {
-			d += 2 * Math.PI
-		}
-		return d
 	}
 
 	private readonly pointerCache = new Map<number, PointerEvent>()
@@ -70,14 +61,11 @@ export class EventPreprocessor {
 	) {}
 
 	/** Maps client coordinates to Pixi global space (matches `renderer.screen` and `getBounds()`). */
-	private clientToGlobalCoords(clientX: number, clientY: number): { x: number; y: number } {
+	private clientToGlobalCoords(clientX: number, clientY: number): Vector2 {
 		const rect = this.canvas.getBoundingClientRect()
 		const sw = this.renderer.screen.width
 		const sh = this.renderer.screen.height
-		return {
-			x: (clientX - rect.left) * (sw / rect.width),
-			y: (clientY - rect.top) * (sh / rect.height),
-		}
+		return Vector2.from((clientX - rect.left) * (sw / rect.width), (clientY - rect.top) * (sh / rect.height))
 	}
 
 	private readonly onPointerDownBound = (e: PointerEvent) => {
@@ -149,18 +137,13 @@ export class EventPreprocessor {
 		return [...this.pointerCache.values()].filter((p) => p.pointerType === 'touch')
 	}
 
-	private computePinchGesture(): {
-		distSq: number
-		angle: number
-		cx: number
-		cy: number
-	} | null {
+	private computePinchGesture(): PinchData | null {
 		const t = this.getTouchPointers()
 		if (t.length < 2) {
 			return null
 		}
-		const a = t[0]
-		const b = t[1]
+		const a: PointerEvent | undefined = t[0]
+		const b: PointerEvent | undefined = t[1]
 		if (a === undefined || b === undefined) {
 			return null
 		}
@@ -210,9 +193,9 @@ export class EventPreprocessor {
 
 		this.suppressClickUntilPointerDown = false
 		this.dragPointerId = event.pointerId
-		this.lastPointerDownPosition = { x: event.clientX, y: event.clientY }
+		this.lastPointerDownPosition = Vector2.fromEvent(event)
 		this.isDragging = false
-		this.lastMoveClient = { x: event.clientX, y: event.clientY }
+		this.lastMoveClient = Vector2.fromEvent(event)
 		this.cancelClickTimers()
 	}
 
@@ -235,7 +218,7 @@ export class EventPreprocessor {
 				return
 			}
 			const pinchDistSqDelta = this.prevPinch.distSq - now.distSq
-			const rotationDelta = EventPreprocessor.normalizeAngleDelta(this.prevPinch.angle, now.angle)
+			const rotationDelta = normalizeAngleDelta(this.prevPinch.angle, now.angle)
 			const panDx = now.cx - this.prevPinch.cx
 			const panDy = now.cy - this.prevPinch.cy
 			this.prevPinch = now
@@ -333,7 +316,7 @@ export class EventPreprocessor {
 		}
 
 		const currentTime = Date.now()
-		const currentPosition = { x: event.clientX, y: event.clientY }
+		const currentPosition = Vector2.fromEvent(event)
 
 		const isDoubleClick =
 			this.lastPointerUpPosition !== null &&
@@ -363,7 +346,7 @@ export class EventPreprocessor {
 		}, EventPreprocessor.SINGLE_CLICK_DELAY_MS)
 	}
 
-	private isMoved(x: number, y: number, referencePosition?: { x: number; y: number }): boolean {
+	private isMoved(x: number, y: number, referencePosition?: Vector2): boolean {
 		const position = referencePosition ?? this.lastPointerDownPosition
 		if (position === null) {
 			return false

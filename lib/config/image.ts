@@ -12,4 +12,4 @@ export const FULL_IMAGE_QUALITY = 0.6
 export const PREVIEW_IMAGE_WIDTH = 256
 
 /** Quality of the stored “small” WebP variant in collection uploads. */
-export const SMALL_IMAGE_QUALITY = 0.35
+export const SMALL_IMAGE_QUALITY = 0.6

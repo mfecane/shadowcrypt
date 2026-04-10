@@ -1,7 +1,5 @@
 import { Optional } from 'typescript-optional'
 
-export type Vector2 = { x: number; y: number }
-
 export function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(value, max))
 }

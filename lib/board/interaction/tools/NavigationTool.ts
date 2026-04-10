@@ -18,6 +18,8 @@ const WHEEL_PAN_TAIL_EPS = 0.5
 
 /** Pan/zoom state: world-space point shown at the viewport center, plus uniform scale. */
 export class NavigationTool implements Tool {
+	private static readonly ENABLE_PINCH_ROTATION = false
+
 	public readonly id = 'navigation'
 
 	public readonly priority = 10
@@ -205,8 +207,8 @@ export class NavigationTool implements Tool {
 			this.zoom = clamp(this.zoom, ZOOM_MIN, ZOOM_MAX)
 			this.applyScaleAtRendererPoint(this.zoom, event.x, event.y)
 		}
-		if (rotDelta !== undefined && rotDelta !== 0) {
-			this.worldContainer.rotation += rotDelta
+		if (NavigationTool.ENABLE_PINCH_ROTATION && rotDelta !== undefined && rotDelta !== 0) {
+			this.applyRotationAtRendererPoint(rotDelta, event.x, event.y)
 		}
 		this.syncStateFromWorld()
 		this.board.syncTransformWidgetFromParentSprite()
@@ -267,5 +269,14 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.x += focalGlobal.x - after.x
 		this.worldContainer.position.y += focalGlobal.y - after.y
 		this.zoom = newScale
+	}
+
+	private applyRotationAtRendererPoint(delta: number, globalX: number, globalY: number): void {
+		const focalGlobal = new Point(globalX, globalY)
+		const before = this.worldContainer.toLocal(focalGlobal)
+		this.worldContainer.rotation += delta
+		const after = this.worldContainer.toGlobal(before)
+		this.worldContainer.position.x += focalGlobal.x - after.x
+		this.worldContainer.position.y += focalGlobal.y - after.y
 	}
 }
