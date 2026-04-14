@@ -118,6 +118,15 @@ export interface StorageClient {
 	): Promise<StorageKey>
 
 	/**
+	 * Copies both WebP variants of a collection image to another collection prefix (same hash).
+	 */
+	copyCollectionImageBetweenCollections(
+		fromCollectionId: string,
+		toCollectionId: string,
+		hash: string
+	): Promise<void>
+
+	/**
 	 * Deletes one object by key.
 	 *
 	 * @param key - Object key in the bucket.

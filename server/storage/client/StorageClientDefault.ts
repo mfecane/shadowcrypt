@@ -4,7 +4,13 @@ import { DesignImageType } from '~~/server/storage/DesignImageType'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKey } from '~~/server/storage/key/StorageKey'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
-import { DeleteObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+	CopyObjectCommand,
+	DeleteObjectCommand,
+	ListObjectsV2Command,
+	PutObjectCommand,
+	S3Client,
+} from '@aws-sdk/client-s3'
 import { Optional } from 'typescript-optional'
 
 export abstract class StorageClientDefault implements StorageClient {
@@ -78,6 +84,25 @@ export abstract class StorageClientDefault implements StorageClient {
 
 	public getCollectionImageUrl(collectionId: string, variant: ImageSizeVariant, hash: string): StorageKey {
 		return this.storageKeyFactory.createCollectionImageKey(collectionId, variant, hash)
+	}
+
+	public async copyCollectionImageBetweenCollections(
+		fromCollectionId: string,
+		toCollectionId: string,
+		hash: string
+	): Promise<void> {
+		const targetBucket = this.defaultBucket
+		for (const variant of [ImageSizeVariant.ORIGINAL, ImageSizeVariant.SMALL]) {
+			const srcKey = this.storageKeyFactory.createCollectionImageKey(fromCollectionId, variant, hash).get()
+			const destKey = this.storageKeyFactory.createCollectionImageKey(toCollectionId, variant, hash).get()
+			await this.s3Client.send(
+				new CopyObjectCommand({
+					Bucket: targetBucket,
+					Key: destKey,
+					CopySource: `${targetBucket}/${srcKey}`,
+				})
+			)
+		}
 	}
 
 	public async deleteCollectionImages(collectionId: string): Promise<void> {

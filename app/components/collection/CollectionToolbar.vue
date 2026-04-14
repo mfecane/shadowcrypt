@@ -1,10 +1,76 @@
 <script setup lang="ts">
-import { useQueryClient } from '@tanstack/vue-query'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import CollectionDeleteImageModal from '~/components/collection/CollectionDeleteImageModal.vue'
+import CollectionMoveImageModal from '~/components/collection/CollectionMoveImageModal.vue'
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 import SaveWidget from '~/components/collection/SaveWidget.vue'
+import type { CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 import { nn } from '~~/lib/collectionViewer/viewerUtils'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
+
+function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
+	const seen = new Set<string>()
+	const out: CollectionListItem[] = []
+	const push = (c: CollectionListItem): void => {
+		if (seen.has(c.id)) {
+			return
+		}
+		seen.add(c.id)
+		out.push(c)
+	}
+	for (const f of res.folders) {
+		for (const c of f.collections) {
+			push(c)
+		}
+	}
+	for (const c of res.ungrouped) {
+		push(c)
+	}
+	return out
+}
+
+function groupedCollectionOptions(
+	res: CollectionsListResponse
+): { label: string; options: { id: string; name: string }[] }[] {
+	const seen = new Set<string>()
+	const take = (c: CollectionListItem): { id: string; name: string } | null => {
+		if (seen.has(c.id)) {
+			return null
+		}
+		seen.add(c.id)
+		return { id: c.id, name: c.name }
+	}
+	const groups: { label: string; options: { id: string; name: string }[] }[] = []
+	for (const f of res.folders) {
+		if (f.collections.length === 0) {
+			continue
+		}
+		const options = f.collections.map(take).filter((o): o is { id: string; name: string } => o !== null)
+		if (options.length > 0) {
+			groups.push({ label: f.name, options })
+		}
+	}
+	if (res.ungrouped.length > 0) {
+		const options = res.ungrouped.map(take).filter((o): o is { id: string; name: string } => o !== null)
+		if (options.length > 0) {
+			groups.push({ label: 'Without folder', options })
+		}
+	}
+	return groups
+}
+
+function groupsExcludingCollectionId(
+	groups: { label: string; options: { id: string; name: string }[] }[],
+	excludeId: string
+): { label: string; options: { id: string; name: string }[] }[] {
+	return groups
+		.map((g) => ({
+			...g,
+			options: g.options.filter((o) => o.id !== excludeId),
+		}))
+		.filter((g) => g.options.length > 0)
+}
 
 const { collectionId, collectionName, selectedImageId, canUndo, canRedo, bridge } =
 	storeToRefs(useCollectionViewerStore())
@@ -21,6 +87,39 @@ const editError = ref<string | null>(null)
 const deleteError = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
+
+const moveOpen = ref(false)
+const moveTargetCollectionId = ref<string | null>(null)
+const moveError = ref<string | null>(null)
+const moving = ref(false)
+
+const { data: collectionsData, isPending: collectionsListPending } = useQuery({
+	queryKey: ['collections'],
+	queryFn: () => $fetch<CollectionsListResponse>('/api/collections'),
+})
+
+const moveCollectionGroups = computed(() => {
+	if (collectionsData.value === undefined) {
+		return []
+	}
+	const cid = collectionId.value
+	if (cid === null) {
+		return []
+	}
+	const g = groupedCollectionOptions(collectionsData.value)
+	return groupsExcludingCollectionId(g, cid)
+})
+
+const hasAnotherCollection = computed(() => {
+	if (collectionsData.value === undefined) {
+		return false
+	}
+	const cid = collectionId.value
+	if (cid === null) {
+		return false
+	}
+	return flattenCollectionsDeduped(collectionsData.value).some((c) => c.id !== cid)
+})
 
 function openEdit(): void {
 	editName.value = collectionName.value
@@ -57,6 +156,40 @@ function openDeleteImage(): void {
 	}
 	deleteError.value = null
 	deleteOpen.value = true
+}
+
+function openMoveImage(): void {
+	if (selected.value === null) {
+		return
+	}
+	moveError.value = null
+	moveTargetCollectionId.value = null
+	moveOpen.value = true
+}
+
+async function confirmMoveImage(): Promise<void> {
+	const imageId = nn(selected.value)
+	const targetId = moveTargetCollectionId.value
+	if (targetId === null || targetId === collectionId.value) {
+		return
+	}
+	moving.value = true
+	moveError.value = null
+	try {
+		await $fetch(`/api/collections/${collectionId.value}/images/${imageId}/move`, {
+			method: 'POST',
+			body: { targetCollectionId: targetId },
+		})
+		bridge.value?.removeImage(imageId)
+		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
+		await queryClient.invalidateQueries({ queryKey: ['collection', targetId] })
+		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		moveOpen.value = false
+	} catch (e: unknown) {
+		moveError.value = fetchFormErrorMessage(e, 'Move failed')
+	} finally {
+		moving.value = false
+	}
 }
 
 async function confirmDeleteImage(): Promise<void> {
@@ -111,6 +244,15 @@ async function confirmDeleteImage(): Promise<void> {
 			/>
 
 			<CollectionToolbarButton
+				:icon="'i-lucide-folder-input'"
+				tooltip="Move to collection"
+				:disabled="
+					selected === null || collectionsListPending || !hasAnotherCollection
+				"
+				@click="openMoveImage"
+			/>
+
+			<CollectionToolbarButton
 				:icon="'i-lucide-trash'"
 				tooltip="Delete image"
 				:disabled="selected === null"
@@ -129,34 +271,21 @@ async function confirmDeleteImage(): Promise<void> {
 		@save="saveEdit"
 	/>
 
-	<Teleport to="body">
-		<div
-			v-if="deleteOpen"
-			class="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4"
-			@click.self="deleteOpen = false"
-		>
-			<div class="bg-elevated border-muted w-full max-w-md rounded-lg border p-6 shadow-xl">
-				<h2 class="text-highlighted mb-4 text-lg font-semibold">Delete image?</h2>
-				<p class="text-muted mb-4 text-sm">This cannot be undone.</p>
-				<p v-if="deleteError !== null" class="text-red-400 mb-4 text-sm">{{ deleteError }}</p>
-				<div class="flex justify-end gap-2">
-					<button
-						type="button"
-						class="text-muted hover:text-highlighted rounded px-4 py-2 text-sm"
-						@click="deleteOpen = false"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						class="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-						:disabled="deleting"
-						@click="confirmDeleteImage"
-					>
-						Delete
-					</button>
-				</div>
-			</div>
-		</div>
-	</Teleport>
+	<CollectionDeleteImageModal
+		v-model:open="deleteOpen"
+		:deleting="deleting"
+		:error="deleteError"
+		@confirm="confirmDeleteImage"
+	/>
+
+	<CollectionMoveImageModal
+		v-model:open="moveOpen"
+		v-model:target-collection-id="moveTargetCollectionId"
+		:groups="moveCollectionGroups"
+		:collections-pending="collectionsListPending"
+		:has-another-collection="hasAnotherCollection"
+		:moving="moving"
+		:error="moveError"
+		@confirm="confirmMoveImage"
+	/>
 </template>
