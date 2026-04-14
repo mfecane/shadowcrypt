@@ -1,3 +1,5 @@
+// Drizzle migrations script - runs through github actions
+
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { Pool } from 'pg'

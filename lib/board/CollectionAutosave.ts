@@ -22,7 +22,7 @@ export class CollectionAutosave {
 	private saving = false
 	private pending = false
 
-	private static readonly DEBOUNCE_MSEC = 2_000
+	private static readonly DEBOUNCE_MSEC = 5_000
 
 	public constructor(
 		private readonly board: Board,

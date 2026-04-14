@@ -36,6 +36,14 @@ const icon = computed((): string => {
 	}
 	return ''
 })
+
+watch(
+	collectionSaveError,
+	() => {
+		console.log('collectionSaveError', collectionSaveError.value)
+	},
+	{ immediate: true }
+)
 </script>
 
 <template>

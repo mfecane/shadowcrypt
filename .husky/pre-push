@@ -6,4 +6,6 @@ set -a
 . ./.env.local
 set +a
 
+npm run build:zig
+npm run test:zig
 npm run check

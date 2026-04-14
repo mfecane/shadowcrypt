@@ -22,3 +22,7 @@ logs
 .env.local
 !.env.example
 drizzle.config.prod.ts
+
+# Zig
+.zig-cache/
+zig-out/

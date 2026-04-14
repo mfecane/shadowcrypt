@@ -18,9 +18,9 @@ export class EventPreprocessor {
 	 */
 	private static readonly DOUBLE_CLICK_SHIFT = 10
 
-	private static readonly SINGLE_CLICK_DELAY_MS = 200
+	private static readonly SINGLE_CLICK_DELAY_MS = 125
 
-	private static readonly DOUBLE_CLICK_TIME_MS = 300
+	private static readonly DOUBLE_CLICK_TIME_MS = 250
 
 	private static modifiersFrom(e: PointerEvent | WheelEvent) {
 		return {

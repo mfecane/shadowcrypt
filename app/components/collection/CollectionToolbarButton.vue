@@ -3,6 +3,7 @@ defineProps<{
 	icon: string
 	disabled?: boolean
 	tooltip?: string
+	spin?: boolean
 }>()
 </script>
 
@@ -14,7 +15,7 @@ defineProps<{
 			:disabled="disabled"
 			:aria-label="tooltip"
 		>
-			<Icon :name="icon" class="h-4 w-4" />
+			<Icon :name="icon" class="h-4 w-4" :class="spin ? 'animate-spin' : ''" />
 		</UButton>
 	</UTooltip>
 </template>

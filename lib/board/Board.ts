@@ -1,4 +1,5 @@
 import { Application, Assets, Container, Rectangle, Sprite } from 'pixi.js'
+import { nextTick } from 'vue'
 import type { LogPanel } from '~~/lib/LogPanel'
 import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidget'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
@@ -9,6 +10,11 @@ import {
 	ViewerImageTransformCommand,
 	type ViewerSpriteSnapshot,
 } from '../collectionViewer/commands/ImageTransformCommand'
+import {
+	ViewerImageLayoutBatchCommand,
+	type ViewerImageLayoutBatchSnapshot,
+} from '../collectionViewer/commands/ViewerImageLayoutBatchCommand'
+import { roundTripLayoutRects } from '../zig/autoLayout'
 import { BoardImage, type BoardRect } from './BoardImage'
 import { BoardVueBridge } from './BoardVueBridge'
 import { CollectionAutosave, type CollectionLayoutRow } from './CollectionAutosave'
@@ -22,6 +28,14 @@ import { HoverTool } from './interaction/tools/HoverTool'
 import { NavigationTool } from './interaction/tools/NavigationTool'
 import { SelectTool } from './interaction/tools/SelectTool'
 import { TransformTool } from './interaction/tools/TransformTool'
+
+function waitForNextPaint(): Promise<void> {
+	return new Promise((resolve) => {
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => resolve())
+		})
+	})
+}
 
 export class Board {
 	private static readonly MIN_IMAGE_Z_INDEX = 0
@@ -209,6 +223,7 @@ export class Board {
 		this.bridge.setImageCount(0)
 		this.bridge.setReady(false)
 		this.bridge.closeFullscreen()
+		this.bridge.setAutoLayoutPending(false)
 	}
 
 	public undo(): void {
@@ -230,6 +245,62 @@ export class Board {
 	public fitWorldToView(): void {
 		this.navigationTool?.fitWorldToView()
 		this.autosave.schedule()
+	}
+
+	public async autoLayout(): Promise<void> {
+		if (this.bridge.autoLayoutPending || this.images.size === 0) {
+			return
+		}
+
+		this.bridge.setAutoLayoutPending(true)
+		// Let Vue flush, then wait until after a paint so cached WASM cannot clear pending before paint.
+		await nextTick()
+		await waitForNextPaint()
+		try {
+			if (this.bridge.fullscreenImage !== null) {
+				this.bridge.closeFullscreen()
+			}
+			if (this.selectedImageId !== null) {
+				this.selectImage(null)
+			}
+
+			const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
+			const before: ViewerImageLayoutBatchSnapshot[] = ordered.map((image) => ({
+				imageId: image.id,
+				snapshot: { x: image.rect.x, y: image.rect.y, width: image.rect.w, height: image.rect.h },
+			}))
+			const nextRects = await roundTripLayoutRects(
+				ordered.map((image) => ({
+					x: image.rect.x,
+					y: image.rect.y,
+					w: image.rect.w,
+					h: image.rect.h,
+				}))
+			)
+			if (nextRects.length !== ordered.length) {
+				throw new Error(`Expected ${ordered.length} rects from Zig, got ${nextRects.length}`)
+			}
+
+			const after: ViewerImageLayoutBatchSnapshot[] = ordered.map((image, index) => {
+				const next = nextRects[index]!
+				return {
+					imageId: image.id,
+					snapshot: { x: next.x, y: next.y, width: next.w, height: next.h },
+				}
+			})
+
+			this.commandController.execute(
+				new ViewerImageLayoutBatchCommand(before, after, (snapshots) => this.applySnapshotsBatch(snapshots))
+			)
+			this.transformWidget?.syncFromParentSprite()
+			this.bridge.setCanUndo(this.commandController.canUndo())
+			this.bridge.setCanRedo(this.commandController.canRedo())
+			this.autosave.schedule()
+		} catch (error: unknown) {
+			console.error('Auto layout failed:', error)
+		} finally {
+			this.bridge.setAutoLayoutPending(false)
+		}
 	}
 
 	private openFullscreenById(imageId: string): void {
@@ -281,6 +352,12 @@ export class Board {
 		}
 		this.syncModelImage(imageId)
 		this.transformWidget?.syncFromParentSprite()
+	}
+
+	private applySnapshotsBatch(snapshots: ViewerImageLayoutBatchSnapshot[]): void {
+		for (const { imageId, snapshot } of snapshots) {
+			this.applySnapshot(imageId, snapshot)
+		}
 	}
 
 	public layoutRowsForSave(): CollectionLayoutRow[] {
@@ -368,7 +445,9 @@ export class Board {
 		this.bridge.setReady(false)
 		this.logger.log(`start collection=${this.model.id} images=${this.model.images.length}`)
 
-		const items = [...this.model.images].sort((a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id))
+		const items = [...this.model.images].sort(
+			(a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id)
+		)
 		if (items.length === 0) {
 			this.logger.log('no images, marking board ready')
 			this.bridge.setImageCount(0)

@@ -4,8 +4,8 @@ import CollectionDeleteImageModal from '~/components/collection/CollectionDelete
 import CollectionMoveImageModal from '~/components/collection/CollectionMoveImageModal.vue'
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 import SaveWidget from '~/components/collection/SaveWidget.vue'
-import type { CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
+import type { CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { nn } from '~~/lib/collectionViewer/viewerUtils'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 
@@ -72,7 +72,7 @@ function groupsExcludingCollectionId(
 		.filter((g) => g.options.length > 0)
 }
 
-const { collectionId, collectionName, selectedImageId, canUndo, canRedo, bridge } =
+const { collectionId, collectionName, selectedImageId, canUndo, canRedo, bridge, autoLayoutPending } =
 	storeToRefs(useCollectionViewerStore())
 
 const selected = computed(() => selectedImageId.value)
@@ -184,9 +184,9 @@ async function confirmMoveImage(): Promise<void> {
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', targetId] })
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
-		moveOpen.value = false
 	} catch (e: unknown) {
 		moveError.value = fetchFormErrorMessage(e, 'Move failed')
+		moveOpen.value = true
 	} finally {
 		moving.value = false
 	}
@@ -237,6 +237,14 @@ async function confirmDeleteImage(): Promise<void> {
 			/>
 
 			<CollectionToolbarButton
+				:icon="autoLayoutPending ? 'i-lucide-loader-2' : 'i-lucide-layout-template'"
+				tooltip="Auto layout"
+				:spin="autoLayoutPending"
+				:disabled="bridge === null"
+				@click="bridge?.autoLayout()"
+			/>
+
+			<CollectionToolbarButton
 				:icon="'i-lucide-scan-search'"
 				tooltip="Fit all images to view"
 				:disabled="bridge === null"
@@ -246,9 +254,7 @@ async function confirmDeleteImage(): Promise<void> {
 			<CollectionToolbarButton
 				:icon="'i-lucide-folder-input'"
 				tooltip="Move to collection"
-				:disabled="
-					selected === null || collectionsListPending || !hasAnotherCollection
-				"
+				:disabled="selected === null || collectionsListPending || !hasAnotherCollection"
 				@click="openMoveImage"
 			/>
 

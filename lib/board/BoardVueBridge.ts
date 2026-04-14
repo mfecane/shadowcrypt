@@ -15,6 +15,7 @@ export interface BoardBridgeState {
 	collectionSaveError: string | null
 	imageCount: number
 	ready: boolean
+	autoLayoutPending: boolean
 }
 
 interface BoardForBridge {
@@ -22,6 +23,7 @@ interface BoardForBridge {
 	navigationTool: NavigationTool | null
 	removeImage: (imageId: string) => void
 	setCollectionName: (name: string) => void
+	autoLayout: () => Promise<void>
 }
 
 export class BoardVueBridge {
@@ -43,6 +45,8 @@ export class BoardVueBridge {
 
 	/** True after `Board.init()` / `buildPixi` finishes for the current mount (including empty collections). */
 	public ready = false
+
+	public autoLayoutPending = false
 
 	private readonly subscribers = new Set<() => void>()
 
@@ -84,6 +88,7 @@ export class BoardVueBridge {
 			collectionSaveError: this.collectionSaveError,
 			imageCount: this.imageCount,
 			ready: this.ready,
+			autoLayoutPending: this.autoLayoutPending,
 		}
 	}
 
@@ -146,6 +151,16 @@ export class BoardVueBridge {
 		this.notify()
 	}
 
+	public setAutoLayoutPending(v: boolean): void {
+		const changed = this.autoLayoutPending !== v
+		this.autoLayoutPending = v
+		// Always notify when entering pending: Pinia can miss an update if the bridge already had true
+		// (e.g. notify while store.board was null) so `if (pending === v) return` would skip a resync.
+		if (changed || v) {
+			this.notify()
+		}
+	}
+
 	public undo(): void {
 		this.board.commandController.undo()
 		this.notify()
@@ -169,5 +184,9 @@ export class BoardVueBridge {
 	public setCollectionName(name: string): void {
 		this.board.setCollectionName(name)
 		this.notify()
+	}
+
+	public autoLayout(): void {
+		void this.board.autoLayout()
 	}
 }

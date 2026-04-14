@@ -21,6 +21,7 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 		collectionSaveError: null,
 		imageCount: 0,
 		ready: false,
+		autoLayoutPending: false,
 	}),
 	actions: {
 		clear(): void {
@@ -55,6 +56,8 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 			this.collectionSaveStatus = state.collectionSaveStatus
 			this.collectionSaveError = state.collectionSaveError
 			this.imageCount = state.imageCount
+			this.ready = state.ready
+			this.autoLayoutPending = state.autoLayoutPending
 		},
 
 		reset(): void {
@@ -68,6 +71,7 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 			this.collectionSaveError = null
 			this.imageCount = 0
 			this.ready = false
+			this.autoLayoutPending = false
 			this.board = null
 			this.loading = true
 		},
