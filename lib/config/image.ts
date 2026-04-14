@@ -1,6 +1,6 @@
 /** Max raw bytes accepted for a collection image upload before decoding (multipart file). */
 // TODO unused, make it used somewhere
-export const MAX_COLLECTION_IMAGE_UPLOAD_BYTES = 2 * 1024 * 1024 // 2MB
+export const MAX_COLLECTION_IMAGE_UPLOAD_BYTES = 3 * 1024 * 1024 // 2MB
 
 /** Max edge length (px) for the stored “original” WebP variant in collection uploads. */
 export const FULL_IMAGE_WIDTH = 1024
