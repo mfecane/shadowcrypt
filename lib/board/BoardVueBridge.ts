@@ -27,6 +27,7 @@ interface BoardForBridge {
 	undo: () => void
 	redo: () => void
 	saveNow: () => void
+	fitIntoView: () => void
 }
 
 export class BoardVueBridge {
@@ -172,8 +173,9 @@ export class BoardVueBridge {
 		this.board.redo()
 	}
 
-	public fitWorldToView(): void {
-		this.board.navigationTool?.fitWorldToView()
+	/** Normalize layout scale/COM + fit camera (undoable). */
+	public fitIntoView(): void {
+		this.board.fitIntoView()
 		this.notify()
 	}
 

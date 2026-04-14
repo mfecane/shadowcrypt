@@ -1,20 +1,18 @@
 import { Application, Assets, Container, Rectangle, Sprite } from 'pixi.js'
-import { nextTick } from 'vue'
 import type { LogPanel } from '~~/lib/LogPanel'
 import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidget'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { container } from '~~/lib/di/container'
 import type { CollectionDetail } from '../../app/types/collections'
 import { ImageCommandController } from '../collectionViewer/commands/ImageCommandController'
-import {
-	ViewerImageTransformCommand,
-	type ViewerSpriteSnapshot,
-} from '../collectionViewer/commands/ImageTransformCommand'
-import {
-	ViewerImageLayoutBatchCommand,
-	type ViewerImageLayoutBatchSnapshot,
-} from '../collectionViewer/commands/ViewerImageLayoutBatchCommand'
+import type { ViewerSpriteSnapshot } from '../collectionViewer/commands/ImageTransformCommand'
+import { ViewerImageTransformCommand } from '../collectionViewer/commands/ImageTransformCommand'
+import type { ViewerImageLayoutBatchSnapshot } from '../collectionViewer/commands/ViewerImageLayoutBatchCommand'
+import type { ViewportSnapshot } from '../collectionViewer/commands/ViewerLayoutViewportCommand'
+import { ViewerLayoutViewportCommand } from '../collectionViewer/commands/ViewerLayoutViewportCommand'
 import { roundTripLayoutRects } from '../zig/autoLayout'
+import { computeFitViewportSnapshot, worldBoundsRectangles } from './layoutGeometry'
+import { normalizeLayoutSnapshotsForFit } from './layoutNormalize'
 import { BoardImage, type BoardRect } from './BoardImage'
 import { BoardVueBridge } from './BoardVueBridge'
 import { CollectionAutosave, type CollectionLayoutRow } from './CollectionAutosave'
@@ -28,14 +26,6 @@ import { HoverTool } from './interaction/tools/HoverTool'
 import { NavigationTool } from './interaction/tools/NavigationTool'
 import { SelectTool } from './interaction/tools/SelectTool'
 import { TransformTool } from './interaction/tools/TransformTool'
-
-function waitForNextPaint(): Promise<void> {
-	return new Promise((resolve) => {
-		requestAnimationFrame(() => {
-			requestAnimationFrame(() => resolve())
-		})
-	})
-}
 
 export class Board {
 	private static readonly MIN_IMAGE_Z_INDEX = 0
@@ -131,35 +121,8 @@ export class Board {
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.bridge.setImageCount(this.model.images.length)
-		this.fitWorldToView()
-	}
-
-	private static worldBounds(rects: { x: number; y: number; w: number; h: number }[]): {
-		minX: number
-		minY: number
-		maxX: number
-		maxY: number
-		width: number
-		height: number
-	} {
-		if (rects.length === 0) {
-			return { minX: 0, minY: 0, maxX: 8, maxY: 8, width: 8, height: 8 }
-		}
-		let minX = Infinity
-		let minY = Infinity
-		let maxX = -Infinity
-		let maxY = -Infinity
-		for (const r of rects) {
-			minX = Math.min(minX, r.x)
-			minY = Math.min(minY, r.y)
-			maxX = Math.max(maxX, r.x + r.w)
-			maxY = Math.max(maxY, r.y + r.h)
-		}
-		minX -= 8
-		minY -= 8
-		maxX += 8
-		maxY += 8
-		return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY }
+		this.navigationTool?.fitWorldToView()
+		this.autosave.schedule()
 	}
 
 	/** World-space center of image layout bounds; used when no viewport is stored yet (not auto-fit). */
@@ -242,11 +205,44 @@ export class Board {
 		this.autosave.schedule()
 	}
 
-	public fitWorldToView(): void {
-		this.navigationTool?.fitWorldToView()
+	/** Normalize layouts + fit camera; single undo step. */
+	public fitIntoView(): void {
+		if (this.images.size === 0 || this.navigationTool === null) {
+			return
+		}
+		const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
+		const beforeLayout = this.captureLayoutSnapshots(ordered)
+		const beforeViewport = this.navigationTool.getViewportStateForSave()
+		const afterLayout = normalizeLayoutSnapshotsForFit(beforeLayout)
+		const { w: vw, h: vh } = this.getViewportSize()
+		const rects = afterLayout.map((s) => ({
+			x: s.snapshot.x,
+			y: s.snapshot.y,
+			w: s.snapshot.width,
+			h: s.snapshot.height,
+		}))
+		const bounds = worldBoundsRectangles(rects)
+		const afterViewport = computeFitViewportSnapshot(vw, vh, bounds)
+		this.commandController.execute(
+			new ViewerLayoutViewportCommand(
+				beforeLayout,
+				afterLayout,
+				beforeViewport,
+				afterViewport,
+				(snapshots) => this.applySnapshotsBatch(snapshots),
+				(v) => this.applyViewportSnapshot(v)
+			)
+		)
+		this.transformWidget?.syncFromParentSprite()
+		this.bridge.setCanUndo(this.commandController.canUndo())
+		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.autosave.schedule()
 	}
 
+	/**
+	 * Normalize (memory) → Zig autolayout → fit viewport: **one** {@link ViewerLayoutViewportCommand},
+	 * one undo step. Normalization is not applied until execute; it is not a separate stack entry.
+	 */
 	public async autoLayout(): Promise<void> {
 		if (this.bridge.autoLayoutPending || this.images.size === 0) {
 			return
@@ -254,8 +250,7 @@ export class Board {
 
 		this.bridge.setAutoLayoutPending(true)
 		// Let Vue flush, then wait until after a paint so cached WASM cannot clear pending before paint.
-		await nextTick()
-		await waitForNextPaint()
+		await this.waitForNextPaint()
 		try {
 			if (this.bridge.fullscreenImage !== null) {
 				this.bridge.closeFullscreen()
@@ -265,23 +260,22 @@ export class Board {
 			}
 
 			const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
-			const before: ViewerImageLayoutBatchSnapshot[] = ordered.map((image) => ({
-				imageId: image.id,
-				snapshot: { x: image.rect.x, y: image.rect.y, width: image.rect.w, height: image.rect.h },
-			}))
+			const beforeLayout = this.captureLayoutSnapshots(ordered)
+			const beforeViewport = this.navigationTool!.getViewportStateForSave()
+			const normalizedInput = normalizeLayoutSnapshotsForFit(beforeLayout)
 			const nextRects = await roundTripLayoutRects(
-				ordered.map((image) => ({
-					x: image.rect.x,
-					y: image.rect.y,
-					w: image.rect.w,
-					h: image.rect.h,
+				normalizedInput.map((s) => ({
+					x: s.snapshot.x,
+					y: s.snapshot.y,
+					w: s.snapshot.width,
+					h: s.snapshot.height,
 				}))
 			)
 			if (nextRects.length !== ordered.length) {
 				throw new Error(`Expected ${ordered.length} rects from Zig, got ${nextRects.length}`)
 			}
 
-			const after: ViewerImageLayoutBatchSnapshot[] = ordered.map((image, index) => {
+			const afterLayout: ViewerImageLayoutBatchSnapshot[] = ordered.map((image, index) => {
 				const next = nextRects[index]!
 				return {
 					imageId: image.id,
@@ -289,8 +283,26 @@ export class Board {
 				}
 			})
 
+			const { w: vw, h: vh } = this.getViewportSize()
+			const rects = afterLayout.map((s) => ({
+				x: s.snapshot.x,
+				y: s.snapshot.y,
+				w: s.snapshot.width,
+				h: s.snapshot.height,
+			}))
+			const bounds = worldBoundsRectangles(rects)
+			const afterViewport = computeFitViewportSnapshot(vw, vh, bounds)
+
 			this.commandController.execute(
-				new ViewerImageLayoutBatchCommand(before, after, (snapshots) => this.applySnapshotsBatch(snapshots))
+				new ViewerLayoutViewportCommand(
+					beforeLayout,
+					afterLayout,
+					beforeViewport,
+					afterViewport,
+					(snapshots) => this.applySnapshotsBatch(snapshots),
+					(v) => this.applyViewportSnapshot(v),
+					'viewer_autolayout_fit'
+				)
 			)
 			this.transformWidget?.syncFromParentSprite()
 			this.bridge.setCanUndo(this.commandController.canUndo())
@@ -360,6 +372,17 @@ export class Board {
 		}
 	}
 
+	private captureLayoutSnapshots(ordered: BoardImage[]): ViewerImageLayoutBatchSnapshot[] {
+		return ordered.map((image) => ({
+			imageId: image.id,
+			snapshot: { x: image.rect.x, y: image.rect.y, width: image.rect.w, height: image.rect.h },
+		}))
+	}
+
+	private applyViewportSnapshot(v: ViewportSnapshot): void {
+		this.navigationTool?.setViewportFromSaved({ x: v.centerX, y: v.centerY }, v.zoom)
+	}
+
 	public layoutRowsForSave(): CollectionLayoutRow[] {
 		const rows: CollectionLayoutRow[] = []
 		for (const bi of this.normalizeImageZIndices()) {
@@ -418,13 +441,13 @@ export class Board {
 
 	public getWorldSize(): { w: number; h: number } {
 		const rects = Array.from(this.images.values()).map((i) => i.rect)
-		const { width: ww, height: wh } = Board.worldBounds(rects)
+		const { width: ww, height: wh } = worldBoundsRectangles(rects)
 		return { w: ww, h: wh }
 	}
 
 	public getWorldBounds(): { minX: number; minY: number; maxX: number; maxY: number; w: number; h: number } {
 		const rects = Array.from(this.images.values()).map((i) => i.rect)
-		const bounds = Board.worldBounds(rects)
+		const bounds = worldBoundsRectangles(rects)
 		return {
 			minX: bounds.minX,
 			minY: bounds.minY,
@@ -650,5 +673,13 @@ export class Board {
 	private syncRuntimeImageOrder(): void {
 		this.worldContainer?.sortChildren()
 		this.model.sortImagesByZIndex()
+	}
+
+	private async waitForNextPaint(): Promise<void> {
+		return new Promise((resolve) => {
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => resolve())
+			})
+		})
 	}
 }

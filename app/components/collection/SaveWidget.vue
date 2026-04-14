@@ -1,91 +1,62 @@
 <script setup lang="ts">
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 
-// TODO it flickers
-
 const { bridge, collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
 
-const expanded = computed(
-	() => collectionSaveStatus.value === 'saved' || collectionSaveStatus.value === 'error'
-)
+const status = computed(() => collectionSaveStatus.value)
 
-const isError = computed(() => collectionSaveStatus.value === 'error')
+const isSaving = computed(() => status.value === 'saving')
+const isSaved = computed(() => status.value === 'saved')
+const isError = computed(() => status.value === 'error')
 
-const iconSpin = computed(() => collectionSaveStatus.value === 'saving')
-
-const saveDisabled = computed(() => bridge.value === null || collectionSaveStatus.value === 'saving')
-
-const rowClass = computed((): string => {
-	const s = collectionSaveStatus.value
-	if (s === 'saving') {
-		return 'text-primary'
+const icon = computed(() => {
+	if (isSaving.value) {
+		return 'i-lucide-loader-2'
 	}
-	if (s === 'saved') {
+	if (isSaved.value) {
+		return 'i-lucide-check'
+	}
+	if (isError.value) {
+		return 'i-lucide-alert-circle'
+	}
+	return 'i-lucide-save'
+})
+
+const iconClass = computed(() => {
+	if (isSaved.value) {
 		return 'text-green-500'
 	}
-	if (s === 'error') {
+	if (isError.value) {
 		return 'text-red-400'
 	}
 	return ''
 })
 
-const icon = computed((): string => {
-	const s = collectionSaveStatus.value
-	if (s === 'saving') {
-		return 'i-lucide-loader-2'
+const tooltip = computed(() => {
+	if (isError.value) {
+		return collectionSaveError.value ?? 'Save failed'
 	}
-	if (s === 'saved') {
-		return 'i-lucide-check'
+	if (isSaving.value) {
+		return 'Saving…'
 	}
-	if (s === 'error') {
-		return 'i-lucide-alert-circle'
+	if (isSaved.value) {
+		return 'Saved'
 	}
-	return ''
+	return 'Save'
 })
+
+const saveDisabled = computed(() => bridge.value === null || isSaving.value)
 </script>
 
 <template>
-	<div class="flex items-center gap-2">
-		<div class="flex items-center bg-neutral-900/70 backdrop-blur-sm rounded-lg p-2">
-			<CollectionToolbarButton
-				:icon="'i-lucide-save'"
-				tooltip="Save now"
-				:disabled="saveDisabled"
-				:spin="collectionSaveStatus === 'saving'"
-				@click="bridge?.saveNow()"
-			/>
-		</div>
-		<Transition name="save-widget" mode="out-in">
-			<div
-				v-if="expanded"
-				:key="collectionSaveStatus"
-				class="inline-flex min-w-0 items-center justify-center gap-1 p-2 text-xs rounded-lg bg-neutral-900/70 backdrop-blur-sm w-12 h-12"
-				:class="rowClass"
-			>
-				<UTooltip
-					v-if="isError"
-					:text="collectionSaveError ?? 'Save failed'"
-					:content="{ side: 'bottom', align: 'start' }"
-				>
-					<Icon :name="icon" class="h-4 w-4 shrink-0 cursor-default" />
-				</UTooltip>
-				<Icon v-else :name="icon" class="h-4 w-4 shrink-0" :class="{ 'animate-spin': iconSpin }" />
-			</div>
-		</Transition>
+	<div class="flex items-center rounded-lg bg-neutral-900/70 p-2 backdrop-blur-sm">
+		<CollectionToolbarButton
+			:icon="icon"
+			:tooltip="tooltip"
+			:icon-class="iconClass"
+			:disabled="saveDisabled"
+			:spin="isSaving"
+			@click="bridge?.saveNow()"
+		/>
 	</div>
 </template>
-
-<style scoped>
-.save-widget-enter-active,
-.save-widget-leave-active {
-	transition:
-		opacity 0.22s ease,
-		transform 0.22s ease;
-}
-
-.save-widget-enter-from,
-.save-widget-leave-to {
-	opacity: 0;
-	transform: scale(0.92);
-}
-</style>

@@ -246,9 +246,9 @@ async function confirmDeleteImage(): Promise<void> {
 
 			<CollectionToolbarButton
 				:icon="'i-lucide-scan-search'"
-				tooltip="Fit all images to view"
+				tooltip="Fit into view"
 				:disabled="bridge === null"
-				@click="bridge?.fitWorldToView()"
+				@click="bridge?.fitIntoView()"
 			/>
 
 			<CollectionToolbarButton

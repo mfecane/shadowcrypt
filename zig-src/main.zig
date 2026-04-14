@@ -44,27 +44,51 @@ const layout_field = struct {
     const h: usize = 3;
 };
 
-const max_layout_rects: usize = 16384;
+/// Maximum number of rectangles that can be laid out.
+const max_layout_rects: usize = 512;
 /// Maximum number of relaxation iterations per solve.
-const layout_max_iterations: usize = 48;
-/// Fixed broad-phase grid cell size in world units.
-const layout_grid_cell_size: f32 = 128.0;
+/// This is the actual solve budget for one `autoLayout()` call.
+/// `max_layout_rects` only limits input size; it does not increase iteration count.
+/// If one run still has visible motion or overlap cleanup left near the end, raise this.
+/// If later iterations are already stalling into a force balance, increasing this alone
+/// usually does much less than expected.
+const layout_max_iterations: usize = 1024;
+/// Lower bound for broad-phase grid cell size in world units.
+const layout_grid_cell_size_min: f32 = 128.0;
+/// Upper bound for broad-phase grid cell size in world units.
+const layout_grid_cell_size_max: f32 = 512.0;
 /// Fraction of penetration resolved per overlap pair each iteration.
+/// Higher values clear overlaps faster, but can also make the layout kick harder
+/// and overshoot before damping settles it back down.
 const layout_separation_strength: f32 = 1.0;
 /// Weak pull back toward each rectangle's original position.
 /// Small but non-zero so layouts do not drift arbitrarily far from the user's composition.
-const layout_anchor_strength: f32 = 0.0002;
+/// If rerunning the solver works much better than adding more iterations, this is
+/// one of the first constants to question. A rerun effectively redefines the
+/// "original" positions to the latest layout, while one long run keeps pulling
+/// toward the older starting arrangement.
+const layout_anchor_strength: f32 = 0.0005;
 /// Very weak pull toward the overall layout center.
 /// Kept weaker than the anchor so compactness does not dominate arrangement preservation.
-const layout_compactness_strength: f32 = 0.0002;
+/// This prevents the pack from spreading forever, but too much compactness can
+/// keep dense groups compressed and preserve tiny residual overlaps.
+const layout_compactness_strength: f32 = 0.0025;
 /// Velocity damping used to suppress oscillation.
-const layout_damping: f32 = 0.6;
+/// Higher values keep velocity around longer and feel smoother, but can also make
+/// the solver sluggish to settle tiny collisions. Lower values react harder per
+/// step, but increase the risk of bounce and churn.
+const layout_damping: f32 = 0.99;
 /// Maximum movement length for one rectangle in a single iteration.
-const layout_max_step: f32 = 192.0;
+/// This caps explosive jumps. Too low makes large overlaps take many passes to
+/// open up. Too high can cause overshoot and noisy settling.
+const layout_max_step: f32 = 96.0;
 /// Desired empty space between solved rectangles, modeled as collision inflation.
 const layout_target_gap: f32 = 8.0;
 /// Early-out threshold when movement becomes negligible.
-const layout_stop_epsilon: f32 = 0.02;
+/// Lower this if the solver is stopping while tiny corrections are still useful.
+/// Raising it exits earlier, which is cheaper but makes small residual overlaps
+/// more likely to survive.
+const layout_stop_epsilon: f32 = 0.05;
 
 var layout_rect_count: u32 = 0;
 var layout_input: [max_layout_rects * layout_rect_stride]f32 = undefined;
@@ -75,6 +99,8 @@ const layout_grid_max_nodes: usize = max_layout_rects * 32;
 var layout_grid_bucket_heads: [layout_grid_bucket_count]i32 = undefined;
 var layout_grid_nodes: [layout_grid_max_nodes]GridNode = undefined;
 var layout_candidate_seen_stamp: [max_layout_rects]u32 = [_]u32{0} ** max_layout_rects;
+var layout_grid_cell_size_current: f32 = layout_grid_cell_size_min;
+var layout_grid_cell_size_inv_current: f32 = 1.0 / layout_grid_cell_size_min;
 
 const LayoutSolveStats = struct {
     iterations: u32 = 0,
@@ -83,6 +109,7 @@ const LayoutSolveStats = struct {
     converged: bool = false,
     grid_nodes: u32 = 0,
     used_grid: bool = false,
+    grid_cell_size: f32 = layout_grid_cell_size_min,
 };
 
 const GridNode = struct {
@@ -164,8 +191,25 @@ fn clampVector(x: *f32, y: *f32, max_len: f32) void {
     y.* *= scale;
 }
 
+fn clampf(value: f32, min_value: f32, max_value: f32) f32 {
+    return @min(@max(value, min_value), max_value);
+}
+
+fn chooseGridCellSize(rects: []const LayoutRect) f32 {
+    var total_extent: f32 = 0;
+    for (rects) |rect| {
+        total_extent += @max(rect.w, rect.h);
+    }
+
+    const inv_count = 1.0 / @as(f32, @floatFromInt(rects.len));
+    const average_extent = total_extent * inv_count;
+    // Bias upward so large rectangles occupy fewer cells and the grid stays useful
+    // for layouts dominated by card-like blocks around 400x400 units.
+    return clampf(average_extent * 1.25 + layout_target_gap, layout_grid_cell_size_min, layout_grid_cell_size_max);
+}
+
 fn cellCoord(value: f32) i32 {
-    return @as(i32, @intFromFloat(@floor(value / layout_grid_cell_size)));
+    return @as(i32, @intFromFloat(@floor(value * layout_grid_cell_size_inv_current)));
 }
 
 fn hashCell(cell_x: i32, cell_y: i32) usize {
@@ -194,6 +238,9 @@ fn insertGridNode(node_count: *usize, rect_index: usize, cell_x: i32, cell_y: i3
 fn buildSpatialGrid(rects: []LayoutRect, stats: *LayoutSolveStats) bool {
     @memset(&layout_grid_bucket_heads, -1);
     var node_count: usize = 0;
+    layout_grid_cell_size_current = chooseGridCellSize(rects);
+    layout_grid_cell_size_inv_current = 1.0 / layout_grid_cell_size_current;
+    stats.grid_cell_size = layout_grid_cell_size_current;
 
     for (rects, 0..) |rect, rect_index| {
         const min_x = rect.x - layout_target_gap * 0.5;
@@ -428,14 +475,16 @@ export fn autoLayout() void {
     logFmt(.info, "overlaps resolved: {}", .{stats.overlaps});
     logFmt(.info, "broad phase: {s}", .{if (stats.used_grid) "grid" else "all-pairs fallback"});
     logFmt(.info, "grid nodes: {}", .{stats.grid_nodes});
+    logFmt(.info, "grid cell size: {}", .{stats.grid_cell_size});
     logFmt(.info, "converged: {}", .{stats.converged});
-    logFmt(.info, "summary: rects={}, iterations={}, pair_checks={}, overlaps={}, broad_phase={s}, grid_nodes={}, converged={}", .{
+    logFmt(.info, "summary: rects={}, iterations={}, pair_checks={}, overlaps={}, broad_phase={s}, grid_nodes={}, grid_cell_size={}, converged={}", .{
         layout_rect_count,
         stats.iterations,
         stats.pair_checks,
         stats.overlaps,
         if (stats.used_grid) "grid" else "all-pairs fallback",
         stats.grid_nodes,
+        stats.grid_cell_size,
         stats.converged,
     });
 }

@@ -59,6 +59,8 @@ async function getZigAutoLayout(): Promise<ZigAutoLayoutExports> {
 }
 
 export async function roundTripLayoutRects(rects: ZigLayoutRect[]): Promise<ZigLayoutRect[]> {
+	console.log('roundTripLayoutRects', rects)
+
 	const zig = await getZigAutoLayout()
 	const accepted = zig.setLayoutRectCount(rects.length)
 	if (accepted !== 1) {

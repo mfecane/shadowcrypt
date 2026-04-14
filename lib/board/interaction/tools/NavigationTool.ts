@@ -1,14 +1,13 @@
 import type { Container, Renderer } from 'pixi.js'
 import { Point } from 'pixi.js'
 import type { Board } from '~~/lib/board/Board'
+import { computeFitViewportSnapshot } from '~~/lib/board/layoutGeometry'
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
 import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
 import type { Tool } from '~~/lib/board/interaction/Tool'
 import { clamp } from '~~/lib/collectionViewer/viewerUtils'
-
-const TOP_GUTTER = 8
 
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 4
@@ -72,22 +71,17 @@ export class NavigationTool implements Tool {
 		}
 	}
 
+	/** Fits camera to current world bounds (no layout change). Used after e.g. image removal. */
 	public fitWorldToView(): void {
 		const { w: vw, h: vh } = this.board.getViewportSize()
 		const { minX, minY, w: ww, h: wh } = this.board.getWorldBounds()
-		let s = 1
-		if (ww !== 0) {
-			s = Math.min(vw / ww, vh / (wh + TOP_GUTTER))
-		}
-		if (s > 1) {
-			s = 1
-		}
-		this.worldContainer.scale.set(s)
-		this.worldContainer.rotation = 0
-		this.worldContainer.position.x = vw / 2 - (minX + ww / 2) * s
-		this.worldContainer.position.y = (vh + TOP_GUTTER) / 2 - (minY + wh / 2) * s
-		this.zoom = s
-		this.syncStateFromWorld()
+		const snap = computeFitViewportSnapshot(vw, vh, {
+			minX,
+			minY,
+			width: ww,
+			height: wh,
+		})
+		this.setViewportFromSaved({ x: snap.centerX, y: snap.centerY }, snap.zoom)
 		this.board.syncTransformWidgetFromParentSprite()
 	}
 

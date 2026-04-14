@@ -4,6 +4,8 @@ defineProps<{
 	disabled?: boolean
 	tooltip?: string
 	spin?: boolean
+	/** Extra classes on the icon (e.g. success/error tone on the save control). */
+	iconClass?: string
 }>()
 </script>
 
@@ -11,11 +13,15 @@ defineProps<{
 	<UTooltip :text="tooltip" :content="{ side: 'bottom', align: 'start' }">
 		<UButton
 			variant="ghost"
-			class="rounded-m h-8 w-8 p-2 disabled:text-beige-600"
+			class="rounded-md h-8 w-8 p-2 disabled:text-beige-600"
 			:disabled="disabled"
 			:aria-label="tooltip"
 		>
-			<Icon :name="icon" class="h-4 w-4" :class="spin ? 'animate-spin' : ''" />
+			<Icon
+				:name="icon"
+				class="size-4 shrink-0 [&_svg]:block"
+				:class="[spin ? 'animate-spin' : '', iconClass]"
+			/>
 		</UButton>
 	</UTooltip>
 </template>
