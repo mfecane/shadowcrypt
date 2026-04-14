@@ -44,7 +44,7 @@ const layout_field = struct {
     const h: usize = 3;
 };
 
-const max_layout_rects: usize = 8192;
+const max_layout_rects: usize = 16384;
 /// Maximum number of relaxation iterations per solve.
 const layout_max_iterations: usize = 48;
 /// Fixed broad-phase grid cell size in world units.
@@ -53,10 +53,10 @@ const layout_grid_cell_size: f32 = 128.0;
 const layout_separation_strength: f32 = 1.0;
 /// Weak pull back toward each rectangle's original position.
 /// Small but non-zero so layouts do not drift arbitrarily far from the user's composition.
-const layout_anchor_strength: f32 = 0.0001;
+const layout_anchor_strength: f32 = 0.0002;
 /// Very weak pull toward the overall layout center.
 /// Kept weaker than the anchor so compactness does not dominate arrangement preservation.
-const layout_compactness_strength: f32 = 0.0001;
+const layout_compactness_strength: f32 = 0.0002;
 /// Velocity damping used to suppress oscillation.
 const layout_damping: f32 = 0.6;
 /// Maximum movement length for one rectangle in a single iteration.

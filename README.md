@@ -33,11 +33,17 @@ This project was built as a product-style portfolio piece rather than a demo toy
 - **Storage**: MinIO / S3-compatible object storage
 - **Auth**: `nuxt-auth-utils`, Google OAuth, email one-time codes
 - **Tooling**: TypeScript, ESLint, Docker Compose
+- **Board auto-layout (WebAssembly)**: Zig `0.15.x`, built to `ReleaseSmall` and served as `public/zig/main.wasm`
+
+### Zig and WebAssembly
+
+Overlap resolution and auto-layout for the canvas run in Zig under `zig-src/`, compiled with the usual `build.zig` / `build.zig.zon` setup and instantiated from Nuxt through the typed bridge in `lib/zig/`. The solver uses a spatial hash grid and iterative relaxation with bounded work per pass so it stays predictable next to Pixi at scale. Logging from the guest is wired through a narrow host import so messages appear in the developer console alongside application output. `npm run build:zig` emits the WASM; `npm run dev:zig` watches sources; `npm run test:zig` runs Zig tests; `npm run check` and the pre-push hook run Zig build and tests together with the TypeScript and Nuxt steps.
 
 ## Architecture
 
 - `app/` contains the Nuxt application, pages, and UI components.
-- `lib/board/` contains the board runtime, interaction system, autosave, and Pixi integration.
+- `lib/board/` contains the board runtime, interaction system, autosave, and Pixi integration (layout rect round-trips through Zig WASM).
+- `zig-src/` + `build.zig` compile the auto-layout solver to `public/zig/main.wasm`; `lib/zig/` loads and types the WASM surface for the app.
 - `server/api/` contains collection, image, auth, folder, and profile endpoints.
 - `server/db/schema.ts` defines the database schema via Drizzle.
 - `server/storage/` contains image storage abstractions for S3-compatible backends.

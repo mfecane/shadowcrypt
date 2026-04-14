@@ -1,13 +1,19 @@
 <script setup lang="ts">
+import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
+
 // TODO it flickers
 
-const { collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
+const { bridge, collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
 
-const expanded = computed(() => collectionSaveStatus.value !== 'idle')
+const expanded = computed(
+	() => collectionSaveStatus.value === 'saved' || collectionSaveStatus.value === 'error'
+)
 
 const isError = computed(() => collectionSaveStatus.value === 'error')
 
 const iconSpin = computed(() => collectionSaveStatus.value === 'saving')
+
+const saveDisabled = computed(() => bridge.value === null || collectionSaveStatus.value === 'saving')
 
 const rowClass = computed((): string => {
 	const s = collectionSaveStatus.value
@@ -36,18 +42,19 @@ const icon = computed((): string => {
 	}
 	return ''
 })
-
-watch(
-	collectionSaveError,
-	() => {
-		console.log('collectionSaveError', collectionSaveError.value)
-	},
-	{ immediate: true }
-)
 </script>
 
 <template>
-	<div>
+	<div class="flex items-center gap-2">
+		<div class="flex items-center bg-neutral-900/70 backdrop-blur-sm rounded-lg p-2">
+			<CollectionToolbarButton
+				:icon="'i-lucide-save'"
+				tooltip="Save now"
+				:disabled="saveDisabled"
+				:spin="collectionSaveStatus === 'saving'"
+				@click="bridge?.saveNow()"
+			/>
+		</div>
 		<Transition name="save-widget" mode="out-in">
 			<div
 				v-if="expanded"

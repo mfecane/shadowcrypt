@@ -24,6 +24,9 @@ interface BoardForBridge {
 	removeImage: (imageId: string) => void
 	setCollectionName: (name: string) => void
 	autoLayout: () => Promise<void>
+	undo: () => void
+	redo: () => void
+	saveNow: () => void
 }
 
 export class BoardVueBridge {
@@ -162,13 +165,11 @@ export class BoardVueBridge {
 	}
 
 	public undo(): void {
-		this.board.commandController.undo()
-		this.notify()
+		this.board.undo()
 	}
 
 	public redo(): void {
-		this.board.commandController.redo()
-		this.notify()
+		this.board.redo()
 	}
 
 	public fitWorldToView(): void {
@@ -188,5 +189,9 @@ export class BoardVueBridge {
 
 	public autoLayout(): void {
 		void this.board.autoLayout()
+	}
+
+	public saveNow(): void {
+		this.board.saveNow()
 	}
 }

@@ -26,6 +26,7 @@ export class ImageCommandController {
 		cmd.undo()
 		this.redoStack.push(cmd)
 		this.bridge.setCanUndo(this.canUndo())
+		this.bridge.setCanRedo(this.canRedo())
 	}
 
 	public redo(): void {
@@ -35,6 +36,7 @@ export class ImageCommandController {
 		}
 		cmd.execute()
 		this.undoStack.push(cmd)
+		this.bridge.setCanUndo(this.canUndo())
 		this.bridge.setCanRedo(this.canRedo())
 	}
 

@@ -81,6 +81,26 @@ export class CollectionAutosave {
 		}, CollectionAutosave.DEBOUNCE_MSEC)
 	}
 
+	/** Persists immediately (clears pending debounce). If a save is already in flight, queues another run. */
+	public saveNow(): void {
+		if (this.disposed) {
+			return
+		}
+		if (this.savedIdleTimer !== null) {
+			clearTimeout(this.savedIdleTimer)
+			this.savedIdleTimer = null
+		}
+		if (this.timer !== null) {
+			clearTimeout(this.timer)
+			this.timer = null
+		}
+		if (this.saving) {
+			this.pending = true
+			return
+		}
+		void this.runSave()
+	}
+
 	public dispose(): void {
 		this.disposed = true
 		if (this.timer !== null) {

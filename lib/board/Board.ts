@@ -84,6 +84,10 @@ export class Board {
 		this.bridge.setCollection(this.model.id, name)
 	}
 
+	public saveNow(): void {
+		this.autosave.saveNow()
+	}
+
 	/** Updates the in-memory model after a successful server persist (viewport + image layouts). */
 	public afterSuccessfulPersist(
 		viewport: { centerX: number; centerY: number; zoom: number } | null,
@@ -229,16 +233,12 @@ export class Board {
 	public undo(): void {
 		this.commandController.undo()
 		this.transformWidget?.syncFromParentSprite()
-		this.bridge.setCanUndo(this.commandController.canUndo())
-		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.autosave.schedule()
 	}
 
 	public redo(): void {
 		this.commandController.redo()
 		this.transformWidget?.syncFromParentSprite()
-		this.bridge.setCanUndo(this.commandController.canUndo())
-		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.autosave.schedule()
 	}
 
