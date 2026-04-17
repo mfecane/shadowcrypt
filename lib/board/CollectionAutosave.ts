@@ -1,20 +1,9 @@
+import type { BoardImageLayoutSaveRow } from '~~/lib/board/BoardImageApi'
+import type { BoardViewportState } from '~~/lib/board/BoardViewport'
+import type { CollectionBoardModel } from '~~/lib/board/CollectionBoardModel'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 import type { Board } from './Board'
 import type { BoardVueBridge } from './BoardVueBridge'
-
-export type LayoutPatchBody = {
-	layoutX: number
-	layoutY: number
-	layoutW: number
-	layoutH: number
-	layoutZ: number
-	layoutFlipX: boolean
-	layoutFlipY: boolean
-}
-
-export type CollectionLayoutRow = {
-	imageId: string
-} & LayoutPatchBody
 
 /** Debounced persistence of image layouts and collection viewport; drives {@link BoardVueBridge} save status. */
 export class CollectionAutosave {
@@ -23,50 +12,37 @@ export class CollectionAutosave {
 	private disposed = false
 	private saving = false
 	private pending = false
-	private readonly persistedImageLayoutById = new Map<string, LayoutPatchBody>()
-	private persistedViewport: { centerX: number; centerY: number; zoom: number } | null = null
 
-	private static readonly DEBOUNCE_MSEC = 5_000
+	private persistedBaseline: CollectionBoardModel
+
+	private static readonly DEBOUNCE_LAYOUT_MS = 2_000
+	private static readonly DEBOUNCE_VIEWPORT_MS = 5_000
 
 	public constructor(
 		private readonly board: Board,
 		private readonly bridge: BoardVueBridge,
-		private readonly collectionId: string
+		private readonly collectionId: string,
+		baseline: CollectionBoardModel
 	) {
-		for (const layout of this.board.layoutRowsForSave()) {
-			const { imageId, ...body } = layout
-			this.persistedImageLayoutById.set(imageId, body)
-		}
-		this.persistedViewport = this.board.viewportForSave()
+		this.persistedBaseline = baseline
 	}
 
-	private static equalLayout(a: LayoutPatchBody, b: LayoutPatchBody): boolean {
-		return (
-			a.layoutX === b.layoutX &&
-			a.layoutY === b.layoutY &&
-			a.layoutW === b.layoutW &&
-			a.layoutH === b.layoutH &&
-			a.layoutZ === b.layoutZ &&
-			a.layoutFlipX === b.layoutFlipX &&
-			a.layoutFlipY === b.layoutFlipY
-		)
-	}
-
-	private static equalViewport(
-		a: { centerX: number; centerY: number; zoom: number } | null,
-		b: { centerX: number; centerY: number; zoom: number } | null
-	): boolean {
-		if (a === null || b === null) {
-			return a === b
-		}
-		return a.centerX === b.centerX && a.centerY === b.centerY && a.zoom === b.zoom
-	}
-
-	private async patchImageLayouts(rows: CollectionLayoutRow[]): Promise<void> {
+	private async patchImageLayouts(rows: BoardImageLayoutSaveRow[]): Promise<void> {
 		const res = await fetch(`/api/collections/${this.collectionId}/images`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ images: rows }),
+			body: JSON.stringify({
+				images: rows.map((r) => ({
+					imageId: r.imageId,
+					layoutX: r.layout.x,
+					layoutY: r.layout.y,
+					layoutW: r.layout.w,
+					layoutH: r.layout.h,
+					layoutZ: r.layout.zIndex,
+					layoutFlipX: r.layout.flipX,
+					layoutFlipY: r.layout.flipY,
+				})),
+			}),
 		})
 
 		if (!res.ok) {
@@ -75,7 +51,7 @@ export class CollectionAutosave {
 		}
 	}
 
-	private async patchCollectionViewport(body: { centerX: number; centerY: number; zoom: number }): Promise<void> {
+	private async patchCollectionViewport(body: BoardViewportState): Promise<void> {
 		const res = await fetch(`/api/collections/${this.collectionId}`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
@@ -92,7 +68,17 @@ export class CollectionAutosave {
 		}
 	}
 
+	/** Layout / image mutations (faster). */
 	public schedule(): void {
+		this.scheduleAfter(CollectionAutosave.DEBOUNCE_LAYOUT_MS)
+	}
+
+	/** Pan / zoom only (longer debounce). */
+	public scheduleViewport(): void {
+		this.scheduleAfter(CollectionAutosave.DEBOUNCE_VIEWPORT_MS)
+	}
+
+	private scheduleAfter(debounceMs: number): void {
 		if (this.disposed) {
 			return
 		}
@@ -110,7 +96,7 @@ export class CollectionAutosave {
 		this.timer = setTimeout(() => {
 			this.timer = null
 			void this.runSave()
-		}, CollectionAutosave.DEBOUNCE_MSEC)
+		}, debounceMs)
 	}
 
 	/** Persists immediately (clears pending debounce). If a save is already in flight, queues another run. */
@@ -157,31 +143,23 @@ export class CollectionAutosave {
 		this.pending = false
 		this.bridge.setCollectionSaveState('saving')
 		try {
-			const layouts = this.board.layoutRowsForSave()
-			const viewport = this.board.viewportForSave()
-			const dirtyLayouts = layouts.filter((layout) => {
-				const { imageId, ...body } = layout
-				const prev = this.persistedImageLayoutById.get(imageId)
-				return prev === undefined || !CollectionAutosave.equalLayout(prev, body)
-			})
+			this.board.syncViewportToModel()
+			this.board.prepareModelForSave()
+			const model = this.board.getModel()
+			const viewport = model.getViewportState()
+			const dirtyLayouts = model.getDirtyLayouts(this.persistedBaseline)
 			const tasks: Promise<void>[] = []
 			if (dirtyLayouts.length > 0) {
 				tasks.push(this.patchImageLayouts(dirtyLayouts))
 			}
-			const viewportChanged = !CollectionAutosave.equalViewport(this.persistedViewport, viewport)
-			if (viewport !== null && viewportChanged) {
+			if (viewport !== null) {
 				tasks.push(this.patchCollectionViewport(viewport))
 			}
+
 			if (tasks.length > 0) {
 				await Promise.all(tasks)
-				this.board.afterSuccessfulPersist(viewportChanged ? viewport : null, dirtyLayouts)
-				for (const layout of dirtyLayouts) {
-					const { imageId, ...body } = layout
-					this.persistedImageLayoutById.set(imageId, body)
-				}
-				if (viewportChanged) {
-					this.persistedViewport = viewport
-				}
+				this.board.afterSuccessfulPersist(dirtyLayouts)
+				this.persistedBaseline = this.board.getModel()
 			}
 
 			this.bridge.notifyOnPersistSuccess()

@@ -3,7 +3,7 @@ import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
 import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
 import type { Tool } from '~~/lib/board/interaction/Tool'
-import type { Board } from '~~/lib/board/Board'
+import type { BoardHost } from '~~/lib/board/BoardHost'
 
 export class SelectTool implements Tool {
 	public readonly id = 'select'
@@ -12,7 +12,7 @@ export class SelectTool implements Tool {
 
 	public enabled = true
 
-	public constructor(private readonly board: Board) {}
+	public constructor(private readonly board: BoardHost) {}
 
 	public isEnabled(event: InteractionEvent): boolean {
 		return this.enabled && event.type === CanvasEventType.Click

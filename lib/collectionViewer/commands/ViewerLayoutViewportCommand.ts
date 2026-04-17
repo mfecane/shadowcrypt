@@ -1,10 +1,5 @@
+import type { BoardViewportState } from '~~/lib/board/BoardViewport'
 import type { ViewerImageLayoutBatchSnapshot } from './ViewerImageLayoutBatchCommand'
-
-export interface ViewportSnapshot {
-	centerX: number
-	centerY: number
-	zoom: number
-}
 
 /**
  * Single undo/redo step: applies a batch of image rects and one viewport together.
@@ -17,10 +12,10 @@ export class ViewerLayoutViewportCommand {
 	public constructor(
 		private readonly beforeLayout: ViewerImageLayoutBatchSnapshot[],
 		private readonly afterLayout: ViewerImageLayoutBatchSnapshot[],
-		private readonly beforeViewport: ViewportSnapshot,
-		private readonly afterViewport: ViewportSnapshot,
+		private readonly beforeViewport: BoardViewportState,
+		private readonly afterViewport: BoardViewportState,
 		private readonly applyLayout: (snapshots: ViewerImageLayoutBatchSnapshot[]) => void,
-		private readonly applyViewport: (v: ViewportSnapshot) => void,
+		private readonly applyViewport: (v: BoardViewportState) => void,
 		id: string = 'viewer_layout_viewport'
 	) {
 		this.id = id

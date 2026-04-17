@@ -1,11 +1,5 @@
+import type { BoardRect } from '~~/lib/board/BoardRect'
 import { createZigImportObject } from './consoleBridge'
-
-export interface ZigLayoutRect {
-	x: number
-	y: number
-	w: number
-	h: number
-}
 
 interface ZigAutoLayoutExports {
 	memory: WebAssembly.Memory
@@ -58,9 +52,7 @@ async function getZigAutoLayout(): Promise<ZigAutoLayoutExports> {
 	return await zigAutoLayoutPromise
 }
 
-export async function roundTripLayoutRects(rects: ZigLayoutRect[]): Promise<ZigLayoutRect[]> {
-	console.log('roundTripLayoutRects', rects)
-
+export async function roundTripLayoutRects(rects: BoardRect[]): Promise<BoardRect[]> {
 	const zig = await getZigAutoLayout()
 	const accepted = zig.setLayoutRectCount(rects.length)
 	if (accepted !== 1) {
@@ -83,7 +75,7 @@ export async function roundTripLayoutRects(rects: ZigLayoutRect[]): Promise<ZigL
 	zig.autoLayout()
 
 	const output = new Float32Array(zig.memory.buffer, zig.getLayoutOutputPtr(), valuesLen)
-	const nextRects: ZigLayoutRect[] = []
+	const nextRects: BoardRect[] = []
 	for (let index = 0; index < rects.length; index += 1) {
 		const offset = index * rectScalarStride
 		nextRects.push({

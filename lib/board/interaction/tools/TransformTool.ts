@@ -8,26 +8,27 @@ import type { Tool } from '~~/lib/board/interaction/Tool'
 import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidget'
 import { WidgetCorner } from '~~/lib/board/interaction/widgets/WidgetPart'
 import { clamp } from '~~/lib/collectionViewer/viewerUtils'
-import type { ViewerSpriteSnapshot } from '~~/lib/collectionViewer/commands/ImageTransformCommand'
-import type { Board } from '~~/lib/board/Board'
+import type { BoardHost } from '~~/lib/board/BoardHost'
+import { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
 
 const MIN_SPRITE_SIZE = 16
 
-function signedSnapshotFromSprite(sprite: Sprite): ViewerSpriteSnapshot {
+function signedSnapshotFromSprite(sprite: Sprite): BoardImageLayout {
 	const baseWidth = sprite.texture.orig.width > 0 ? sprite.texture.orig.width : sprite.texture.width
 	const baseHeight = sprite.texture.orig.height > 0 ? sprite.texture.orig.height : sprite.texture.height
-	const width = Math.abs(sprite.scale.x * baseWidth)
-	const height = Math.abs(sprite.scale.y * baseHeight)
+	const w = Math.abs(sprite.scale.x * baseWidth)
+	const h = Math.abs(sprite.scale.y * baseHeight)
 	const flipX = sprite.scale.x < 0
 	const flipY = sprite.scale.y < 0
-	return {
-		x: flipX ? sprite.x - width : sprite.x,
-		y: flipY ? sprite.y - height : sprite.y,
-		width,
-		height,
+	return new BoardImageLayout(
+		sprite.zIndex,
+		flipX ? sprite.x - w : sprite.x,
+		flipY ? sprite.y - h : sprite.y,
+		w,
+		h,
 		flipX,
-		flipY,
-	}
+		flipY
+	)
 }
 
 function applyUnsignedSizePreserveOrientation(sprite: Sprite, width: number, height: number): void {
@@ -79,12 +80,12 @@ export class TransformTool implements Tool {
 
 	private dragImageId: string | null = null
 
-	private startSnapshot: ViewerSpriteSnapshot | null = null
+	private startSnapshot: BoardImageLayout | null = null
 
 	public constructor(
 		private readonly worldContainer: Container,
 		private readonly canvas: HTMLCanvasElement,
-		private readonly board: Board,
+		private readonly board: BoardHost,
 		private readonly getWidget: () => TransformWidget | null
 	) {}
 
@@ -244,7 +245,7 @@ export class TransformTool implements Tool {
 		if (this.dragSprite !== null && this.dragImageId !== null && this.startSnapshot !== null) {
 			const after = signedSnapshotFromSprite(this.dragSprite)
 			const b = this.startSnapshot
-			if (after.x !== b.x || after.y !== b.y || after.width !== b.width || after.height !== b.height) {
+			if (after.x !== b.x || after.y !== b.y || after.w !== b.w || after.h !== b.h) {
 				this.board.commitTransform(this.dragImageId, b, after)
 			}
 		}

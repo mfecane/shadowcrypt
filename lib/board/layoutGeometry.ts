@@ -1,9 +1,12 @@
+import type { BoardRect } from '~~/lib/board/BoardRect'
+import type { BoardViewportState } from '~~/lib/board/BoardViewport'
+
 /** Matches {@link NavigationTool} fit padding above the world. */
 export const TOP_GUTTER = 8
 
 const EDGE_PAD = 8
 
-export function worldBoundsRectangles(rects: { x: number; y: number; w: number; h: number }[]): {
+export function worldBoundsRectangles(rects: BoardRect[]): {
 	minX: number
 	minY: number
 	maxX: number
@@ -31,6 +34,24 @@ export function worldBoundsRectangles(rects: { x: number; y: number; w: number; 
 	return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY }
 }
 
+/** Center of the axis-aligned bounding box of rects (no padding). Returns (0,0) if empty. */
+export function worldBoundsCenter(rects: BoardRect[]): { x: number; y: number } {
+	if (rects.length === 0) {
+		return { x: 0, y: 0 }
+	}
+	let minX = Infinity
+	let minY = Infinity
+	let maxX = -Infinity
+	let maxY = -Infinity
+	for (const r of rects) {
+		minX = Math.min(minX, r.x)
+		minY = Math.min(minY, r.y)
+		maxX = Math.max(maxX, r.x + r.w)
+		maxY = Math.max(maxY, r.y + r.h)
+	}
+	return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
+}
+
 /**
  * Viewport (world center + zoom) that matches {@link NavigationTool.fitWorldToView} math
  * for the given padded bounds and viewport size.
@@ -39,7 +60,7 @@ export function computeFitViewportSnapshot(
 	vw: number,
 	vh: number,
 	bounds: { minX: number; minY: number; width: number; height: number }
-): { centerX: number; centerY: number; zoom: number } {
+): BoardViewportState {
 	const { minX, minY, width: ww, height: wh } = bounds
 	let s = 1
 	if (ww !== 0) {

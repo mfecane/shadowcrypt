@@ -1,12 +1,12 @@
-import type { LayoutRect } from '~~/lib/collectionLayout/types'
+import type { BoardRect } from '~~/lib/board/BoardRect'
 
 const GAP = 4
 const BASE = 400
 
 export function computeDefaultLayoutRects(
 	images: { id: string; width: number | null; height: number | null }[]
-): Map<string, LayoutRect> {
-	const out = new Map<string, LayoutRect>()
+): Map<string, BoardRect> {
+	const out = new Map<string, BoardRect>()
 	const n = images.length
 	if (n === 0) {
 		return out

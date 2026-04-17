@@ -1,33 +1,28 @@
-import { Application, Assets, Container, Rectangle, Sprite } from 'pixi.js'
 import type { LogPanel } from '~~/lib/LogPanel'
-import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidget'
+import type { BoardForBridge } from '~~/lib/board/BoardForBridge'
+import type { BoardHost } from '~~/lib/board/BoardHost'
+import type { BoardImageLayoutSaveRow } from '~~/lib/board/BoardImageApi'
+import { BoardRenderer } from '~~/lib/board/BoardRenderer'
+import type { BoardViewportState } from '~~/lib/board/BoardViewport'
+import type { NavigationTool } from '~~/lib/board/interaction/tools/NavigationTool'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { container } from '~~/lib/di/container'
 import type { CollectionDetail } from '../../app/types/collections'
 import { ImageCommandController } from '../collectionViewer/commands/ImageCommandController'
-import type { ViewerSpriteSnapshot } from '../collectionViewer/commands/ImageTransformCommand'
 import { ViewerImageTransformCommand } from '../collectionViewer/commands/ImageTransformCommand'
 import type { ViewerImageLayoutBatchSnapshot } from '../collectionViewer/commands/ViewerImageLayoutBatchCommand'
-import type { ViewportSnapshot } from '../collectionViewer/commands/ViewerLayoutViewportCommand'
 import { ViewerLayoutViewportCommand } from '../collectionViewer/commands/ViewerLayoutViewportCommand'
 import { roundTripLayoutRects } from '../zig/autoLayout'
-import { BoardImage, type BoardRect } from './BoardImage'
+import { BoardImage } from './BoardImage'
+import { BoardImageLayout } from './BoardImageLayout'
 import { BoardVueBridge } from './BoardVueBridge'
-import { CollectionAutosave, type CollectionLayoutRow } from './CollectionAutosave'
+import { CollectionAutosave } from './CollectionAutosave'
 import { CollectionBoardModel } from './CollectionBoardModel'
 import { CollectionBoardModelFactory } from './CollectionBoardModelFactory'
-import { EventPreprocessor } from './interaction/EventPreprocessor'
-import { EventRouter } from './interaction/EventRouter'
-import { PixiInteractionContext } from './interaction/PixiInteractionContext'
-import { FullscreenTool } from './interaction/tools/FullscreenTool'
-import { HoverTool } from './interaction/tools/HoverTool'
-import { NavigationTool } from './interaction/tools/NavigationTool'
-import { SelectTool } from './interaction/tools/SelectTool'
-import { TransformTool } from './interaction/tools/TransformTool'
-import { computeFitViewportSnapshot, worldBoundsRectangles } from './layoutGeometry'
+import { computeFitViewportSnapshot, worldBoundsCenter, worldBoundsRectangles } from './layoutGeometry'
 import { normalizeLayoutSnapshotsForFit } from './layoutNormalize'
 
-export class Board {
+export class Board implements BoardForBridge, BoardHost {
 	private static readonly MIN_IMAGE_Z_INDEX = 0
 
 	public readonly bridge: BoardVueBridge = new BoardVueBridge(this)
@@ -36,18 +31,9 @@ export class Board {
 
 	public readonly autosave: CollectionAutosave
 
-	private app: Application | null = null
-	private worldContainer: Container | null = null
-	private preprocessor: EventPreprocessor | null = null
-	private router: EventRouter | null = null
-	public navigationTool: NavigationTool | null = null
-	private interactionContext: PixiInteractionContext | null = null
-	private resizeObserver: ResizeObserver | null = null
-	private debugOverlayEl: HTMLDivElement | null = null
-	private debugLines: string[] = []
+	private renderer: BoardRenderer | null = null
 
-	private readonly spriteById = new Map<string, Sprite>()
-	private transformWidget: TransformWidget | null = null
+	private debugOverlayEl: HTMLDivElement | null = null
 
 	private selectedImageId: string | null = null
 
@@ -59,40 +45,8 @@ export class Board {
 
 	private readonly logger = container.resolve<LogPanel>(ServiceAlias.LogPanel)
 
-	private static spriteBaseSize(sprite: Sprite): { width: number; height: number } {
-		const texture = sprite.texture
-		return {
-			width: texture.orig.width > 0 ? texture.orig.width : texture.width,
-			height: texture.orig.height > 0 ? texture.orig.height : texture.height,
-		}
-	}
-
-	private static signedSnapshotFromSprite(sprite: Sprite): ViewerSpriteSnapshot {
-		const base = Board.spriteBaseSize(sprite)
-		const width = Math.abs(sprite.scale.x * base.width)
-		const height = Math.abs(sprite.scale.y * base.height)
-		const flipX = sprite.scale.x < 0
-		const flipY = sprite.scale.y < 0
-		return {
-			x: flipX ? sprite.x - width : sprite.x,
-			y: flipY ? sprite.y - height : sprite.y,
-			width,
-			height,
-			flipX,
-			flipY,
-		}
-	}
-
-	private static applySnapshotToSprite(sprite: Sprite, snapshot: ViewerSpriteSnapshot): void {
-		const base = Board.spriteBaseSize(sprite)
-		const safeBaseW = Math.max(1e-6, base.width)
-		const safeBaseH = Math.max(1e-6, base.height)
-		const scaleX = Math.abs(snapshot.width) / safeBaseW
-		const scaleY = Math.abs(snapshot.height) / safeBaseH
-		sprite.scale.x = snapshot.flipX ? -scaleX : scaleX
-		sprite.scale.y = snapshot.flipY ? -scaleY : scaleY
-		sprite.x = snapshot.flipX ? snapshot.x + Math.abs(snapshot.width) : snapshot.x
-		sprite.y = snapshot.flipY ? snapshot.y + Math.abs(snapshot.height) : snapshot.y
+	public get navigationTool(): NavigationTool | null {
+		return this.renderer?.navigationTool ?? null
 	}
 
 	public constructor(
@@ -100,7 +54,7 @@ export class Board {
 		detail: CollectionDetail
 	) {
 		this.model = new CollectionBoardModelFactory().create(detail)
-		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id)
+		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id, this.model.clone())
 		this.bridge.setCollection(this.model.id, this.model.name)
 		this.bridge.setImageCount(this.model.images.length)
 	}
@@ -114,24 +68,23 @@ export class Board {
 		this.autosave.saveNow()
 	}
 
-	/** Updates the in-memory model after a successful server persist (viewport + image layouts). */
-	public afterSuccessfulPersist(
-		viewport: { centerX: number; centerY: number; zoom: number } | null,
-		layouts: CollectionLayoutRow[]
-	): void {
-		if (viewport !== null) {
-			this.model.setViewportSnapshot({ x: viewport.centerX, y: viewport.centerY }, viewport.zoom)
+	/** Deep clone of the live collection model (read-only snapshot for consumers). */
+	public getModel(): CollectionBoardModel {
+		return this.model.clone()
+	}
+
+	/** Copies live navigation into the model (viewport center + zoom). */
+	public syncViewportToModel(): void {
+		const v = this.navigationTool?.getViewportStateForSave() ?? null
+		if (v !== null) {
+			this.model.setViewportSnapshot({ x: v.centerX, y: v.centerY }, v.zoom)
 		}
-		for (const l of layouts) {
-			this.model.syncImageLayout(l.imageId, {
-				x: l.layoutX,
-				y: l.layoutY,
-				w: l.layoutW,
-				h: l.layoutH,
-				flipX: l.layoutFlipX,
-				flipY: l.layoutFlipY,
-				zIndex: l.layoutZ,
-			})
+	}
+
+	/** Applies persisted layouts from the server response into the live model. */
+	public afterSuccessfulPersist(layouts: BoardImageLayoutSaveRow[]): void {
+		for (const { imageId, layout } of layouts) {
+			this.model.syncImageLayout(imageId, layout)
 		}
 		this.model.sortImagesByZIndex()
 	}
@@ -147,12 +100,7 @@ export class Board {
 		if (this.selectedImageId === imageId) {
 			this.selectImage(null)
 		}
-		const sp = this.spriteById.get(imageId)
-		if (sp !== undefined && this.worldContainer !== null) {
-			this.worldContainer.removeChild(sp)
-			sp.destroy({ texture: true })
-			this.spriteById.delete(imageId)
-		}
+		this.renderer?.removeSprite(imageId)
 		this.images.delete(imageId)
 		this.model.removeImage(imageId)
 		this.commandController.clearStacks()
@@ -163,65 +111,25 @@ export class Board {
 		this.autosave.schedule()
 	}
 
-	/** World-space center of image layout bounds; used when no viewport is stored yet (not auto-fit). */
-	private static worldBoundsCenter(rects: { x: number; y: number; w: number; h: number }[]): {
-		x: number
-		y: number
-	} {
-		if (rects.length === 0) {
-			return { x: 0, y: 0 }
-		}
-		let minX = Infinity
-		let minY = Infinity
-		let maxX = -Infinity
-		let maxY = -Infinity
-		for (const r of rects) {
-			minX = Math.min(minX, r.x)
-			minY = Math.min(minY, r.y)
-			maxX = Math.max(maxX, r.x + r.w)
-			maxY = Math.max(maxY, r.y + r.h)
-		}
-		return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
-	}
-
 	public async init(): Promise<void> {
-		await this.buildPixi()
+		await this.buildViewLayer()
 	}
 
 	public destroy(): void {
-		this.teardownPixi()
+		this.teardownViewLayer()
 		this.autosave.dispose()
 		this.bridge.setCollectionSaveState('idle')
 	}
 
-	private teardownPixi(): void {
-		if (this.resizeObserver !== null) {
-			this.resizeObserver.disconnect()
-			this.resizeObserver = null
-		}
-		this.preprocessor?.detach()
-		this.preprocessor = null
-		this.navigationTool?.destroy()
-		this.navigationTool = null
-		this.router = null
-		this.interactionContext = null
-		if (this.transformWidget !== null) {
-			this.transformWidget.destroy({ children: true })
-			this.transformWidget = null
-		}
-		this.spriteById.clear()
-		this.worldContainer = null
+	private teardownViewLayer(): void {
+		this.renderer?.destroy()
+		this.renderer = null
 		this.selectedImageId = null
 		this.images.clear()
-		if (this.app !== null) {
-			this.app.destroy(true)
-			this.app = null
-		}
 		if (this.debugOverlayEl !== null) {
 			this.debugOverlayEl.remove()
 			this.debugOverlayEl = null
 		}
-		this.debugLines = []
 		this.bridge.setSelectedImageId(this.selectedImageId)
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
@@ -233,13 +141,13 @@ export class Board {
 
 	public undo(): void {
 		this.commandController.undo()
-		this.transformWidget?.syncFromParentSprite()
+		this.renderer?.syncTransformWidgetFromParentSprite()
 		this.autosave.schedule()
 	}
 
 	public redo(): void {
 		this.commandController.redo()
-		this.transformWidget?.syncFromParentSprite()
+		this.renderer?.syncTransformWidgetFromParentSprite()
 		this.autosave.schedule()
 	}
 
@@ -248,19 +156,20 @@ export class Board {
 		if (imageId === null) {
 			return
 		}
-		const sprite = this.spriteById.get(imageId)
+		const sprite = this.renderer?.getSprite(imageId)
 		if (sprite === undefined) {
 			return
 		}
-		const before = Board.signedSnapshotFromSprite(sprite)
-		const after: ViewerSpriteSnapshot = {
-			x: before.x,
-			y: before.y,
-			width: before.width,
-			height: before.height,
-			flipX: !before.flipX,
-			flipY: before.flipY,
-		}
+		const before = BoardRenderer.signedSnapshotFromSprite(sprite)
+		const after = new BoardImageLayout(
+			before.zIndex,
+			before.x,
+			before.y,
+			before.w,
+			before.h,
+			!before.flipX,
+			before.flipY
+		)
 		this.commandController.execute(
 			new ViewerImageTransformCommand(imageId, before, after, (id, s) => this.applySnapshot(id, s))
 		)
@@ -274,17 +183,14 @@ export class Board {
 		if (this.images.size === 0 || this.navigationTool === null) {
 			return
 		}
-		const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
+		const ordered = [...this.images.values()].sort(
+			(a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id)
+		)
 		const beforeLayout = this.captureLayoutSnapshots(ordered)
 		const beforeViewport = this.navigationTool.getViewportStateForSave()
 		const afterLayout = normalizeLayoutSnapshotsForFit(beforeLayout)
 		const { w: vw, h: vh } = this.getViewportSize()
-		const rects = afterLayout.map((s) => ({
-			x: s.snapshot.x,
-			y: s.snapshot.y,
-			w: s.snapshot.width,
-			h: s.snapshot.height,
-		}))
+		const rects = afterLayout.map((s) => s.snapshot.getRect())
 		const bounds = worldBoundsRectangles(rects)
 		const afterViewport = computeFitViewportSnapshot(vw, vh, bounds)
 		this.commandController.execute(
@@ -297,7 +203,7 @@ export class Board {
 				(v) => this.applyViewportSnapshot(v)
 			)
 		)
-		this.transformWidget?.syncFromParentSprite()
+		this.renderer?.syncTransformWidgetFromParentSprite()
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.autosave.schedule()
@@ -323,44 +229,31 @@ export class Board {
 				this.selectImage(null)
 			}
 
-			const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
+			const ordered = [...this.images.values()].sort(
+				(a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id)
+			)
 			const beforeLayout = this.captureLayoutSnapshots(ordered)
 			const beforeViewport = this.navigationTool!.getViewportStateForSave()
 			const normalizedInput = normalizeLayoutSnapshotsForFit(beforeLayout)
-			const nextRects = await roundTripLayoutRects(
-				normalizedInput.map((s) => ({
-					x: s.snapshot.x,
-					y: s.snapshot.y,
-					w: s.snapshot.width,
-					h: s.snapshot.height,
-				}))
-			)
+			const nextRects = await roundTripLayoutRects(normalizedInput.map((s) => s.snapshot.getRect()))
 			if (nextRects.length !== ordered.length) {
 				throw new Error(`Expected ${ordered.length} rects from Zig, got ${nextRects.length}`)
 			}
 
 			const afterLayout: ViewerImageLayoutBatchSnapshot[] = ordered.map((image, index) => {
 				const next = nextRects[index]!
+
+				const layout = image.layout.clone()
+				layout.setRect(next)
+
 				return {
 					imageId: image.id,
-					snapshot: {
-						x: next.x,
-						y: next.y,
-						width: next.w,
-						height: next.h,
-						flipX: image.rect.flipX,
-						flipY: image.rect.flipY,
-					},
+					snapshot: layout,
 				}
 			})
 
 			const { w: vw, h: vh } = this.getViewportSize()
-			const rects = afterLayout.map((s) => ({
-				x: s.snapshot.x,
-				y: s.snapshot.y,
-				w: s.snapshot.width,
-				h: s.snapshot.height,
-			}))
+			const rects = afterLayout.map((s) => s.snapshot.getRect())
 			const bounds = worldBoundsRectangles(rects)
 			const afterViewport = computeFitViewportSnapshot(vw, vh, bounds)
 
@@ -375,7 +268,7 @@ export class Board {
 					'viewer_autolayout_fit'
 				)
 			)
-			this.transformWidget?.syncFromParentSprite()
+			this.renderer?.syncTransformWidgetFromParentSprite()
 			this.bridge.setCanUndo(this.commandController.canUndo())
 			this.bridge.setCanRedo(this.commandController.canRedo())
 			this.autosave.schedule()
@@ -398,47 +291,14 @@ export class Board {
 		return { w: r.width || 800, h: r.height || 600 }
 	}
 
-	private setupResizeObserver(): void {
-		if (this.app === null) {
-			return
-		}
-		this.resizeObserver = new ResizeObserver((entries) => {
-			const entry = entries[0]
-			if (entry === undefined || this.app === null) {
-				return
-			}
-			const w = entry.contentRect.width
-			const h = entry.contentRect.height
-			if (w < 1 || h < 1) {
-				return
-			}
-			this.app.renderer.resize(w, h)
-			this.app.stage.hitArea = new Rectangle(0, 0, w, h)
-			this.navigationTool?.applyViewport()
-			this.transformWidget?.syncFromParentSprite()
-		})
-		this.resizeObserver.observe(this.mountEl)
-	}
-
-	private applySnapshot(imageId: string, s: ViewerSpriteSnapshot): void {
-		const sp = this.spriteById.get(imageId)
-		if (!sp) {
-			return
-		}
-		Board.applySnapshotToSprite(sp, s)
+	private applySnapshot(imageId: string, s: BoardImageLayout): void {
+		this.renderer?.applySnapshotToSprite(imageId, s)
 		const bi = this.images.get(imageId)
 		if (bi) {
-			bi.rect = {
-				x: s.x,
-				y: s.y,
-				w: Math.abs(s.width),
-				h: Math.abs(s.height),
-				flipX: s.flipX,
-				flipY: s.flipY,
-			}
+			bi.setLayout(s.clone())
 		}
 		this.syncModelImage(imageId)
-		this.transformWidget?.syncFromParentSprite()
+		this.renderer?.syncTransformWidgetFromParentSprite()
 	}
 
 	private applySnapshotsBatch(snapshots: ViewerImageLayoutBatchSnapshot[]): void {
@@ -450,68 +310,29 @@ export class Board {
 	private captureLayoutSnapshots(ordered: BoardImage[]): ViewerImageLayoutBatchSnapshot[] {
 		return ordered.map((image) => ({
 			imageId: image.id,
-			snapshot: {
-				x: image.rect.x,
-				y: image.rect.y,
-				width: image.rect.w,
-				height: image.rect.h,
-				flipX: image.rect.flipX,
-				flipY: image.rect.flipY,
-			},
+			snapshot: image.layout.clone(),
 		}))
 	}
 
-	private applyViewportSnapshot(v: ViewportSnapshot): void {
+	private applyViewportSnapshot(v: BoardViewportState): void {
 		this.navigationTool?.setViewportFromSaved({ x: v.centerX, y: v.centerY }, v.zoom)
 	}
 
-	public layoutRowsForSave(): CollectionLayoutRow[] {
-		const rows: CollectionLayoutRow[] = []
-		for (const bi of this.normalizeImageZIndices()) {
-			const r = bi.rect
-			rows.push({
-				imageId: bi.id,
-				layoutX: r.x,
-				layoutY: r.y,
-				layoutW: r.w,
-				layoutH: r.h,
-				layoutZ: bi.zIndex,
-				layoutFlipX: r.flipX,
-				layoutFlipY: r.flipY,
-			})
+	/** Contiguous z-indices on the collection model + Pixi world order (before layout diff / PATCH). */
+	public prepareModelForSave(): void {
+		this.model.normalizeImageZIndicesForSave(Board.MIN_IMAGE_Z_INDEX)
+		for (const im of this.images.values()) {
+			this.renderer?.setSpriteWorldZIndex(im.id, im.layout.zIndex)
 		}
-		return rows
+		this.syncRuntimeImageOrder()
 	}
 
 	public getBridge(): BoardVueBridge {
 		return this.bridge
 	}
 
-	public viewportForSave(): { centerX: number; centerY: number; zoom: number } | null {
-		return this.navigationTool?.getViewportStateForSave() ?? null
-	}
-
 	private syncTransformWidget(): void {
-		const widget = this.transformWidget
-		const world = this.worldContainer
-		if (widget === null || world === null) {
-			return
-		}
-		if (widget.parent !== null) {
-			widget.parent.removeChild(widget)
-		}
-		if (this.selectedImageId === null) {
-			widget.hide()
-			return
-		}
-		const sp = this.spriteById.get(this.selectedImageId)
-		if (sp === undefined) {
-			widget.hide()
-			return
-		}
-		sp.addChild(widget)
-		widget.show()
-		widget.syncFromParentSprite()
+		this.renderer?.syncTransformWidget(this.selectedImageId)
 	}
 
 	public selectImage(id: string | null): void {
@@ -523,7 +344,7 @@ export class Board {
 		this.bridge.setSelectedImageId(this.selectedImageId)
 	}
 
-	public commitTransform(imageId: string, before: ViewerSpriteSnapshot, after: ViewerSpriteSnapshot): void {
+	public commitTransform(imageId: string, before: BoardImageLayout, after: BoardImageLayout): void {
 		this.commandController.execute(
 			new ViewerImageTransformCommand(imageId, before, after, (id, s) => this.applySnapshot(id, s))
 		)
@@ -533,13 +354,13 @@ export class Board {
 	}
 
 	public getWorldSize(): { w: number; h: number } {
-		const rects = Array.from(this.images.values()).map((i) => i.rect)
+		const rects = Array.from(this.images.values()).map((i) => i.layout.getRect())
 		const { width: ww, height: wh } = worldBoundsRectangles(rects)
 		return { w: ww, h: wh }
 	}
 
 	public getWorldBounds(): { minX: number; minY: number; maxX: number; maxY: number; w: number; h: number } {
-		const rects = Array.from(this.images.values()).map((i) => i.rect)
+		const rects = Array.from(this.images.values()).map((i) => i.layout.getRect())
 		const bounds = worldBoundsRectangles(rects)
 		return {
 			minX: bounds.minX,
@@ -552,11 +373,11 @@ export class Board {
 	}
 
 	public syncTransformWidgetFromParentSprite(): void {
-		this.transformWidget?.syncFromParentSprite()
+		this.renderer?.syncTransformWidgetFromParentSprite()
 	}
 
-	private async buildPixi(): Promise<void> {
-		this.teardownPixi()
+	private async buildViewLayer(): Promise<void> {
+		this.teardownViewLayer()
 		this.bridge.setCollection(this.model.id, this.model.name)
 		this.bridge.setReady(false)
 		this.logger.log(`start collection=${this.model.id} images=${this.model.images.length}`)
@@ -572,142 +393,33 @@ export class Board {
 		}
 
 		for (const im of items) {
-			const r: BoardRect = {
-				...im.layout,
-				flipX: im.layout.flipX ?? false,
-				flipY: im.layout.flipY ?? false,
-			}
-			this.images.set(im.id, new BoardImage(im.id, im.url, r, im.layout.zIndex))
+			this.images.set(im.id, im)
 		}
 		this.logger.log(`seeded image map entries=${this.images.size}`)
 
-		const rects = items.map((i) => i.layout)
-
-		const viewport = this.getViewportSize()
-		this.logger.log(`viewport ${Math.round(viewport.w)}x${Math.round(viewport.h)}`)
-
-		this.app = new Application()
-		this.logger.log('initializing pixi application')
-		try {
-			await this.app.init({
-				width: viewport.w,
-				height: viewport.h,
-				backgroundAlpha: 0,
-				antialias: true,
-				resolution: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
-				autoDensity: true,
-			})
-		} catch (error) {
-			this.logger.log(`app.init failed: ${error instanceof Error ? error.message : String(error)}`)
-			throw error
-		}
-		this.logger.log('pixi application initialized')
-
-		const canvas = this.app.canvas as HTMLCanvasElement
-		canvas.style.display = 'block'
-		canvas.style.width = '100%'
-		canvas.style.height = '100%'
-		canvas.style.touchAction = 'none'
-		this.mountEl.appendChild(canvas)
-		this.logger.log('canvas attached to mount element')
-
-		this.worldContainer = new Container()
-		this.worldContainer.sortableChildren = true
-		this.app.stage.addChild(this.worldContainer)
-
-		this.app.stage.eventMode = 'static'
-		this.app.stage.hitArea = new Rectangle(0, 0, viewport.w, viewport.h)
-
-		this.interactionContext = new PixiInteractionContext(this.worldContainer, this.spriteById)
-
-		this.transformWidget = new TransformWidget()
-		this.transformWidget.hide()
-
-		this.navigationTool = new NavigationTool(this.worldContainer, canvas, this.app.renderer, this)
-
-		this.router = new EventRouter([
-			new HoverTool(canvas),
-			new FullscreenTool(this),
-			new TransformTool(
-				this.worldContainer,
-				canvas,
-				this,
-				() => this.transformWidget
-			),
-			new SelectTool(this),
-			this.navigationTool,
-		])
-
-		this.preprocessor = new EventPreprocessor(canvas, this.app.renderer, this.interactionContext, (e) =>
-			this.router!.dispatch(e)
-		)
-		this.preprocessor.attach()
-		this.logger.log('interaction stack attached')
-
-		for (const [index, im] of items.entries()) {
-			this.logger.log(`loading image ${index + 1}/${items.length} id=${im.id}`)
-			try {
-				const texture = await Assets.load(im.url)
-				const bi = this.images.get(im.id)
-				if (bi) {
-					bi.width = texture.width
-					bi.height = texture.height
-				}
-				const sprite = new Sprite(texture)
-				const L = im.layout
-				const flipX = L.flipX ?? false
-				const flipY = L.flipY ?? false
-				const scaleX = L.w / Math.max(1e-6, texture.width)
-				const scaleY = L.h / Math.max(1e-6, texture.height)
-				sprite.scale.x = flipX ? -scaleX : scaleX
-				sprite.scale.y = flipY ? -scaleY : scaleY
-				sprite.x = flipX ? L.x + L.w : L.x
-				sprite.y = flipY ? L.y + L.h : L.y
-				sprite.zIndex = L.zIndex
-				sprite.eventMode = 'static'
-				sprite.cursor = 'pointer'
-				this.worldContainer.addChild(sprite)
-				this.spriteById.set(im.id, sprite)
-				this.logger.log(
-					`image ready ${index + 1}/${items.length} id=${im.id} tex=${texture.width}x${texture.height}`
-				)
-			} catch (error) {
-				this.logger.log(
-					`image failed ${index + 1}/${items.length} id=${im.id}: ${
-						error instanceof Error ? error.message : String(error)
-					}`
-				)
-				throw error
-			}
-		}
-		this.logger.log(`all sprites created count=${this.spriteById.size}`)
-		this.worldContainer.sortChildren()
-
-		this.selectImage(null)
+		const rectsPlain = items.map((i) => ({ x: i.layout.x, y: i.layout.y, w: i.layout.w, h: i.layout.h }))
 		const v = this.model.viewportCenter
 		const vz = this.model.viewportZoom
-		if (v !== null && vz !== null) {
-			this.navigationTool.setViewportFromSaved(v, vz)
+		let initialCenter: { x: number; y: number }
+		let initialZoom: number
+		if (v === null || vz === null) {
+			initialCenter = worldBoundsCenter(rectsPlain)
+			initialZoom = Board.defaultViewportZoom
 		} else {
-			this.navigationTool.setViewportFromSaved(Board.worldBoundsCenter(rects), Board.defaultViewportZoom)
+			initialCenter = v
+			initialZoom = vz
 		}
-		this.logger.log('viewport initialized')
-		this.setupResizeObserver()
-		this.logger.log('resize observer attached')
+
+		this.renderer = new BoardRenderer(this.mountEl, this, (msg) => this.logger.log(msg))
+		await this.renderer.mount(items, initialCenter, initialZoom)
+
+		this.selectImage(null)
+		this.logger.log(`all sprites created count=${items.length}`)
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.bridge.setImageCount(items.length)
 		this.bridge.setReady(true)
 		this.logger.log('build complete, board ready')
-	}
-
-	private normalizeImageZIndices(): BoardImage[] {
-		const ordered = [...this.images.values()].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id))
-		for (const [index, image] of ordered.entries()) {
-			this.setImageZIndex(image.id, Board.MIN_IMAGE_Z_INDEX + index, false)
-		}
-		this.syncRuntimeImageOrder()
-		return ordered
 	}
 
 	public touchImage(imageId: string): void {
@@ -721,7 +433,7 @@ export class Board {
 	private getMaxImageZIndex(): number {
 		let max = Board.MIN_IMAGE_Z_INDEX - 1
 		for (const image of this.images.values()) {
-			max = Math.max(max, image.zIndex)
+			max = Math.max(max, image.layout.zIndex)
 		}
 		return max
 	}
@@ -731,11 +443,18 @@ export class Board {
 		if (bi === undefined) {
 			return
 		}
-		bi.zIndex = zIndex
-		const sp = this.spriteById.get(imageId)
-		if (sp !== undefined) {
-			sp.zIndex = zIndex
-		}
+		bi.setLayout(
+			new BoardImageLayout(
+				zIndex,
+				bi.layout.x,
+				bi.layout.y,
+				bi.layout.w,
+				bi.layout.h,
+				bi.layout.flipX,
+				bi.layout.flipY
+			)
+		)
+		this.renderer?.setSpriteWorldZIndex(imageId, zIndex)
 		this.syncModelImage(imageId)
 		if (syncOrder) {
 			this.syncRuntimeImageOrder()
@@ -748,19 +467,19 @@ export class Board {
 			return
 		}
 		this.model.syncImageLayout(imageId, {
-			x: bi.rect.x,
-			y: bi.rect.y,
-			w: Math.abs(bi.rect.w),
-			h: Math.abs(bi.rect.h),
-			flipX: bi.rect.flipX,
-			flipY: bi.rect.flipY,
-			zIndex: bi.zIndex,
+			x: bi.layout.x,
+			y: bi.layout.y,
+			w: Math.abs(bi.layout.w),
+			h: Math.abs(bi.layout.h),
+			flipX: bi.layout.flipX,
+			flipY: bi.layout.flipY,
+			zIndex: bi.layout.zIndex,
 		})
 		this.model.sortImagesByZIndex()
 	}
 
 	private syncRuntimeImageOrder(): void {
-		this.worldContainer?.sortChildren()
+		this.renderer?.sortWorldChildren()
 		this.model.sortImagesByZIndex()
 	}
 

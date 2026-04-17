@@ -1,19 +1,24 @@
 # Shadowcrypt
 
-Shadowcrypt is a full-stack moodboard application for collecting, arranging, and revisiting visual references. It combines a polished Nuxt interface with a Pixi-powered infinite canvas, passwordless authentication, S3-compatible media storage, and PostgreSQL persistence.
+Shadowcrypt is an infinite-canvas moodboard application designed for fast visual exploration and structured reference management.
+
+The system emphasizes direct manipulation, persistent layout state, and predictable performance at scale, combining a Pixi.js rendering layer with WebAssembly-based layout processing and a production-oriented backend.
 
 Live app: `https://shadowcrypt-eight.vercel.app/list`
 
 ## Overview
 
-This project was built as a product-style portfolio piece rather than a demo toy. The focus is on interaction quality, state persistence, and production-oriented architecture:
+This project focuses on interaction quality, state persistence, and production-ready architecture:
 
-- passwordless sign-in with email one-time codes
-- optional Google OAuth
-- drag, resize, pan, pinch-to-zoom, fullscreen viewing, and autosave on the board
-- collections, folders, pinning, archiving, and quick find
-- PostgreSQL + Drizzle migrations for relational data
-- MinIO / S3-compatible object storage for uploaded images
+- passwordless authentication via email one-time codes, with optional Google OAuth
+- infinite canvas with drag, resize, pan, zoom, and fullscreen interaction
+- persistent board state including viewport, layout, and stacking order
+- collections, folders, pinning, and archiving for organization
+- PostgreSQL with Drizzle ORM for relational data modeling
+- S3-compatible object storage for media handling
+- local development environment with Dockerized services (Postgres, MinIO, Mailpit)
+
+Layout and overlap resolution are handled in WebAssembly using a spatial grid and iterative relaxation, allowing large boards to remain responsive under heavy interaction.
 
 ## Product Highlights
 
@@ -37,7 +42,11 @@ This project was built as a product-style portfolio piece rather than a demo toy
 
 ### Zig and WebAssembly
 
-Overlap resolution and auto-layout for the canvas run in Zig under `zig-src/`, compiled with the usual `build.zig` / `build.zig.zon` setup and instantiated from Nuxt through the typed bridge in `lib/zig/`. The solver uses a spatial hash grid and iterative relaxation with bounded work per pass so it stays predictable next to Pixi at scale. Logging from the guest is wired through a narrow host import so messages appear in the developer console alongside application output. `npm run build:zig` emits the WASM; `npm run dev:zig` watches sources; `npm run test:zig` runs Zig tests; `npm run check` and the pre-push hook run Zig build and tests together with the TypeScript and Nuxt steps.
+Overlap resolution and auto-layout are implemented in Zig and compiled to WebAssembly.
+
+The solver uses a spatial hash grid and iterative relaxation with bounded work per pass, ensuring stable performance characteristics alongside real-time canvas interaction.
+
+The WebAssembly module is integrated through a typed bridge and participates directly in the board layout pipeline.
 
 ## Architecture
 

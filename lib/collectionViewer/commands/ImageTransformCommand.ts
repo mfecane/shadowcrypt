@@ -1,27 +1,20 @@
-export interface ViewerSpriteSnapshot {
-  x: number
-  y: number
-  width: number
-  height: number
-  flipX: boolean
-  flipY: boolean
-}
+import type { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
 
 export class ViewerImageTransformCommand {
-  public readonly id = 'viewer_image_transform'
+	public readonly id = 'viewer_image_transform'
 
-  public constructor(
-    public readonly imageId: string,
-    private readonly before: ViewerSpriteSnapshot,
-    private readonly after: ViewerSpriteSnapshot,
-    private readonly apply: (imageId: string, s: ViewerSpriteSnapshot) => void
-  ) {}
+	public constructor(
+		public readonly imageId: string,
+		private readonly before: BoardImageLayout,
+		private readonly after: BoardImageLayout,
+		private readonly apply: (imageId: string, s: BoardImageLayout) => void
+	) {}
 
-  public execute(): void {
-    this.apply(this.imageId, this.after)
-  }
+	public execute(): void {
+		this.apply(this.imageId, this.after)
+	}
 
-  public undo(): void {
-    this.apply(this.imageId, this.before)
-  }
+	public undo(): void {
+		this.apply(this.imageId, this.before)
+	}
 }

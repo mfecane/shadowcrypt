@@ -1,5 +1,5 @@
 import { computeDefaultLayoutRects } from '~~/lib/collectionLayout/computeDefaultLayoutRects'
-import type { LayoutRect } from '~~/lib/collectionLayout/types'
+import type { BoardRect } from '~~/lib/board/BoardRect'
 
 export type ImageRowForLayout = {
 	id: string
@@ -20,12 +20,12 @@ function hasStoredLayout(row: ImageRowForLayout): boolean {
 	)
 }
 
-export function mergeImageLayouts(rows: ImageRowForLayout[]): Map<string, LayoutRect> {
+export function mergeImageLayouts(rows: ImageRowForLayout[]): Map<string, BoardRect> {
 	if (rows.length === 0) {
 		return new Map()
 	}
 	const defaults = computeDefaultLayoutRects(rows)
-	const out = new Map<string, LayoutRect>()
+	const out = new Map<string, BoardRect>()
 	for (const row of rows) {
 		if (hasStoredLayout(row)) {
 			out.set(row.id, {

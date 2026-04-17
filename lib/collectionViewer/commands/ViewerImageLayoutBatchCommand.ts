@@ -1,8 +1,8 @@
-import type { ViewerSpriteSnapshot } from './ImageTransformCommand'
+import type { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
 
 export interface ViewerImageLayoutBatchSnapshot {
 	imageId: string
-	snapshot: ViewerSpriteSnapshot
+	snapshot: BoardImageLayout
 }
 
 export class ViewerImageLayoutBatchCommand {

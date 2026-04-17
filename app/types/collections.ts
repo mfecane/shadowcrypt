@@ -1,12 +1,4 @@
-export interface CollectionImageLayout {
-	x: number
-	y: number
-	w: number
-	h: number
-	flipX?: boolean
-	flipY?: boolean
-	zIndex: number
-}
+import type { BoardImageApi, BoardImageLayoutApi } from '~~/lib/board/BoardImageApi'
 
 export interface CollectionListItem {
 	id: string
@@ -66,7 +58,7 @@ export interface CollectionImageUploadResponse {
 		url: string
 		width: number | null
 		height: number | null
-		layout: CollectionImageLayout
+		layout: BoardImageLayoutApi
 	}
 }
 
@@ -82,11 +74,5 @@ export interface CollectionDetail {
 	viewportCenter: { x: number; y: number } | null
 	/** Uniform zoom; null = use fit-to-view on load. */
 	viewportZoom: number | null
-	images: {
-		id: string
-		url: string
-		width: number | null
-		height: number | null
-		layout: CollectionImageLayout
-	}[]
+	images: BoardImageApi[]
 }

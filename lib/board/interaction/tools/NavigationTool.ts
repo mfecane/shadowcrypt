@@ -1,6 +1,7 @@
 import type { Container, Renderer } from 'pixi.js'
 import { Point } from 'pixi.js'
-import type { Board } from '~~/lib/board/Board'
+import type { BoardHost } from '~~/lib/board/BoardHost'
+import type { BoardViewportState } from '~~/lib/board/BoardViewport'
 import { computeFitViewportSnapshot } from '~~/lib/board/layoutGeometry'
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
@@ -37,7 +38,7 @@ export class NavigationTool implements Tool {
 		private readonly worldContainer: Container,
 		private readonly canvas: HTMLCanvasElement,
 		private readonly renderer: Renderer,
-		private readonly board: Board
+		private readonly board: BoardHost
 	) {}
 
 	public destroy(): void {}
@@ -63,7 +64,7 @@ export class NavigationTool implements Tool {
 		this.applyViewport()
 	}
 
-	public getViewportStateForSave(): { centerX: number; centerY: number; zoom: number } {
+	public getViewportStateForSave(): BoardViewportState {
 		return {
 			centerX: this.centerWorld.x,
 			centerY: this.centerWorld.y,
@@ -168,7 +169,7 @@ export class NavigationTool implements Tool {
 			this.applyScaleAtRendererPoint(this.zoom, focal.x, focal.y)
 			this.syncStateFromWorld()
 			this.board.syncTransformWidgetFromParentSprite()
-			this.board.autosave.schedule()
+			this.board.autosave.scheduleViewport()
 			r.setHandled()
 			return r
 		}
@@ -183,7 +184,7 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.y -= dy
 		this.syncStateFromWorld()
 		this.board.syncTransformWidgetFromParentSprite()
-		this.board.autosave.schedule()
+		this.board.autosave.scheduleViewport()
 		r.setHandled()
 		return r
 	}
@@ -204,7 +205,7 @@ export class NavigationTool implements Tool {
 		}
 		this.syncStateFromWorld()
 		this.board.syncTransformWidgetFromParentSprite()
-		this.board.autosave.schedule()
+		this.board.autosave.scheduleViewport()
 		r.setHandled()
 		return r
 	}
@@ -231,7 +232,7 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.y += event.dy
 		this.syncStateFromWorld()
 		this.board.syncTransformWidgetFromParentSprite()
-		this.board.autosave.schedule()
+		this.board.autosave.scheduleViewport()
 		r.setHandled()
 		return r
 	}

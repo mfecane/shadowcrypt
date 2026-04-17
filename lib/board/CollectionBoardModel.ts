@@ -1,16 +1,9 @@
-import type { CollectionDetail, CollectionImageLayout } from '../../app/types/collections'
+import type { BoardViewportState } from '~~/lib/board/BoardViewport'
+import type { BoardImage } from '~~/lib/board/BoardImage'
+import type { BoardImageLayoutApi, BoardImageLayoutSaveRow } from '~~/lib/board/BoardImageApi'
+import { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
 
-export type BoardModelImage = {
-	id: string
-	url: string
-	width: number | null
-	height: number | null
-	layout: CollectionImageLayout
-}
-
-/**
- * Mutable plain-data snapshot of a collection for the Pixi board (decoupled from Vue readonly proxies).
- */
+/** Mutable collection snapshot for the board (decoupled from Vue). */
 export class CollectionBoardModel {
 	public constructor(
 		public id: string,
@@ -20,39 +13,36 @@ export class CollectionBoardModel {
 		public folderId: string | null,
 		public lastSeenAt: string | null,
 		public updatedAt: string,
-		public viewportCenter: { x: number; y: number },
-		public viewportZoom: number,
-		public images: BoardModelImage[]
+		public viewportCenter: { x: number; y: number } | null,
+		public viewportZoom: number | null,
+		public images: BoardImage[]
 	) {}
 
-	/** Plain {@link CollectionDetail} for typing or cache updates; does not alias mutable internals. */
-	public clone(): CollectionDetail {
+	public clone(): CollectionBoardModel {
+		const c = new CollectionBoardModel(
+			this.id,
+			this.name,
+			this.pinned,
+			this.archived,
+			this.folderId,
+			this.lastSeenAt,
+			this.updatedAt,
+			this.viewportCenter === null ? null : { x: this.viewportCenter.x, y: this.viewportCenter.y },
+			this.viewportZoom,
+			this.images.map((im) => im.clone())
+		)
+		return c
+	}
+
+	/** Current viewport for PATCH; null if never set (no saved viewport / nav not synced yet). */
+	public getViewportState(): BoardViewportState | null {
+		if (this.viewportCenter === null || this.viewportZoom === null) {
+			return null
+		}
 		return {
-			id: this.id,
-			name: this.name,
-			pinned: this.pinned,
-			archived: this.archived,
-			folderId: this.folderId,
-			lastSeenAt: this.lastSeenAt,
-			updatedAt: this.updatedAt,
-			viewportCenter:
-				this.viewportCenter !== null ? { x: this.viewportCenter.x, y: this.viewportCenter.y } : null,
-			viewportZoom: this.viewportZoom,
-			images: this.images.map((im) => ({
-				id: im.id,
-				url: im.url,
-				width: im.width,
-				height: im.height,
-				layout: {
-					x: im.layout.x,
-					y: im.layout.y,
-					w: im.layout.w,
-					h: im.layout.h,
-					flipX: im.layout.flipX,
-					flipY: im.layout.flipY,
-					zIndex: im.layout.zIndex,
-				},
-			})),
+			centerX: this.viewportCenter.x,
+			centerY: this.viewportCenter.y,
+			zoom: this.viewportZoom,
 		}
 	}
 
@@ -69,22 +59,46 @@ export class CollectionBoardModel {
 		this.images = this.images.filter((it) => it.id !== imageId)
 	}
 
-	public syncImageLayout(imageId: string, layout: CollectionImageLayout): void {
+	public syncImageLayout(imageId: string, layout: BoardImageLayoutApi): void {
 		const im = this.images.find((i) => i.id === imageId)
 		if (im !== undefined) {
-			im.layout = {
-				x: layout.x,
-				y: layout.y,
-				w: layout.w,
-				h: layout.h,
-				flipX: layout.flipX ?? false,
-				flipY: layout.flipY ?? false,
-				zIndex: layout.zIndex,
-			}
+			im.setLayout(
+				new BoardImageLayout(
+					layout.zIndex,
+					layout.x,
+					layout.y,
+					layout.w,
+					layout.h,
+					layout.flipX ?? false,
+					layout.flipY ?? false
+				)
+			)
 		}
 	}
 
 	public sortImagesByZIndex(): void {
 		this.images.sort((a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id))
+	}
+
+	public normalizeImageZIndicesForSave(minZ: number): void {
+		const ordered = [...this.images].sort(
+			(a, b) => a.layout.zIndex - b.layout.zIndex || a.id.localeCompare(b.id)
+		)
+		for (const [index, im] of ordered.entries()) {
+			im.layout.zIndex = minZ + index
+		}
+		this.sortImagesByZIndex()
+	}
+
+	public getDirtyLayouts(baseline: CollectionBoardModel): BoardImageLayoutSaveRow[] {
+		const rows: BoardImageLayoutSaveRow[] = []
+		const byId = new Map(baseline.images.map((im) => [im.id, im]))
+		for (const im of this.images) {
+			const prev = byId.get(im.id)
+			if (prev === undefined || !im.layout.isEqual(prev.layout)) {
+				rows.push({ imageId: im.id, layout: im.layout.toApi() })
+			}
+		}
+		return rows
 	}
 }

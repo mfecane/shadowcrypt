@@ -16,8 +16,8 @@ export function normalizeLayoutSnapshotsForFit(
 	let sumW = 0
 	let sumH = 0
 	for (const s of snapshots) {
-		sumW += s.snapshot.width
-		sumH += s.snapshot.height
+		sumW += s.snapshot.w
+		sumH += s.snapshot.h
 	}
 	const n = snapshots.length
 	const avgDim = (sumW + sumH) / (2 * n)
@@ -27,25 +27,22 @@ export function normalizeLayoutSnapshotsForFit(
 
 	const scale = targetAvgDimension / avgDim
 
-	const scaled: ViewerImageLayoutBatchSnapshot[] = snapshots.map((s) => ({
-		imageId: s.imageId,
-		snapshot: {
-			x: s.snapshot.x * scale,
-			y: s.snapshot.y * scale,
-			width: s.snapshot.width * scale,
-			height: s.snapshot.height * scale,
-			flipX: s.snapshot.flipX,
-			flipY: s.snapshot.flipY,
-		},
-	}))
+	const scaled: ViewerImageLayoutBatchSnapshot[] = snapshots.map((s) => {
+		const layout = s.snapshot.clone()
+		layout.x *= scale
+		layout.y *= scale
+		layout.w *= scale
+		layout.h *= scale
+		return { imageId: s.imageId, snapshot: layout }
+	})
 
 	let totalArea = 0
 	let sumCx = 0
 	let sumCy = 0
 	for (const s of scaled) {
-		const cx = s.snapshot.x + s.snapshot.width / 2
-		const cy = s.snapshot.y + s.snapshot.height / 2
-		const a = s.snapshot.width * s.snapshot.height
+		const cx = s.snapshot.x + s.snapshot.w / 2
+		const cy = s.snapshot.y + s.snapshot.h / 2
+		const a = s.snapshot.w * s.snapshot.h
 		totalArea += a
 		sumCx += cx * a
 		sumCy += cy * a
@@ -60,36 +57,24 @@ export function normalizeLayoutSnapshotsForFit(
 		let uc = 0
 		let uy = 0
 		for (const s of scaled) {
-			uc += s.snapshot.x + s.snapshot.width / 2
-			uy += s.snapshot.y + s.snapshot.height / 2
+			uc += s.snapshot.x + s.snapshot.w / 2
+			uy += s.snapshot.y + s.snapshot.h / 2
 		}
 		comX = uc / scaled.length
 		comY = uy / scaled.length
 	}
 
-	return scaled.map((s) => ({
-		imageId: s.imageId,
-		snapshot: {
-			x: s.snapshot.x - comX,
-			y: s.snapshot.y - comY,
-			width: s.snapshot.width,
-			height: s.snapshot.height,
-			flipX: s.snapshot.flipX,
-			flipY: s.snapshot.flipY,
-		},
-	}))
+	return scaled.map((s) => {
+		const layout = s.snapshot.clone()
+		layout.x -= comX
+		layout.y -= comY
+		return { imageId: s.imageId, snapshot: layout }
+	})
 }
 
 function cloneLayoutSnapshot(s: ViewerImageLayoutBatchSnapshot): ViewerImageLayoutBatchSnapshot {
 	return {
 		imageId: s.imageId,
-		snapshot: {
-			x: s.snapshot.x,
-			y: s.snapshot.y,
-			width: s.snapshot.width,
-			height: s.snapshot.height,
-			flipX: s.snapshot.flipX,
-			flipY: s.snapshot.flipY,
-		},
+		snapshot: s.snapshot.clone(),
 	}
 }
