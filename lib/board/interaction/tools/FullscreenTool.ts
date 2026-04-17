@@ -3,6 +3,7 @@ import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
 import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
 import type { Tool } from '~~/lib/board/interaction/Tool'
+import type { Board } from '~~/lib/board/Board'
 
 export class FullscreenTool implements Tool {
 	public readonly id = 'fullscreen'
@@ -11,7 +12,7 @@ export class FullscreenTool implements Tool {
 
 	public enabled = true
 
-	public constructor(private readonly openFullscreen: (id: string) => void) {}
+	public constructor(private readonly board: Board) {}
 
 	public isEnabled(event: InteractionEvent): boolean {
 		return this.enabled && event.type === CanvasEventType.DoubleClick
@@ -24,7 +25,7 @@ export class FullscreenTool implements Tool {
 		}
 		const hit = event.context.hitResult
 		if ((hit.kind === HitKind.sprite || hit.kind === HitKind.widget) && hit.imageId !== undefined) {
-			this.openFullscreen(hit.imageId)
+			this.board.openFullscreenById(hit.imageId)
 			return r.setHandled()
 		}
 		return r

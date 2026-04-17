@@ -3,6 +3,8 @@ export interface CollectionImageLayout {
 	y: number
 	w: number
 	h: number
+	flipX?: boolean
+	flipY?: boolean
 	zIndex: number
 }
 

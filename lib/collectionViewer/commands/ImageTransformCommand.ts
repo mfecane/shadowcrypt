@@ -3,6 +3,8 @@ export interface ViewerSpriteSnapshot {
   y: number
   width: number
   height: number
+  flipX: boolean
+  flipY: boolean
 }
 
 export class ViewerImageTransformCommand {

@@ -9,8 +9,40 @@ import { TransformWidget } from '~~/lib/board/interaction/widgets/TransformWidge
 import { WidgetCorner } from '~~/lib/board/interaction/widgets/WidgetPart'
 import { clamp } from '~~/lib/collectionViewer/viewerUtils'
 import type { ViewerSpriteSnapshot } from '~~/lib/collectionViewer/commands/ImageTransformCommand'
+import type { Board } from '~~/lib/board/Board'
 
 const MIN_SPRITE_SIZE = 16
+
+function signedSnapshotFromSprite(sprite: Sprite): ViewerSpriteSnapshot {
+	const baseWidth = sprite.texture.orig.width > 0 ? sprite.texture.orig.width : sprite.texture.width
+	const baseHeight = sprite.texture.orig.height > 0 ? sprite.texture.orig.height : sprite.texture.height
+	const width = Math.abs(sprite.scale.x * baseWidth)
+	const height = Math.abs(sprite.scale.y * baseHeight)
+	const flipX = sprite.scale.x < 0
+	const flipY = sprite.scale.y < 0
+	return {
+		x: flipX ? sprite.x - width : sprite.x,
+		y: flipY ? sprite.y - height : sprite.y,
+		width,
+		height,
+		flipX,
+		flipY,
+	}
+}
+
+function applyUnsignedSizePreserveOrientation(sprite: Sprite, width: number, height: number): void {
+	const baseWidth = Math.max(1e-6, sprite.texture.orig.width > 0 ? sprite.texture.orig.width : sprite.texture.width)
+	const baseHeight = Math.max(
+		1e-6,
+		sprite.texture.orig.height > 0 ? sprite.texture.orig.height : sprite.texture.height
+	)
+	const flipX = sprite.scale.x < 0
+	const flipY = sprite.scale.y < 0
+	const scaleX = width / baseWidth
+	const scaleY = height / baseHeight
+	sprite.scale.x = flipX ? -scaleX : scaleX
+	sprite.scale.y = flipY ? -scaleY : scaleY
+}
 
 function globalDeltaToParentLocal(container: Container, dx: number, dy: number): { x: number; y: number } {
 	const wt = container.worldTransform
@@ -52,10 +84,8 @@ export class TransformTool implements Tool {
 	public constructor(
 		private readonly worldContainer: Container,
 		private readonly canvas: HTMLCanvasElement,
-		private readonly getWidget: () => TransformWidget | null,
-		private readonly onTransform: () => void,
-		private readonly onTouchImage: (imageId: string) => void,
-		private readonly onCommit: (imageId: string, before: ViewerSpriteSnapshot, after: ViewerSpriteSnapshot) => void
+		private readonly board: Board,
+		private readonly getWidget: () => TransformWidget | null
 	) {}
 
 	public isEnabled(event: InteractionEvent): boolean {
@@ -98,8 +128,8 @@ export class TransformTool implements Tool {
 		}
 		this.dragSprite = h.sprite
 		this.dragImageId = h.imageId
-		this.onTouchImage(h.imageId)
-		this.startSnapshot = { x: h.sprite.x, y: h.sprite.y, width: h.sprite.width, height: h.sprite.height }
+		this.board.touchImage(h.imageId)
+		this.startSnapshot = signedSnapshotFromSprite(h.sprite)
 		const part = h.widgetPart
 		const raw = event.raw as PointerEvent
 		if (part === 'body') {
@@ -142,7 +172,6 @@ export class TransformTool implements Tool {
 			sprite.x += ld.x
 			sprite.y += ld.y
 			this.getWidget()?.syncFromParentSprite()
-			this.onTransform()
 			return r.setHandled()
 		}
 
@@ -162,8 +191,7 @@ export class TransformTool implements Tool {
 					const h = clamp(w / ratio, min, 1e6)
 					sprite.x = ax - w
 					sprite.y = ay - h
-					sprite.width = w
-					sprite.height = h
+					applyUnsignedSizePreserveOrientation(sprite, w, h)
 					break
 				}
 				case WidgetCorner.ne: {
@@ -174,8 +202,7 @@ export class TransformTool implements Tool {
 					const h = clamp(w / ratio, min, 1e6)
 					sprite.x = s.x
 					sprite.y = bottomY - h
-					sprite.width = w
-					sprite.height = h
+					applyUnsignedSizePreserveOrientation(sprite, w, h)
 					break
 				}
 				case WidgetCorner.se: {
@@ -185,8 +212,7 @@ export class TransformTool implements Tool {
 					const h = clamp(w / ratio, min, 1e6)
 					sprite.x = s.x
 					sprite.y = s.y
-					sprite.width = w
-					sprite.height = h
+					applyUnsignedSizePreserveOrientation(sprite, w, h)
 					break
 				}
 				case WidgetCorner.sw: {
@@ -197,15 +223,13 @@ export class TransformTool implements Tool {
 					const h = clamp(w / ratio, min, 1e6)
 					sprite.x = rightX - w
 					sprite.y = s.y
-					sprite.width = w
-					sprite.height = h
+					applyUnsignedSizePreserveOrientation(sprite, w, h)
 					break
 				}
 				default:
 					break
 			}
 			this.getWidget()?.syncFromParentSprite()
-			this.onTransform()
 			return r.setHandled()
 		}
 		return r
@@ -218,15 +242,10 @@ export class TransformTool implements Tool {
 			return r
 		}
 		if (this.dragSprite !== null && this.dragImageId !== null && this.startSnapshot !== null) {
-			const after = {
-				x: this.dragSprite.x,
-				y: this.dragSprite.y,
-				width: this.dragSprite.width,
-				height: this.dragSprite.height,
-			}
+			const after = signedSnapshotFromSprite(this.dragSprite)
 			const b = this.startSnapshot
 			if (after.x !== b.x || after.y !== b.y || after.width !== b.width || after.height !== b.height) {
-				this.onCommit(this.dragImageId, b, after)
+				this.board.commitTransform(this.dragImageId, b, after)
 			}
 		}
 		try {

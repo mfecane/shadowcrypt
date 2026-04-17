@@ -11,8 +11,6 @@ import type { ViewerImageLayoutBatchSnapshot } from '../collectionViewer/command
 import type { ViewportSnapshot } from '../collectionViewer/commands/ViewerLayoutViewportCommand'
 import { ViewerLayoutViewportCommand } from '../collectionViewer/commands/ViewerLayoutViewportCommand'
 import { roundTripLayoutRects } from '../zig/autoLayout'
-import { computeFitViewportSnapshot, worldBoundsRectangles } from './layoutGeometry'
-import { normalizeLayoutSnapshotsForFit } from './layoutNormalize'
 import { BoardImage, type BoardRect } from './BoardImage'
 import { BoardVueBridge } from './BoardVueBridge'
 import { CollectionAutosave, type CollectionLayoutRow } from './CollectionAutosave'
@@ -26,6 +24,8 @@ import { HoverTool } from './interaction/tools/HoverTool'
 import { NavigationTool } from './interaction/tools/NavigationTool'
 import { SelectTool } from './interaction/tools/SelectTool'
 import { TransformTool } from './interaction/tools/TransformTool'
+import { computeFitViewportSnapshot, worldBoundsRectangles } from './layoutGeometry'
+import { normalizeLayoutSnapshotsForFit } from './layoutNormalize'
 
 export class Board {
 	private static readonly MIN_IMAGE_Z_INDEX = 0
@@ -58,6 +58,42 @@ export class Board {
 	private static readonly defaultViewportZoom = 1
 
 	private readonly logger = container.resolve<LogPanel>(ServiceAlias.LogPanel)
+
+	private static spriteBaseSize(sprite: Sprite): { width: number; height: number } {
+		const texture = sprite.texture
+		return {
+			width: texture.orig.width > 0 ? texture.orig.width : texture.width,
+			height: texture.orig.height > 0 ? texture.orig.height : texture.height,
+		}
+	}
+
+	private static signedSnapshotFromSprite(sprite: Sprite): ViewerSpriteSnapshot {
+		const base = Board.spriteBaseSize(sprite)
+		const width = Math.abs(sprite.scale.x * base.width)
+		const height = Math.abs(sprite.scale.y * base.height)
+		const flipX = sprite.scale.x < 0
+		const flipY = sprite.scale.y < 0
+		return {
+			x: flipX ? sprite.x - width : sprite.x,
+			y: flipY ? sprite.y - height : sprite.y,
+			width,
+			height,
+			flipX,
+			flipY,
+		}
+	}
+
+	private static applySnapshotToSprite(sprite: Sprite, snapshot: ViewerSpriteSnapshot): void {
+		const base = Board.spriteBaseSize(sprite)
+		const safeBaseW = Math.max(1e-6, base.width)
+		const safeBaseH = Math.max(1e-6, base.height)
+		const scaleX = Math.abs(snapshot.width) / safeBaseW
+		const scaleY = Math.abs(snapshot.height) / safeBaseH
+		sprite.scale.x = snapshot.flipX ? -scaleX : scaleX
+		sprite.scale.y = snapshot.flipY ? -scaleY : scaleY
+		sprite.x = snapshot.flipX ? snapshot.x + Math.abs(snapshot.width) : snapshot.x
+		sprite.y = snapshot.flipY ? snapshot.y + Math.abs(snapshot.height) : snapshot.y
+	}
 
 	public constructor(
 		private readonly mountEl: HTMLElement,
@@ -92,6 +128,8 @@ export class Board {
 				y: l.layoutY,
 				w: l.layoutW,
 				h: l.layoutH,
+				flipX: l.layoutFlipX,
+				flipY: l.layoutFlipY,
 				zIndex: l.layoutZ,
 			})
 		}
@@ -205,6 +243,32 @@ export class Board {
 		this.autosave.schedule()
 	}
 
+	public flipSelectedImageX(): void {
+		const imageId = this.selectedImageId
+		if (imageId === null) {
+			return
+		}
+		const sprite = this.spriteById.get(imageId)
+		if (sprite === undefined) {
+			return
+		}
+		const before = Board.signedSnapshotFromSprite(sprite)
+		const after: ViewerSpriteSnapshot = {
+			x: before.x,
+			y: before.y,
+			width: before.width,
+			height: before.height,
+			flipX: !before.flipX,
+			flipY: before.flipY,
+		}
+		this.commandController.execute(
+			new ViewerImageTransformCommand(imageId, before, after, (id, s) => this.applySnapshot(id, s))
+		)
+		this.bridge.setCanUndo(this.commandController.canUndo())
+		this.bridge.setCanRedo(this.commandController.canRedo())
+		this.autosave.schedule()
+	}
+
 	/** Normalize layouts + fit camera; single undo step. */
 	public fitIntoView(): void {
 		if (this.images.size === 0 || this.navigationTool === null) {
@@ -279,7 +343,14 @@ export class Board {
 				const next = nextRects[index]!
 				return {
 					imageId: image.id,
-					snapshot: { x: next.x, y: next.y, width: next.w, height: next.h },
+					snapshot: {
+						x: next.x,
+						y: next.y,
+						width: next.w,
+						height: next.h,
+						flipX: image.rect.flipX,
+						flipY: image.rect.flipY,
+					},
 				}
 			})
 
@@ -315,7 +386,7 @@ export class Board {
 		}
 	}
 
-	private openFullscreenById(imageId: string): void {
+	public openFullscreenById(imageId: string): void {
 		const im = this.images.get(imageId)
 		if (!im) return
 		this.touchImage(imageId)
@@ -354,13 +425,17 @@ export class Board {
 		if (!sp) {
 			return
 		}
-		sp.x = s.x
-		sp.y = s.y
-		sp.width = s.width
-		sp.height = s.height
+		Board.applySnapshotToSprite(sp, s)
 		const bi = this.images.get(imageId)
 		if (bi) {
-			bi.rect = { x: s.x, y: s.y, w: s.width, h: s.height }
+			bi.rect = {
+				x: s.x,
+				y: s.y,
+				w: Math.abs(s.width),
+				h: Math.abs(s.height),
+				flipX: s.flipX,
+				flipY: s.flipY,
+			}
 		}
 		this.syncModelImage(imageId)
 		this.transformWidget?.syncFromParentSprite()
@@ -375,7 +450,14 @@ export class Board {
 	private captureLayoutSnapshots(ordered: BoardImage[]): ViewerImageLayoutBatchSnapshot[] {
 		return ordered.map((image) => ({
 			imageId: image.id,
-			snapshot: { x: image.rect.x, y: image.rect.y, width: image.rect.w, height: image.rect.h },
+			snapshot: {
+				x: image.rect.x,
+				y: image.rect.y,
+				width: image.rect.w,
+				height: image.rect.h,
+				flipX: image.rect.flipX,
+				flipY: image.rect.flipY,
+			},
 		}))
 	}
 
@@ -394,6 +476,8 @@ export class Board {
 				layoutW: r.w,
 				layoutH: r.h,
 				layoutZ: bi.zIndex,
+				layoutFlipX: r.flipX,
+				layoutFlipY: r.flipY,
 			})
 		}
 		return rows
@@ -430,13 +514,22 @@ export class Board {
 		widget.syncFromParentSprite()
 	}
 
-	private selectImage(id: string | null): void {
+	public selectImage(id: string | null): void {
 		this.selectedImageId = id
 		if (id !== null) {
 			this.touchImage(id)
 		}
 		this.syncTransformWidget()
 		this.bridge.setSelectedImageId(this.selectedImageId)
+	}
+
+	public commitTransform(imageId: string, before: ViewerSpriteSnapshot, after: ViewerSpriteSnapshot): void {
+		this.commandController.execute(
+			new ViewerImageTransformCommand(imageId, before, after, (id, s) => this.applySnapshot(id, s))
+		)
+		this.bridge.setCanUndo(this.commandController.canUndo())
+		this.bridge.setCanRedo(this.commandController.canRedo())
+		this.autosave.schedule()
 	}
 
 	public getWorldSize(): { w: number; h: number } {
@@ -479,7 +572,11 @@ export class Board {
 		}
 
 		for (const im of items) {
-			const r: BoardRect = { ...im.layout }
+			const r: BoardRect = {
+				...im.layout,
+				flipX: im.layout.flipX ?? false,
+				flipY: im.layout.flipY ?? false,
+			}
 			this.images.set(im.id, new BoardImage(im.id, im.url, r, im.layout.zIndex))
 		}
 		this.logger.log(`seeded image map entries=${this.images.size}`)
@@ -528,30 +625,16 @@ export class Board {
 
 		this.navigationTool = new NavigationTool(this.worldContainer, canvas, this.app.renderer, this)
 
-		// Jesus, this guy loves callbacks!!
 		this.router = new EventRouter([
 			new HoverTool(canvas),
-			new FullscreenTool((id) => this.openFullscreenById(id)),
+			new FullscreenTool(this),
 			new TransformTool(
 				this.worldContainer,
 				canvas,
-				() => this.transformWidget,
-				() => {},
-				(imageId) => this.touchImage(imageId),
-				(imageId, before, after) => {
-					this.commandController.execute(
-						new ViewerImageTransformCommand(imageId, before, after, (id, s) => this.applySnapshot(id, s))
-					)
-					this.bridge.setCanUndo(this.commandController.canUndo())
-					this.bridge.setCanRedo(this.commandController.canRedo())
-					this.autosave.schedule()
-				}
+				this,
+				() => this.transformWidget
 			),
-			new SelectTool(
-				(id) => this.selectImage(id),
-				() => this.selectImage(null),
-				() => {}
-			),
+			new SelectTool(this),
 			this.navigationTool,
 		])
 
@@ -572,10 +655,14 @@ export class Board {
 				}
 				const sprite = new Sprite(texture)
 				const L = im.layout
-				sprite.x = L.x
-				sprite.y = L.y
-				sprite.width = L.w
-				sprite.height = L.h
+				const flipX = L.flipX ?? false
+				const flipY = L.flipY ?? false
+				const scaleX = L.w / Math.max(1e-6, texture.width)
+				const scaleY = L.h / Math.max(1e-6, texture.height)
+				sprite.scale.x = flipX ? -scaleX : scaleX
+				sprite.scale.y = flipY ? -scaleY : scaleY
+				sprite.x = flipX ? L.x + L.w : L.x
+				sprite.y = flipY ? L.y + L.h : L.y
 				sprite.zIndex = L.zIndex
 				sprite.eventMode = 'static'
 				sprite.cursor = 'pointer'
@@ -623,7 +710,7 @@ export class Board {
 		return ordered
 	}
 
-	private touchImage(imageId: string): void {
+	public touchImage(imageId: string): void {
 		if (!this.images.has(imageId)) {
 			return
 		}
@@ -663,8 +750,10 @@ export class Board {
 		this.model.syncImageLayout(imageId, {
 			x: bi.rect.x,
 			y: bi.rect.y,
-			w: bi.rect.w,
-			h: bi.rect.h,
+			w: Math.abs(bi.rect.w),
+			h: Math.abs(bi.rect.h),
+			flipX: bi.rect.flipX,
+			flipY: bi.rect.flipY,
 			zIndex: bi.zIndex,
 		})
 		this.model.sortImagesByZIndex()

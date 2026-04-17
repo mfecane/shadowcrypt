@@ -22,7 +22,6 @@ watch(state.board, (b) => {
 		b?.bridge.subscribeOnPersistSuccess(() => {
 			const cid = props.collection.id
 			void queryClient.invalidateQueries({ queryKey: ['collection', cid] })
-			void queryClient.invalidateQueries({ queryKey: ['collections'] })
 		}) ?? null
 })
 

@@ -8,6 +8,8 @@ export type LayoutPatchBody = {
 	layoutW: number
 	layoutH: number
 	layoutZ: number
+	layoutFlipX: boolean
+	layoutFlipY: boolean
 }
 
 export type CollectionLayoutRow = {
@@ -21,6 +23,8 @@ export class CollectionAutosave {
 	private disposed = false
 	private saving = false
 	private pending = false
+	private readonly persistedImageLayoutById = new Map<string, LayoutPatchBody>()
+	private persistedViewport: { centerX: number; centerY: number; zoom: number } | null = null
 
 	private static readonly DEBOUNCE_MSEC = 5_000
 
@@ -28,13 +32,41 @@ export class CollectionAutosave {
 		private readonly board: Board,
 		private readonly bridge: BoardVueBridge,
 		private readonly collectionId: string
-	) {}
+	) {
+		for (const layout of this.board.layoutRowsForSave()) {
+			const { imageId, ...body } = layout
+			this.persistedImageLayoutById.set(imageId, body)
+		}
+		this.persistedViewport = this.board.viewportForSave()
+	}
 
-	private async patchImageLayout(imageId: string, body: LayoutPatchBody): Promise<void> {
-		const res = await fetch(`/api/collections/${this.collectionId}/images/${imageId}`, {
+	private static equalLayout(a: LayoutPatchBody, b: LayoutPatchBody): boolean {
+		return (
+			a.layoutX === b.layoutX &&
+			a.layoutY === b.layoutY &&
+			a.layoutW === b.layoutW &&
+			a.layoutH === b.layoutH &&
+			a.layoutZ === b.layoutZ &&
+			a.layoutFlipX === b.layoutFlipX &&
+			a.layoutFlipY === b.layoutFlipY
+		)
+	}
+
+	private static equalViewport(
+		a: { centerX: number; centerY: number; zoom: number } | null,
+		b: { centerX: number; centerY: number; zoom: number } | null
+	): boolean {
+		if (a === null || b === null) {
+			return a === b
+		}
+		return a.centerX === b.centerX && a.centerY === b.centerY && a.zoom === b.zoom
+	}
+
+	private async patchImageLayouts(rows: CollectionLayoutRow[]): Promise<void> {
+		const res = await fetch(`/api/collections/${this.collectionId}/images`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body),
+			body: JSON.stringify({ images: rows }),
 		})
 
 		if (!res.ok) {
@@ -127,15 +159,30 @@ export class CollectionAutosave {
 		try {
 			const layouts = this.board.layoutRowsForSave()
 			const viewport = this.board.viewportForSave()
-			const tasks: Promise<void>[] = layouts.map((l) => {
-				const { imageId, ...body } = l
-				return this.patchImageLayout(imageId, body)
+			const dirtyLayouts = layouts.filter((layout) => {
+				const { imageId, ...body } = layout
+				const prev = this.persistedImageLayoutById.get(imageId)
+				return prev === undefined || !CollectionAutosave.equalLayout(prev, body)
 			})
-			if (viewport !== null) {
+			const tasks: Promise<void>[] = []
+			if (dirtyLayouts.length > 0) {
+				tasks.push(this.patchImageLayouts(dirtyLayouts))
+			}
+			const viewportChanged = !CollectionAutosave.equalViewport(this.persistedViewport, viewport)
+			if (viewport !== null && viewportChanged) {
 				tasks.push(this.patchCollectionViewport(viewport))
 			}
-			await Promise.all(tasks)
-			this.board.afterSuccessfulPersist(viewport, layouts)
+			if (tasks.length > 0) {
+				await Promise.all(tasks)
+				this.board.afterSuccessfulPersist(viewportChanged ? viewport : null, dirtyLayouts)
+				for (const layout of dirtyLayouts) {
+					const { imageId, ...body } = layout
+					this.persistedImageLayoutById.set(imageId, body)
+				}
+				if (viewportChanged) {
+					this.persistedViewport = viewport
+				}
+			}
 
 			this.bridge.notifyOnPersistSuccess()
 

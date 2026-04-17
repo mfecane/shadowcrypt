@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { collectionsQueryKey } from '~/composables/useCollectionsListQuery'
 import type { CollectionDetail } from '~/types/collections'
 
 definePageMeta({
@@ -18,12 +19,19 @@ const { data, isPending: pending, error } = useQuery({
 	queryFn: () => $fetch<{ collection: CollectionDetail }>(`/api/collections/${id.value}`),
 })
 
+let hasLoadedCollectionOnce = false
+
 watch(
 	() => data.value?.collection,
 	(col) => {
-		if (col !== undefined && col !== null) {
-			void queryClient.invalidateQueries({ queryKey: ['collections'] })
+		if (col === undefined || col === null) {
+			return
 		}
+		if (!hasLoadedCollectionOnce) {
+			hasLoadedCollectionOnce = true
+			return
+		}
+		void queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
 	}
 )
 

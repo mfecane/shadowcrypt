@@ -15,6 +15,13 @@
       "when": 1775837774281,
       "tag": "0001_bouncy_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776400000000,
+      "tag": "0002_layout_flip_columns",
+      "breakpoints": true
     }
   ]
 }

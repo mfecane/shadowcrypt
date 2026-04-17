@@ -34,6 +34,8 @@ export function normalizeLayoutSnapshotsForFit(
 			y: s.snapshot.y * scale,
 			width: s.snapshot.width * scale,
 			height: s.snapshot.height * scale,
+			flipX: s.snapshot.flipX,
+			flipY: s.snapshot.flipY,
 		},
 	}))
 
@@ -72,6 +74,8 @@ export function normalizeLayoutSnapshotsForFit(
 			y: s.snapshot.y - comY,
 			width: s.snapshot.width,
 			height: s.snapshot.height,
+			flipX: s.snapshot.flipX,
+			flipY: s.snapshot.flipY,
 		},
 	}))
 }
@@ -84,6 +88,8 @@ function cloneLayoutSnapshot(s: ViewerImageLayoutBatchSnapshot): ViewerImageLayo
 			y: s.snapshot.y,
 			width: s.snapshot.width,
 			height: s.snapshot.height,
+			flipX: s.snapshot.flipX,
+			flipY: s.snapshot.flipY,
 		},
 	}
 }

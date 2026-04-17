@@ -23,6 +23,8 @@ export class CollectionBoardModelFactory {
 					y: im.layout.y,
 					w: im.layout.w,
 					h: im.layout.h,
+					flipX: im.layout.flipX ?? false,
+					flipY: im.layout.flipY ?? false,
 					zIndex: im.layout.zIndex ?? index,
 				},
 			}))

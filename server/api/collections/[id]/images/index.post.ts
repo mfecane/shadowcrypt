@@ -113,6 +113,8 @@ export default defineEventHandler(async (event) => {
 				layoutY: layout.y,
 				layoutW: layout.w,
 				layoutH: layout.h,
+				layoutFlipX: false,
+				layoutFlipY: false,
 				updatedAt: new Date(),
 			})
 			.where(eq(images.id, inserted.id))
@@ -132,6 +134,8 @@ export default defineEventHandler(async (event) => {
 					y: layout.y,
 					w: layout.w,
 					h: layout.h,
+					flipX: false,
+					flipY: false,
 					zIndex: nextZIndex,
 				},
 			},

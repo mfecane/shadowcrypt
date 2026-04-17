@@ -4,10 +4,43 @@ import CollectionToolbarButton from '~/components/collection/CollectionToolbarBu
 const { bridge, collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
 
 const status = computed(() => collectionSaveStatus.value)
+let savedDisplayTimer: ReturnType<typeof setTimeout> | null = null
+const recentlySaved = ref(false)
 
 const isSaving = computed(() => status.value === 'saving')
-const isSaved = computed(() => status.value === 'saved')
+const isSaved = computed(() => status.value === 'saved' || recentlySaved.value)
 const isError = computed(() => status.value === 'error')
+
+const clearSavedDisplayTimer = (): void => {
+	if (savedDisplayTimer !== null) {
+		clearTimeout(savedDisplayTimer)
+		savedDisplayTimer = null
+	}
+}
+
+const markRecentlySaved = (): void => {
+	recentlySaved.value = true
+	clearSavedDisplayTimer()
+	savedDisplayTimer = setTimeout(() => {
+		recentlySaved.value = false
+		savedDisplayTimer = null
+	}, 2000)
+}
+
+watch(status, (nextStatus) => {
+	if (nextStatus === 'saved') {
+		markRecentlySaved()
+		return
+	}
+	if (nextStatus === 'saving' || nextStatus === 'error') {
+		recentlySaved.value = false
+		clearSavedDisplayTimer()
+	}
+})
+
+onBeforeUnmount(() => {
+	clearSavedDisplayTimer()
+})
 
 const icon = computed(() => {
 	if (isSaving.value) {

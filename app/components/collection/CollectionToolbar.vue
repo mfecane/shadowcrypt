@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useQueryClient } from '@tanstack/vue-query'
 import CollectionDeleteImageModal from '~/components/collection/CollectionDeleteImageModal.vue'
 import CollectionMoveImageModal from '~/components/collection/CollectionMoveImageModal.vue'
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 import SaveWidget from '~/components/collection/SaveWidget.vue'
+import { collectionsQueryKey, useCollectionsListQuery } from '~/composables/useCollectionsListQuery'
 import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 import type { CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { nn } from '~~/lib/collectionViewer/viewerUtils'
@@ -93,10 +94,7 @@ const moveTargetCollectionId = ref<string | null>(null)
 const moveError = ref<string | null>(null)
 const moving = ref(false)
 
-const { data: collectionsData, isPending: collectionsListPending } = useQuery({
-	queryKey: ['collections'],
-	queryFn: () => $fetch<CollectionsListResponse>('/api/collections'),
-})
+const { data: collectionsData, isPending: collectionsListPending } = useCollectionsListQuery()
 
 const moveCollectionGroups = computed(() => {
 	if (collectionsData.value === undefined) {
@@ -140,7 +138,7 @@ async function saveEdit(): Promise<void> {
 			body: { name },
 		})
 		bridge.value?.setCollectionName(name)
-		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		editOpen.value = false
 	} catch (e: unknown) {
@@ -183,7 +181,7 @@ async function confirmMoveImage(): Promise<void> {
 		bridge.value?.removeImage(imageId)
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', targetId] })
-		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
 	} catch (e: unknown) {
 		moveError.value = fetchFormErrorMessage(e, 'Move failed')
 		moveOpen.value = true
@@ -202,7 +200,7 @@ async function confirmDeleteImage(): Promise<void> {
 		})
 		bridge.value?.removeImage(imageId)
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
-		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
 		deleteOpen.value = false
 		// Board owns selection; no-op here.
 	} catch (e: unknown) {
@@ -249,6 +247,15 @@ async function confirmDeleteImage(): Promise<void> {
 				tooltip="Fit into view"
 				:disabled="bridge === null"
 				@click="bridge?.fitIntoView()"
+			/>
+		</div>
+
+		<div :class="['flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-2 ']">
+			<CollectionToolbarButton
+				:icon="'i-lucide-flip-horizontal'"
+				tooltip="Flip X"
+				:disabled="selected === null"
+				@click="bridge?.flipSelectedImageX()"
 			/>
 
 			<CollectionToolbarButton

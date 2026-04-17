@@ -24,6 +24,7 @@ interface BoardForBridge {
 	removeImage: (imageId: string) => void
 	setCollectionName: (name: string) => void
 	autoLayout: () => Promise<void>
+	flipSelectedImageX: () => void
 	undo: () => void
 	redo: () => void
 	saveNow: () => void
@@ -191,6 +192,11 @@ export class BoardVueBridge {
 
 	public autoLayout(): void {
 		void this.board.autoLayout()
+	}
+
+	public flipSelectedImageX(): void {
+		this.board.flipSelectedImageX()
+		this.notify()
 	}
 
 	public saveNow(): void {

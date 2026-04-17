@@ -43,7 +43,15 @@ export class CollectionBoardModel {
 				url: im.url,
 				width: im.width,
 				height: im.height,
-				layout: { x: im.layout.x, y: im.layout.y, w: im.layout.w, h: im.layout.h, zIndex: im.layout.zIndex },
+				layout: {
+					x: im.layout.x,
+					y: im.layout.y,
+					w: im.layout.w,
+					h: im.layout.h,
+					flipX: im.layout.flipX,
+					flipY: im.layout.flipY,
+					zIndex: im.layout.zIndex,
+				},
 			})),
 		}
 	}
@@ -64,7 +72,15 @@ export class CollectionBoardModel {
 	public syncImageLayout(imageId: string, layout: CollectionImageLayout): void {
 		const im = this.images.find((i) => i.id === imageId)
 		if (im !== undefined) {
-			im.layout = { x: layout.x, y: layout.y, w: layout.w, h: layout.h, zIndex: layout.zIndex }
+			im.layout = {
+				x: layout.x,
+				y: layout.y,
+				w: layout.w,
+				h: layout.h,
+				flipX: layout.flipX ?? false,
+				flipY: layout.flipY ?? false,
+				zIndex: layout.zIndex,
+			}
 		}
 	}
 

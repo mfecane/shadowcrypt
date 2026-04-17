@@ -11,6 +11,8 @@ const layoutSchema = z.object({
 	layoutW: z.number().finite().positive(),
 	layoutH: z.number().finite().positive(),
 	layoutZ: z.number().int().nonnegative(),
+	layoutFlipX: z.boolean().optional().default(false),
+	layoutFlipY: z.boolean().optional().default(false),
 })
 
 export default defineEventHandler(async (event) => {
@@ -58,6 +60,8 @@ export default defineEventHandler(async (event) => {
 			layoutY: parsed.layoutY,
 			layoutW: parsed.layoutW,
 			layoutH: parsed.layoutH,
+			layoutFlipX: parsed.layoutFlipX,
+			layoutFlipY: parsed.layoutFlipY,
 			zIndex: parsed.layoutZ,
 			updatedAt: new Date(),
 		})

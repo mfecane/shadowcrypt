@@ -3,6 +3,7 @@ import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
 import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
 import type { Tool } from '~~/lib/board/interaction/Tool'
+import type { Board } from '~~/lib/board/Board'
 
 export class SelectTool implements Tool {
 	public readonly id = 'select'
@@ -11,11 +12,7 @@ export class SelectTool implements Tool {
 
 	public enabled = true
 
-	public constructor(
-		private readonly select: (id: string) => void,
-		private readonly deselect: () => void,
-		private readonly bumpMenu: () => void
-	) {}
+	public constructor(private readonly board: Board) {}
 
 	public isEnabled(event: InteractionEvent): boolean {
 		return this.enabled && event.type === CanvasEventType.Click
@@ -31,11 +28,10 @@ export class SelectTool implements Tool {
 			return r.setHandled()
 		}
 		if (hit.kind === HitKind.sprite && hit.imageId !== undefined) {
-			this.select(hit.imageId)
+			this.board.selectImage(hit.imageId)
 			return r.setHandled()
 		}
-		this.deselect()
-		this.bumpMenu()
+		this.board.selectImage(null)
 		return r.setHandled()
 	}
 }

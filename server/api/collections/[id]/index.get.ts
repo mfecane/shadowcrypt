@@ -84,7 +84,12 @@ export default defineEventHandler(async (event) => {
 						.getPublicUrl(),
 					width: img.width,
 					height: img.height,
-					layout: { ...layout, zIndex: img.zIndex },
+					layout: {
+						...layout,
+						flipX: img.layoutFlipX,
+						flipY: img.layoutFlipY,
+						zIndex: img.zIndex,
+					},
 				}
 			}),
 		},

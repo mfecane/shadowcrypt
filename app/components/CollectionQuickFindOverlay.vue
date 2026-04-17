@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query'
 import type { CollectionFolderBlock, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { rankByFuzzyName } from '~~/lib/fuzzyMatchCollectionName'
 
@@ -71,11 +70,7 @@ watch(isTargetRoute, (ok) => {
 	}
 })
 
-const { data, isPending } = useQuery({
-	queryKey: ['collections'],
-	queryFn: () => $fetch<CollectionsListResponse>('/api/collections'),
-	enabled: computed(() => isTargetRoute.value),
-})
+const { data, isPending } = useCollectionsListQuery(computed(() => isTargetRoute.value))
 
 const collections = computed<QuickFindCollectionResult[]>(() =>
 	data.value !== undefined

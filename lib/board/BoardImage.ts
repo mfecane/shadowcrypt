@@ -3,6 +3,8 @@ export interface BoardRect {
 	y: number
 	w: number
 	h: number
+	flipX: boolean
+	flipY: boolean
 }
 
 /** DB-mimic image record used by Board. */
