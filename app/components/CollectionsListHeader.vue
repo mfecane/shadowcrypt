@@ -1,8 +1,7 @@
 <script setup lang="ts">
-const { openOverlay } = useCollectionQuickFind()
+const { openModal } = useCollectionQuickFind()
 
 const headerRef = ref<HTMLElement | null>(null)
-const searchTriggerRef = ref<HTMLElement | null>(null)
 const scrolled = ref(false)
 
 function onScroll(): void {
@@ -10,14 +9,14 @@ function onScroll(): void {
 }
 
 function onOpenSearch(): void {
-	openOverlay()
-	nextTick(() => {
-		const root = searchTriggerRef.value as unknown as { $el?: HTMLElement } | null
-		const input = root?.$el?.querySelector?.('input')
-		if (input instanceof HTMLInputElement) {
-			input.blur()
-		}
-	})
+	openModal()
+}
+
+function onSearchTriggerKeydown(event: KeyboardEvent): void {
+	if (event.key === 'Enter' || event.key === ' ') {
+		event.preventDefault()
+		onOpenSearch()
+	}
 }
 
 onMounted(() => {
@@ -45,24 +44,28 @@ onUnmounted(() => {
 				>
 					<AppLogo collapsible />
 				</NuxtLink>
-				<div class="min-w-[200px] max-w-[600px] flex-1 cursor-pointer">
-					<UInput
-						ref="searchTriggerRef"
-						readonly
-						tabindex="0"
-						:model-value="''"
-						placeholder="Type to filter…"
-						icon="i-lucide-search"
-						size="md"
-						class="w-full"
-						:ui="{ base: 'w-full' }"
-						autocomplete="off"
-						aria-haspopup="dialog"
-						aria-label="Open find collection"
-						@focus="onOpenSearch"
-						@click="onOpenSearch"
-					/>
-				</div>
+				<UInput
+					ref="searchTriggerRef"
+					readonly
+					tabindex="0"
+					:model-value="''"
+					placeholder="Type to filter…"
+					icon="i-lucide-search"
+					size="md"
+					class="min-w-[200px] max-w-[600px] flex-1 cursor-pointer"
+					autocomplete="off"
+					aria-haspopup="dialog"
+					aria-label="Open find collection"
+					@click="onOpenSearch"
+					@keydown="onSearchTriggerKeydown"
+				>
+					<template #trailing>
+						<div class="pointer-events-none me-2 flex items-center gap-1">
+							<UKbd value="Ctrl" size="sm" />
+							<UKbd value="P" size="sm" />
+						</div>
+					</template>
+				</UInput>
 			</div>
 			<UserAvatarMenu class="shrink-0" />
 		</div>

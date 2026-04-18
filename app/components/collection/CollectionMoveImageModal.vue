@@ -28,23 +28,16 @@ function moveToCollection(id: string): void {
 </script>
 
 <template>
-	<Teleport to="body">
-		<div
-			v-if="open"
-			class="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4"
-			@click.self="open = false"
-		>
-			<div class="bg-elevated border-muted w-full max-w-2xl rounded-lg border p-6 shadow-xl">
-				<h2 class="text-highlighted mb-4 text-lg font-semibold">Move image to board</h2>
-				<p v-if="collectionsPending" class="text-muted mb-4 text-sm">Loading collections…</p>
-				<p v-else-if="!hasAnotherCollection" class="text-muted mb-4 text-sm">
+	<UModal v-model:open="open" title="Move image to board" :close="!moving" :dismissible="!moving">
+		<template #body>
+			<div class="space-y-4">
+				<p v-if="collectionsPending" class="text-muted text-sm">Loading collections…</p>
+				<p v-else-if="!hasAnotherCollection" class="text-muted text-sm">
 					Create another collection first, then you can move images there.
 				</p>
-				<div v-else class="mb-4 max-h-[70vh] space-y-6 overflow-y-auto pr-1">
+				<div v-else class="max-h-[70vh] space-y-6 overflow-y-auto pr-1">
 					<section v-for="group in groups" :key="group.label" class="space-y-3">
-						<div
-							class="text-dimmed flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em]"
-						>
+						<div class="text-dimmed flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em]">
 							<Icon
 								:name="group.label === 'Without folder' ? 'i-lucide-folder-open' : 'i-lucide-folder'"
 								class="h-4 w-4"
@@ -58,14 +51,10 @@ function moveToCollection(id: string): void {
 								:key="option.id"
 								class="border-muted bg-muted/50 flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
 							>
-								<div class="min-w-0">
-									<p class="text-highlighted truncate text-sm font-medium">{{ option.name }}</p>
-								</div>
+								<p class="min-w-0 truncate text-sm font-medium text-highlighted">{{ option.name }}</p>
 								<UButton
-									variant="solid"
 									size="sm"
-									class="bg-primary text-inverted shrink-0"
-									:icon="moving ? 'i-lucide-loader-circle' : 'i-lucide-move-right'"
+									leading-icon="i-lucide-move-right"
 									:loading="moving"
 									:disabled="moving"
 									@click="moveToCollection(option.id)"
@@ -76,13 +65,12 @@ function moveToCollection(id: string): void {
 						</div>
 					</section>
 				</div>
-				<p v-if="error !== null" class="text-red-400 mb-4 text-sm">{{ error }}</p>
-				<div class="flex justify-end">
-					<UButton variant="ghost" class="text-muted hover:text-highlighted" @click="open = false">
-						Cancel
-					</UButton>
-				</div>
+				<p v-if="error !== null" class="text-error text-sm">{{ error }}</p>
 			</div>
-		</div>
-	</Teleport>
+		</template>
+
+		<template #footer>
+			<UButton variant="soft" color="neutral" :disabled="moving" @click="open = false">Cancel</UButton>
+		</template>
+	</UModal>
 </template>

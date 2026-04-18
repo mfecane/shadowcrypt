@@ -10,32 +10,25 @@ const emit = defineEmits<{ confirm: [] }>()
 </script>
 
 <template>
-	<Teleport to="body">
-		<div
-			v-if="open"
-			class="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4"
-			@click.self="open = false"
-		>
-			<div class="bg-elevated border-muted w-full max-w-md rounded-lg border p-6 shadow-xl">
-				<h2 class="text-highlighted mb-4 text-lg font-semibold">Delete image?</h2>
-				<p class="text-muted mb-4 text-sm">This cannot be undone.</p>
-				<p v-if="error !== null" class="text-red-400 mb-4 text-sm">{{ error }}</p>
-				<div class="flex justify-end gap-2">
-					<UButton variant="ghost" class="text-muted hover:text-highlighted" @click="open = false">
-						Cancel
-					</UButton>
-					<UButton
-						variant="solid"
-						:icon="deleting ? 'i-lucide-loader-circle' : 'i-lucide-trash'"
-						:loading="deleting"
-						:disabled="deleting"
-						color="error"
-						@click="emit('confirm')"
-					>
-						Delete
-					</UButton>
-				</div>
+	<UModal v-model:open="open" title="Delete image?" :close="!deleting" :dismissible="!deleting">
+		<template #body>
+			<div class="space-y-4">
+				<p class="text-muted text-sm">This cannot be undone.</p>
+				<p v-if="error !== null" class="text-error text-sm">{{ error }}</p>
 			</div>
-		</div>
-	</Teleport>
+		</template>
+
+		<template #footer>
+			<UButton variant="soft" color="neutral" :disabled="deleting" @click="open = false">Cancel</UButton>
+			<UButton
+				color="error"
+				leading-icon="i-lucide-trash"
+				:loading="deleting"
+				:disabled="deleting"
+				@click="emit('confirm')"
+			>
+				Delete
+			</UButton>
+		</template>
+	</UModal>
 </template>

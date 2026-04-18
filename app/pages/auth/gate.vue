@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { normalizeClass as nc } from 'vue'
-
 definePageMeta({
 	layout: 'auth',
 	auth: {
@@ -66,16 +64,12 @@ async function onEmailSubmit(): Promise<void> {
 			</AuthBrandHeader>
 		</template>
 		<div class="flex flex-col gap-4">
-			<UButton variant="soft" class="flex h-12 items-center justify-center gap-2" @click="googleSignIn">
+			<UButton variant="soft" block size="xl" @click="googleSignIn">
 				<IconsGoogleIcon class="size-5 shrink-0" />
 				Continue with Google
 			</UButton>
 			<p v-if="authErrorMessage" class="text-error text-sm">{{ authErrorMessage }}</p>
-			<UButton
-				variant="soft"
-				disabled
-				:class="nc(['flex h-12 flex-col items-center justify-center', 'gap-0.5 '])"
-			>
+			<UButton variant="soft" block size="xl" disabled class="flex-col gap-0.5">
 				<span class="flex items-center gap-2">
 					<IconsAppleIcon class="size-5 shrink-0" />
 					Continue with Apple
@@ -86,12 +80,7 @@ async function onEmailSubmit(): Promise<void> {
 			<p class="text-muted-foreground text-center text-sm">or continue with email</p>
 			<form class="flex flex-col gap-6 items-stretch" @submit.prevent="onEmailSubmit">
 				<UInput id="email" v-model="email" type="email" placeholder="Email" required class="w-full" />
-				<UButton
-					type="submit"
-					variant="soft"
-					:disabled="isSubmittingEmail"
-					class="flex justify-center items-center py-2"
-				>
+				<UButton type="submit" variant="soft" block :loading="isSubmittingEmail" :disabled="isSubmittingEmail">
 					{{ isSubmittingEmail ? 'Sending code...' : 'Continue' }}
 				</UButton>
 				<p v-if="emailRequestError" class="text-error text-sm">{{ emailRequestError }}</p>

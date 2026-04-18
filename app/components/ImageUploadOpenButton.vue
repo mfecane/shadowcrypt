@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
-const { open, openOverlay } = useImageUploadOverlay()
+const { open, openModal } = useImageUploadModal()
 
 const show = computed(() => {
 	const p = route.path
@@ -12,12 +12,15 @@ const show = computed(() => {
 <template>
 	<div v-show="show">
 		<UButton
-			variant="ghost"
-			class="hover:border-neutral-100 hover:bg-muted/50 hover:text-neutral-100 hover:shadow-md hover:shadow-neutral-100/20 border-beige-400 text-beige-400 bg-muted/70 backdrop-blur-md fixed bottom-6 right-6 z-200 flex h-12 w-12 items-center justify-center rounded-full border shadow-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+			color="primary"
+			variant="solid"
+			square
+			class="fixed right-6 bottom-6 z-50 rounded-full shadow-lg"
 			aria-label="Add image to collection"
-			@click="openOverlay"
+			@click="openModal"
 		>
 			<Icon name="i-lucide-plus" class="h-7 w-7" aria-hidden="true" />
 		</UButton>
+		<ImageUploadModal />
 	</div>
 </template>

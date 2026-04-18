@@ -1,3 +1,7 @@
+import UButton from './config/UButton'
+import UInput from './config/UInput'
+import UModal from './config/UModal'
+
 export default defineAppConfig({
 	ui: {
 		colors: {
@@ -5,6 +9,10 @@ export default defineAppConfig({
 			neutral: 'neutral',
 		},
 		card: {
+			slots: {
+				root: 'rounded-md',
+				body: 'p-2 sm:p-2 h-full',
+			},
 			variants: {
 				variant: {
 					outline: {
@@ -13,21 +21,19 @@ export default defineAppConfig({
 				},
 			},
 		},
-		button: {
-			variants: {
-				ghost: {
-					root: 'disabled: text-muted',
-				},
-				soft: {
-					root: 'text-primary disabled:text-neutral-500 hover:bg-neutral-700 disabled:bg-neutral-600',
-				},
-			},
-		},
+		button: UButton,
 		switch: {
 			slots: {
 				base: 'data-[state=unchecked]:bg-neutral-900',
 				thumb: 'bg-neutral-500',
 			},
 		},
+		modal: UModal,
+		formField: {
+			slots: {
+				root: 'space-y-2',
+			},
+		},
+		input: UInput,
 	},
 })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import CollectionsSelector from '~/components/CollectionsSelector.vue'
-import CreateCollectionOverlay from '~/components/CreateCollectionOverlay.vue'
+import CreateCollectionModal from '~/components/CreateCollectionModal.vue'
 import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
@@ -146,13 +146,9 @@ function firstImageFromClipboard(cb: DataTransfer | null): File | null {
 
 const route = useRoute()
 const queryClient = useQueryClient()
-const { open, openOverlay, closeOverlay: closeOverlayState } = useImageUploadOverlay()
+const { open, openModal, closeModal: closeModalState, isTargetRoute } = useImageUploadModal()
+const showFab = computed(() => isTargetRoute.value && !open.value)
 const createCollectionModal = ref(false)
-
-const isTargetRoute = computed(() => {
-	const p = route.path
-	return p === '/list' || /^\/list\/[^/]+$/.test(p) || /^\/collections\/[^/]+$/.test(p)
-})
 
 const collectionIdFromRoute = computed(() => {
 	const m = /^\/collections\/([^/]+)$/.exec(route.path)
@@ -186,7 +182,6 @@ const flatCollections = computed(() =>
 	collectionsData.value !== undefined ? flattenCollectionsDeduped(collectionsData.value) : []
 )
 
-// remote pinned from here
 const collectionGroups = computed(() =>
 	collectionsData.value !== undefined ? groupedCollectionOptions(collectionsData.value) : []
 )
@@ -240,30 +235,18 @@ function setImageUrl(next: string | null): void {
 }
 
 function close(): void {
-	closeOverlayState()
+	closeModalState()
 	clearImage()
 	uploading.value = false
 	error.value = null
 	createCollectionModal.value = false
 }
 
-watch(open, (v) => {
-	if (import.meta.client) {
-		document.body.style.overflow = v ? 'hidden' : ''
-	}
-})
-
-watch(isTargetRoute, (ok) => {
-	if (!ok && open.value) {
-		close()
-	}
-})
-
 function openFromClipboardOrDrag(): void {
 	if (!isTargetRoute.value) {
 		return
 	}
-	openOverlay()
+	openModal()
 }
 
 function onWindowDragEnter(e: DragEvent): void {
@@ -307,11 +290,10 @@ function onPaste(e: ClipboardEvent): void {
 		return
 	}
 	const t = e.target
-	if (
-		t instanceof HTMLInputElement ||
-		t instanceof HTMLTextAreaElement ||
-		(t instanceof HTMLElement && t.isContentEditable)
-	) {
+	if (t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable)) {
+		return
+	}
+	if (t instanceof HTMLInputElement && ['text', 'password', 'search', 'email', 'tel', 'number'].includes(t.type)) {
 		return
 	}
 	const f = firstImageFromClipboard(e.clipboardData)
@@ -329,20 +311,6 @@ function onPaste(e: ClipboardEvent): void {
 	openFromClipboardOrDrag()
 	setImageUrl(url)
 }
-
-function onGlobalKeydown(e: KeyboardEvent): void {
-	if (!open.value) {
-		return
-	}
-	if (e.key === 'Escape') {
-		e.preventDefault()
-		close()
-	}
-}
-
-watch(open, (v: boolean) => {
-	document.body.style.overflow = v ? 'hidden' : ''
-})
 
 async function submitUpload(): Promise<void> {
 	const cid = selectedCollectionId.value
@@ -408,19 +376,16 @@ onMounted(() => {
 	window.addEventListener('dragenter', onWindowDragEnter)
 	window.addEventListener('dragover', onWindowDragOver)
 	document.addEventListener('paste', onPaste)
-	document.addEventListener('keydown', onGlobalKeydown, { capture: true })
 })
 
 onBeforeUnmount(() => {
 	if (import.meta.client) {
-		document.body.style.overflow = ''
 		if (localPreviewUrl.value !== null) {
 			URL.revokeObjectURL(localPreviewUrl.value)
 		}
 		window.removeEventListener('dragenter', onWindowDragEnter)
 		window.removeEventListener('dragover', onWindowDragOver)
 		document.removeEventListener('paste', onPaste)
-		document.removeEventListener('keydown', onGlobalKeydown, { capture: true })
 	}
 })
 
@@ -434,142 +399,124 @@ function onCollectionCreated(collection: { id: string }): void {
 }
 </script>
 <template>
+	<div v-show="showFab">
+		<GlassFabButton aria-label="Add image to collection" @click="openModal" tooltip="Add image to collection" />
+	</div>
 	<Teleport to="body">
-		<Transition name="imgupload-fade">
-			<div
-				v-if="open && isTargetRoute"
-				class="fixed inset-0 z-210 flex items-center justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-[2px]"
-				role="dialog"
-				aria-modal="true"
-				aria-label="Upload image to collection"
-				@click.self="close"
-			>
-				<div
-					class="border-muted bg-elevated text-default flex w-full max-w-md flex-col rounded-xl border shadow-2xl"
-					@click.stop
-					@dragover.prevent
-					@drop="onPanelDrop"
-				>
-					<div class="border-muted flex items-start justify-between border-b px-4 py-3">
-						<div>
-							<p class="text-foreground text-md font-medium tracking-wide uppercase mb-2">Add image</p>
-							<p class="text-muted mt-1 text-xs">
-								Drop, paste, pick or create a collection, then upload.
-							</p>
-						</div>
-						<UButton variant="ghost" aria-label="Close" @click="close">
-							<Icon name="i-lucide-x" class="h-4 w-4" aria-hidden="true" />
-						</UButton>
-					</div>
+		<UModal
+			v-model:open="open"
+			:transition="false"
+			title="Upload image to collection"
+			@close="close"
+			@dragover.prevent
+			@drop="onPanelDrop"
+			:modal="true"
+		>
+			<template #body>
+				<UForm id="image-upload-form" class="space-y-4" @submit.prevent="submitUpload">
+					<p class="text-muted mt-1 text-xs">Drop, paste, pick or create a collection, then upload.</p>
 
-					<div class="flex flex-col gap-4 px-4 py-4">
-						<label class="text-foreground block text-xs font-medium uppercase">Collection</label>
-						<p v-if="collectionsPending" class="text-muted text-sm">Loading collections…</p>
+					<UFormField label="Collection">
+						<p v-if="collectionsPending" class="text-muted flex items-center gap-2 text-sm">
+							<Icon name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+							Loading collections…
+						</p>
 						<template v-else>
-							<div v-if="flatCollections.length > 0" class="flex gap-2 items-stretch">
+							<div v-if="flatCollections.length > 0" class="flex items-stretch gap-2">
 								<CollectionsSelector
 									v-model="selectedCollectionId"
 									:groups="collectionGroups"
 									placeholder="Select collection"
 								/>
 								<UButton
-									class="self-stretch w-12 grid place-items-center"
+									type="button"
+									class="grid w-12 flex-none place-items-center self-stretch"
 									@click="openCreateCollectionModal"
+									icon="i-lucide-plus"
 								>
-									<Icon name="i-lucide-plus" class="h-4 w-4" aria-hidden="true" />
 								</UButton>
 							</div>
 							<div v-else class="text-muted mb-2 flex flex-col items-start gap-2 text-sm">
-								<p>No collections yet — add one below.</p>
-								<UButton icon="i-lucide-plus" @click="openCreateCollectionModal">
+								<p>No collections yet.</p>
+								<UButton type="button" icon="i-lucide-plus" @click="openCreateCollectionModal">
 									Create collection
 								</UButton>
 							</div>
 						</template>
+					</UFormField>
 
-						<div class="h-96 border-muted bg-neutral-800 flex flex-col rounded-lg border border-dashed p-3">
-							<div v-if="previewUrl !== null" class="relative min-h-0 flex-1 overflow-hidden rounded-md">
-								<UButton
-									variant="ghost"
-									class="absolute top-2 right-2 z-10 rounded-full w-8 h-8 text-foreground hover:bg-neutral-700/70 bg-neutral-900/70 backdrop-blur-sm grid place-items-center border-none p-0"
-									@click="clearImage()"
-								>
-									<Icon name="i-lucide-x" class="h-4 w-4" aria-hidden="true" />
-								</UButton>
-								<img :src="previewUrl" alt="" class="w-full h-full object-cover">
-							</div>
-							<div v-else class="flex min-h-0 flex-1 items-center justify-center text-center">
-								<p class="text-muted text-sm max-w-56">
-									Drop an image here, paste an image, or paste/drag an image URL.
-								</p>
-							</div>
-						</div>
-
-						<div class="mt-3 space-y-3">
-							<div v-if="imageUrl !== null" class="flex items-center gap-2">
-								<UInput v-model="imageUrl" type="url" class="min-w-0 flex-1" />
-								<UButton variant="soft" color="neutral" @click="clearImage">Clear</UButton>
-							</div>
-
-							<div v-if="imageUrl === null && inputSource !== 'clipboard-image'" class="space-y-1">
-								<label class="text-muted block text-[11px] font-medium uppercase tracking-wide">
-									Upload from drive
-								</label>
-								<input
-									ref="fileInputEl"
-									type="file"
-									accept="image/*"
-									class="border-muted bg-muted/40 text-default file:border-0 file:bg-accented file:px-3 file:py-2 file:font-medium file:text-highlighted w-full rounded-lg border text-sm"
-									:disabled="uploading"
-									@change="onFileInputChange"
-								>
-							</div>
-						</div>
-
-						<p v-if="error !== null" class="text-red-400 text-sm">{{ error }}</p>
-
-						<div class="flex justify-end gap-2">
-							<UButton variant="soft" :disabled="uploading" @click="close"> Cancel </UButton>
+					<div
+						class="border-muted bg-muted/30 flex h-96 min-h-0 flex-col rounded-lg border border-dashed p-3"
+					>
+						<div v-if="previewUrl !== null" class="relative min-h-0 flex-1 overflow-hidden rounded-md">
 							<UButton
-								:disabled="
-									uploading || (file === null && imageUrl === null) || selectedCollectionId === null
-								"
-								@click="submitUpload"
+								type="button"
+								variant="ghost"
+								class="absolute top-2 right-2 z-10 grid h-8 w-8 place-items-center rounded-full border-none p-0"
+								@click="clearImage()"
 							>
-								<template #leading>
-									<Icon v-if="!uploading" name="i-lucide-upload" class="h-4 w-4" aria-hidden="true" />
-									<Icon
-										v-else
-										name="i-lucide-loader-circle"
-										class="h-4 w-4 animate-spin"
-										aria-hidden="true"
-									/>
-								</template>
-								{{ uploading ? 'Uploading…' : 'Upload' }}
+								<Icon name="i-lucide-x" class="size-4" aria-hidden="true" />
 							</UButton>
+							<img :src="previewUrl" alt="" class="h-full w-full object-cover" />
+						</div>
+						<div v-else class="flex min-h-0 flex-1 items-center justify-center">
+							<p class="text-muted mx-auto max-w-sm text-center text-sm">
+								Drop an image here, paste an image, or paste/drag an image URL.
+							</p>
 						</div>
 					</div>
+
+					<div class="mt-3 space-y-3">
+						<div v-if="imageUrl !== null" class="flex items-center gap-2">
+							<UInput v-model="imageUrl" type="url" class="min-w-0 flex-1" />
+							<UButton type="button" variant="soft" color="neutral" @click="clearImage">Clear</UButton>
+						</div>
+
+						<UFormField
+							label="Upload from drive"
+							v-if="imageUrl === null && inputSource !== 'clipboard-image'"
+						>
+							<UInput
+								size="md"
+								ref="fileInputEl"
+								type="file"
+								accept="image/*"
+								class="w-full"
+								:disabled="uploading"
+								@change="onFileInputChange"
+							/>
+						</UFormField>
+					</div>
+
+					<p v-if="error !== null" class="text-sm text-red-400">{{ error }}</p>
+				</UForm>
+			</template>
+
+			<template #footer>
+				<div class="flex justify-between gap-2 w-full">
+					<UButton type="button" color="neutral" variant="outline" :disabled="uploading" @click="close">
+						Cancel
+					</UButton>
+					<UButton
+						type="submit"
+						form="image-upload-form"
+						:disabled="uploading || (file === null && imageUrl === null) || selectedCollectionId === null"
+					>
+						<template #leading>
+							<Icon v-if="!uploading" name="i-lucide-upload" class="size-4" aria-hidden="true" />
+							<Icon v-else name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+						</template>
+						{{ uploading ? 'Uploading…' : 'Upload' }}
+					</UButton>
 				</div>
-			</div>
-		</Transition>
+			</template>
+		</UModal>
 	</Teleport>
 
-	<CreateCollectionOverlay
+	<CreateCollectionModal
 		v-model:open="createCollectionModal"
 		:folders="collectionsData?.folders ?? []"
 		:initial-folder-id="folderIdFromRoute"
 		@created="onCollectionCreated"
 	/>
 </template>
-
-<style scoped>
-.imgupload-fade-enter-active,
-.imgupload-fade-leave-active {
-	transition: opacity 0.15s ease;
-}
-
-.imgupload-fade-enter-from,
-.imgupload-fade-leave-to {
-	opacity: 0;
-}
-</style>

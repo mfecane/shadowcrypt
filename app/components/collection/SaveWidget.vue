@@ -55,14 +55,14 @@ const icon = computed(() => {
 	return 'i-lucide-save'
 })
 
-const iconClass = computed(() => {
+const buttonColor = computed(() => {
 	if (isSaved.value) {
-		return 'text-green-500'
+		return 'success'
 	}
 	if (isError.value) {
-		return 'text-red-400'
+		return 'error'
 	}
-	return ''
+	return 'neutral'
 })
 
 const tooltip = computed(() => {
@@ -82,14 +82,12 @@ const saveDisabled = computed(() => bridge.value === null || isSaving.value)
 </script>
 
 <template>
-	<div class="flex items-center rounded-lg bg-neutral-900/70 p-2 backdrop-blur-sm">
-		<CollectionToolbarButton
-			:icon="icon"
-			:tooltip="tooltip"
-			:icon-class="iconClass"
-			:disabled="saveDisabled"
-			:spin="isSaving"
-			@click="bridge?.saveNow()"
-		/>
-	</div>
+	<CollectionToolbarButton
+		:icon="icon"
+		:tooltip="tooltip"
+		:color="buttonColor"
+		:disabled="saveDisabled"
+		:spin="isSaving"
+		@click="bridge?.saveNow()"
+	/>
 </template>

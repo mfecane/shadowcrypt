@@ -1,17 +1,17 @@
 export function useCollectionQuickFind() {
 	const open = useState('collection-quick-find-open', () => false)
 
-	function openOverlay(): void {
+	function openModal(): void {
 		open.value = true
 	}
 
-	function closeOverlay(): void {
+	function closeModal(): void {
 		open.value = false
 	}
 
-	function toggleOverlay(): void {
+	function toggleModal(): void {
 		open.value = !open.value
 	}
 
-	return { open, openOverlay, closeOverlay, toggleOverlay }
+	return { open, openModal, closeModal, toggleModal }
 }

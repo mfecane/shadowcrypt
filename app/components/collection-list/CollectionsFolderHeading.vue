@@ -32,8 +32,8 @@ const emit = defineEmits<{ edit: [] }>()
 			v-if="editable"
 			variant="ghost"
 			color="neutral"
-			size="sm"
-			class="rounded-sm h-6 w-6 p-1 border border-muted text-muted hover:text-highlighted hover:border-highlighted"
+			size="xs"
+			square
 			@click="emit('edit')"
 		>
 			<Icon name="i-lucide-pencil" class="h-4 w-4" />

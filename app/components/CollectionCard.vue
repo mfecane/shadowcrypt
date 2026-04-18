@@ -74,9 +74,11 @@ const displayImages = computed(() => {
 		:class="itemWrapperClass"
 	>
 		<UButton
-			variant="ghost"
-			size="sm"
-			class="border-muted text-muted border absolute top-1 right-1 z-10 size-6 p-1 pt-1.5"
+			v-if="showEdit"
+			variant="outline"
+			size="xs"
+			square
+			class="absolute top-1.5 right-1.5 z-1"
 			@click="emit('edit')"
 		>
 			<Icon name="i-lucide-pencil" class="h-4 w-4" />
@@ -97,7 +99,7 @@ const displayImages = computed(() => {
 						class="min-h-0 overflow-hidden"
 						:class="imageClassByIndex(index)"
 					>
-						<img :src="img.url" class="w-full h-full object-cover" alt="" @dragstart.prevent >
+						<img :src="img.url" class="w-full h-full object-cover rounded-xs" alt="" @dragstart.prevent />
 					</div>
 				</div>
 			</div>
@@ -109,10 +111,10 @@ const displayImages = computed(() => {
 			variant="soft"
 			size="sm"
 			color="neutral"
-			class="self-start mt-1 bg-neutral-900 hover:bg-neutral-800 text-muted hover:text-highlighted p-1 px-2"
+			class="mt-2 self-start"
 		>
 			<Icon name="i-lucide-folder" class="h-3 w-3" />
-			<span class="text-xs font-medium">{{ folderName }}</span>
+			<span>{{ folderName }}</span>
 		</UButton>
 	</div>
 </template>

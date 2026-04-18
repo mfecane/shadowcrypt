@@ -50,14 +50,23 @@ function flattenFolders(res: CollectionsListResponse): QuickFindFolderResult[] {
 	}))
 }
 
+function resultMeta(item: QuickFindResult): string {
+	return item.kind === 'folder' ? `${item.collectionCount} collections` : `${item.imageCount} items`
+}
+
+function resultPreviewImages(item: QuickFindResult): CollectionListItem['images'] {
+	return (item.kind === 'folder' ? item.previewImages : item.images).slice(0, 3)
+}
+
 const route = useRoute()
 const router = useRouter()
 
-const { open, closeOverlay: closeOverlayState, toggleOverlay } = useCollectionQuickFind()
+const { open, closeModal: closeModalState, toggleModal } = useCollectionQuickFind()
 const query = ref('')
 const selectedIndex = ref(0)
-const panelRef = ref<HTMLElement | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
 const listRef = ref<HTMLElement | null>(null)
+const listboxId = useId()
 
 const isTargetRoute = computed(() => {
 	const p = route.path
@@ -66,7 +75,7 @@ const isTargetRoute = computed(() => {
 
 watch(isTargetRoute, (ok) => {
 	if (!ok && open.value) {
-		closeOverlayState()
+		closeModalState()
 	}
 })
 
@@ -89,19 +98,16 @@ watch([open, ranked], () => {
 })
 
 watch(open, (v) => {
-	if (import.meta.client) {
-		document.body.style.overflow = v ? 'hidden' : ''
-	}
 	if (v) {
 		query.value = ''
 		nextTick(() => {
-			panelRef.value?.querySelector?.('input')?.focus()
+			contentRef.value?.querySelector?.('input')?.focus()
 		})
 	}
 })
 
 function close(): void {
-	closeOverlayState()
+	closeModalState()
 }
 
 function goToCollection(id: string): void {
@@ -139,7 +145,7 @@ function onGlobalKeydown(event: KeyboardEvent): void {
 		event.preventDefault()
 		event.stopImmediatePropagation()
 		event.stopPropagation()
-		toggleOverlay()
+		toggleModal()
 		return
 	}
 	if (!open.value) {
@@ -182,9 +188,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
 	document.removeEventListener('keydown', onGlobalKeydown, { capture: true })
-	if (import.meta.client) {
-		document.body.style.overflow = ''
-	}
 })
 
 watch(selectedIndex, (i) => {
@@ -200,108 +203,102 @@ watch(selectedIndex, (i) => {
 </script>
 
 <template>
-	<Teleport to="body">
-		<Transition name="quickfind-fade">
-			<div
-				v-if="open && isTargetRoute"
-				class="fixed inset-0 z-200 flex items-center justify-center overflow-y-auto bg-black/55 p-2 backdrop-blur-[2px]"
-				role="dialog"
-				aria-modal="true"
-				aria-label="Find collection"
-				@click.self="close"
-			>
-				<div
-					ref="panelRef"
-					class="border-muted bg-elevated text-default flex h-[90vh] max-h-[99vh] w-full max-w-[800px] min-h-0 flex-col rounded-xl border shadow-2xl"
-					@click.stop
-				>
-					<div class="border-muted shrink-0 border-b px-4 py-3">
-						<p class="text-muted mb-2 text-xs font-medium tracking-wide uppercase">Find collection</p>
-						<UInput
-							v-model="query"
-							placeholder="Type to filter…"
-							icon="i-lucide-search"
-							size="md"
-							class="w-full"
-							:ui="{ base: 'w-full' }"
-							autocomplete="off"
-						/>
-						<p class="text-muted mt-2 text-xs">Ctrl+P to toggle · ↑↓ navigate · Enter open · Esc close</p>
-					</div>
-					<div ref="listRef" class="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-						<p v-if="isPending" class="text-muted px-3 py-6 text-sm">Loading…</p>
-						<p v-else-if="ranked.length === 0" class="text-beige-400 px-3 py-6 text-sm">
-							No matching collections or folders.
-						</p>
-						<ul v-else class="space-y-0.5">
-							<li v-for="(item, idx) in ranked" :key="`${item.kind}-${item.id}`" :data-idx="idx">
-								<button
-									type="button"
-									class="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors"
-									:class="
-										idx === selectedIndex
-											? 'bg-accented text-highlighted'
-											: 'hover:bg-accented/60 text-default'
-									"
-									@click="item.kind === 'folder' ? goToFolder(item.id) : goToCollection(item.id)"
-								>
-									<div class="min-w-0 flex-1">
-										<div class="flex items-center gap-2">
-											<Icon
-												:name="item.kind === 'folder' ? 'i-lucide-folder' : 'i-lucide-layout-grid'"
-												class="text-muted h-4 w-4 shrink-0"
-											/>
-											<div class="truncate font-medium">{{ item.name }}</div>
-										</div>
-										<div class="text-muted mt-0.5 text-xs tabular-nums">
-											{{
-												item.kind === 'folder'
-													? `${item.collectionCount} collections`
-													: `${item.imageCount} items`
-											}}
-										</div>
+	<UModal
+		:open="open && isTargetRoute"
+		@update:open="
+			(value) => {
+				if (!value) close()
+			}
+		"
+		:ui="{
+			content: 'w-full max-w-[800px] h-[90vh]',
+			header: 'flex-col w-full items-stretch min-h-auto gap-2',
+		}"
+	>
+		<template #header="{ close: closeModal }">
+			<UButton
+				variant="ghost"
+				color="neutral"
+				icon="i-lucide-x"
+				@click="closeModal()"
+				class="absolute right-2 top-2"
+			/>
+			<h2 class="text-highlighted text-lg font-medium mb-2">Find collection</h2>
+			<UInput
+				v-model="query"
+				placeholder="Type to filter…"
+				icon="i-lucide-search"
+				size="md"
+				autocomplete="off"
+				:aria-controls="listboxId"
+				aria-autocomplete="list"
+			/>
+			<p class="text-muted text-sm">
+				Navigate -
+				<UKbd>
+					<Icon name="i-lucide-arrow-up" />
+				</UKbd>
+				/
+				<UKbd>
+					<Icon name="i-lucide-arrow-down" />
+				</UKbd>
+			</p>
+		</template>
+		<template #body>
+			<div ref="contentRef" class="flex min-h-0 flex-1 flex-col">
+				<div ref="listRef" :id="listboxId" class="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+					<p v-if="isPending" class="text-muted px-3 py-6 text-sm">Loading…</p>
+					<p v-else-if="ranked.length === 0" class="text-beige-400 px-3 py-6 text-sm">
+						No matching collections or folders.
+					</p>
+					<ul v-else class="space-y-0.5">
+						<li v-for="(item, idx) in ranked" :key="`${item.kind}-${item.id}`" :data-idx="idx">
+							<button
+								type="button"
+								class="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors"
+								:tabindex="idx === 0 ? 0 : -1"
+								:aria-current="idx === selectedIndex ? 'true' : undefined"
+								:class="
+									idx === selectedIndex
+										? 'bg-accented text-highlighted'
+										: 'text-default hover:bg-accented/60'
+								"
+								@click="item.kind === 'folder' ? goToFolder(item.id) : goToCollection(item.id)"
+							>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-center gap-2">
+										<Icon
+											:name="item.kind === 'folder' ? 'i-lucide-folder' : 'i-lucide-layout-grid'"
+											class="text-muted h-4 w-4 shrink-0"
+										/>
+										<div class="truncate font-medium">{{ item.name }}</div>
 									</div>
-									<div class="flex shrink-0 items-center gap-2">
-										<template v-if="(item.kind === 'folder' ? item.previewImages : item.images).length">
-											<img
-												v-for="img in (item.kind === 'folder' ? item.previewImages : item.images).slice(0, 3)"
-												:key="img.id"
-												:src="img.url"
-												class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border object-cover"
-												alt=""
-												@dragstart.prevent
-											>
-										</template>
-										<template v-else>
-											<div
-												class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border"
-											/>
-											<div
-												class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border"
-											/>
-											<div
-												class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border"
-											/>
-										</template>
-									</div>
-								</button>
-							</li>
-						</ul>
-					</div>
+									<div class="text-muted mt-0.5 text-xs tabular-nums">{{ resultMeta(item) }}</div>
+								</div>
+								<div class="flex shrink-0 items-center gap-2">
+									<template v-if="resultPreviewImages(item).length">
+										<img
+											v-for="img in resultPreviewImages(item)"
+											:key="img.id"
+											:src="img.url"
+											class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border object-cover"
+											alt=""
+											@dragstart.prevent
+										/>
+									</template>
+									<template v-else>
+										<div
+											v-for="n in 3"
+											:key="n"
+											class="border-muted bg-muted/60 h-[7.2rem] w-[7.2rem] rounded-sm border object-cover"
+										/>
+									</template>
+								</div>
+							</button>
+						</li>
+					</ul>
 				</div>
 			</div>
-		</Transition>
-	</Teleport>
+		</template>
+	</UModal>
 </template>
-
-<style scoped>
-.quickfind-fade-enter-active,
-.quickfind-fade-leave-active {
-	transition: opacity 0.15s ease;
-}
-
-.quickfind-fade-enter-from,
-.quickfind-fade-leave-to {
-	opacity: 0;
-}
-</style>

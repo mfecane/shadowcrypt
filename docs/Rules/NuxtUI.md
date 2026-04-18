@@ -1,0 +1,1 @@
+We are in process of refactoring UI into Nuxt UI idiomatic way, using main.css and app.config.ts as much as possible. Only if absolutely necessary we can introduce inline formatting. Keep only necessary inline formatting (local layout, positioning and sizing). Colors, borders, backgrounds have to be moved into configs and theme files.

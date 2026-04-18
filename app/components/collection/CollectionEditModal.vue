@@ -8,42 +8,35 @@ const emit = defineEmits<{ save: [] }>()
 </script>
 
 <template>
-	<Teleport to="body">
-		<div
-			v-if="open"
-			class="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4"
-			@click.self="open = false"
-		>
-			<div class="bg-elevated border-muted w-full max-w-md rounded-lg border p-6 shadow-xl">
-				<h2 class="text-highlighted mb-4 text-lg font-semibold">Edit collection</h2>
-				<label class="text-muted mb-1 block text-sm" for="collection-name-input">Collection name</label>
-				<input
-					id="collection-name-input"
-					v-model="name"
-					type="text"
-					class="border-muted bg-muted mb-2 w-full rounded border px-3 py-2 text-highlighted"
-					@keydown.enter="emit('save')"
-				>
-				<p v-if="error" class="text-red-400 mb-4 text-sm">{{ error }}</p>
-				<div class="mt-4 flex justify-end gap-2">
-					<button
-						type="button"
-						class="text-muted hover:text-highlighted rounded px-4 py-2 text-sm"
-						@click="open = false"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						class="bg-primary text-inverted rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
-						:disabled="saving"
-						@click="emit('save')"
-					>
-						Save
-					</button>
-				</div>
-			</div>
-		</div>
-	</Teleport>
-</template>
+	<UModal
+		v-model:open="open"
+		title="Edit collection"
+		description="Rename the current collection."
+		:close="!saving"
+		:dismissible="!saving"
+	>
+		<template #body>
+			<UForm :state="{ name }" id="collection-edit-form" class="space-y-4" @submit.prevent="emit('save')">
+				<UFormField label="Collection name">
+					<UInput id="collection-name-input" v-model="name" type="text" autocomplete="off" class="w-full" />
+				</UFormField>
+				<UAlert v-if="error" color="error" variant="soft" :title="error" />
+			</UForm>
+		</template>
 
+		<template #footer>
+			<div class="flex justify-between gap-2 w-full">
+				<UButton variant="soft" color="neutral" :disabled="saving" @click="open = false">Cancel</UButton>
+				<UButton
+					type="submit"
+					form="collection-edit-form"
+					leading-icon="i-lucide-save"
+					:loading="saving"
+					:disabled="saving"
+				>
+					Save
+				</UButton>
+			</div>
+		</template>
+	</UModal>
+</template>

@@ -15,8 +15,8 @@ useHead({
 	title: 'Collection list',
 })
 
-const folderEdit = useFolderEditOverlayState()
-const collectionEdit = useCollectionEditOverlayState()
+const folderEdit = useFolderEditModalState()
+const collectionEdit = useCollectionListEditModalState()
 
 const route = useRoute()
 const router = useRouter()

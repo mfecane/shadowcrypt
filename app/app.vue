@@ -1,3 +1,11 @@
+<script setup lang="ts">
+useHead({
+	htmlAttrs: {
+		class: 'dark',
+	},
+})
+</script>
+
 <template>
 	<UApp>
 		<NuxtRouteAnnouncer />
@@ -5,12 +13,10 @@
 			<NuxtPage />
 		</NuxtLayout>
 		<ClientOnly>
-			<CollectionQuickFindOverlay />
-			<ImageUploadOverlay />
-			<ImageUploadOpenButton />
-			<CollectionListEditOverlays />
-			<DevPanelOverlay />
+			<CollectionQuickFindModal />
+			<CollectionListEditModals />
+			<FloatingToolbar />
 		</ClientOnly>
-		<DemoOverlay />
+		<DemoModal />
 	</UApp>
 </template>

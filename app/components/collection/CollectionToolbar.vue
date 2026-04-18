@@ -213,12 +213,19 @@ async function confirmDeleteImage(): Promise<void> {
 
 <template>
 	<div :class="['absolute left-2 top-2 z-20 flex flex-wrap p-2 transition-all duration-300 ease-in-out gap-2']">
-		<div :class="['flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-2 ']">
+		<div
+			:class="[
+				'flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-1.5',
+				'border border-neutral-700/40',
+			]"
+		>
 			<CollectionToolbarButton :icon="'i-lucide-chevron-left'" tooltip="Back" @click="router.push('/list')" />
 
 			<div :class="['mx-2 text-sm min-w-0 text-toned sm:min-w-40']">{{ collectionName }}</div>
 
 			<CollectionToolbarButton :icon="'i-heroicons-pencil-square'" tooltip="Edit" @click="openEdit" />
+
+			<SaveWidget />
 
 			<CollectionToolbarButton
 				:icon="'i-lucide-undo'"
@@ -250,7 +257,12 @@ async function confirmDeleteImage(): Promise<void> {
 			/>
 		</div>
 
-		<div :class="['flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-2 ']">
+		<div
+			:class="[
+				'flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-1.5',
+				'border border-neutral-700/40',
+			]"
+		>
 			<CollectionToolbarButton
 				:icon="'i-lucide-flip-horizontal'"
 				tooltip="Flip X"
@@ -272,9 +284,11 @@ async function confirmDeleteImage(): Promise<void> {
 				@click="openDeleteImage"
 			/>
 		</div>
-
-		<SaveWidget />
 	</div>
+
+	<!-- <div class="absolute right-6 top-6 z-20">
+		<UserAvatarMenu />
+	</div> -->
 
 	<CollectionEditModal
 		v-model:open="editOpen"

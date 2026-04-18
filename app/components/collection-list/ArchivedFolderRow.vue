@@ -33,15 +33,16 @@ async function unarchive(): Promise<void> {
 	>
 		<span class="text-muted truncate text-sm font-medium">{{ folder.name }}</span>
 		<div class="flex items-center gap-2">
-			<span v-if="error !== null" class="text-red-400 text-xs">{{ error }}</span>
-			<button
+			<span v-if="error !== null" class="text-error text-xs">{{ error }}</span>
+			<UButton
 				type="button"
-				class="bg-beige-600/80 hover:bg-beige-500 disabled:bg-muted rounded-md px-3 py-1.5 text-xs font-medium text-neutral-950 transition-colors disabled:cursor-not-allowed"
+				size="xs"
+				variant="soft"
 				:disabled="pending"
 				@click="unarchive"
 			>
 				{{ pending ? '…' : 'Unarchive' }}
-			</button>
+			</UButton>
 		</div>
 	</div>
 </template>

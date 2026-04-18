@@ -16,8 +16,8 @@ definePageMeta({
 const route = useRoute()
 const id = computed(() => route.params.id as string)
 
-const folderEdit = useFolderEditOverlayState()
-const collectionEdit = useCollectionEditOverlayState()
+const folderEdit = useFolderEditModalState()
+const collectionEdit = useCollectionListEditModalState()
 
 const {
 	data,

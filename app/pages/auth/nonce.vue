@@ -146,17 +146,15 @@ function goBack(): void {
 		<form class="flex flex-col gap-4" @submit.prevent="onSubmit">
 			<div class="flex flex-col gap-6 items-stretch">
 				<OtpDigitsInput id="nonce-code" v-model="code" />
-				<UButton
-					type="submit"
-					class="flex justify-center items-center py-2 disabled:bg-neutral-600"
-					:disabled="!canSubmit || loading"
-				>
+				<UButton type="submit" block :loading="loading" :disabled="!canSubmit || loading">
 					{{ loading ? 'Verifying...' : 'Verify code' }}
 				</UButton>
 				<UButton
 					type="button"
 					variant="soft"
-					class="text-muted py-2 flex justify-center items-center bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
+					color="neutral"
+					block
+					:loading="resendLoading"
 					:disabled="resendLoading || loading || resendCooldownSeconds > 0"
 					@click="handleResendCode"
 				>
@@ -170,12 +168,8 @@ function goBack(): void {
 				</UButton>
 				<p v-if="message" class="text-muted-foreground text-sm">{{ message }}</p>
 				<p v-if="error" class="text-error text-sm">{{ error }}</p>
-				<UButton
-					class="text-muted mt-4 py-2 flex justify-center items-center bg-neutral-800 hover:bg-neutral-700"
-					variant="soft"
-					@click="goBack"
-				>
-					<Icon name="lucide:arrow-left" class="size-4" /> Go back
+				<UButton variant="soft" color="neutral" block leading-icon="i-lucide-arrow-left" @click="goBack">
+					Go back
 				</UButton>
 			</div>
 		</form>

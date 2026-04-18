@@ -4,11 +4,26 @@ import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 const { fullscreenImage, bridge } = storeToRefs(useCollectionViewerStore())
 
 const locked = ref(true)
+const wrapperEl = ref<HTMLElement | null>(null)
+let previousFocusedElement: HTMLElement | null = null
 
 onMounted(() => {
 	window.setTimeout(() => {
 		locked.value = false
 	}, 200)
+})
+
+watch(fullscreenImage, (image) => {
+	if (!import.meta.client) {
+		return
+	}
+	if (image !== null) {
+		previousFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null
+		void nextTick(() => wrapperEl.value?.focus())
+		return
+	}
+	previousFocusedElement?.focus()
+	previousFocusedElement = null
 })
 
 function close(event: Event): void {
@@ -24,6 +39,12 @@ function onPointerMove(event: PointerEvent): void {
 	}
 }
 
+function onKeydown(event: KeyboardEvent): void {
+	if (event.key === 'Escape') {
+		close(event)
+	}
+}
+
 const wrapperClass = computed(() => {
 	return (
 		'absolute z-30 h-screen w-screen bg-black/60 overflow-hidden flex items-center justify-center p-5' +
@@ -33,7 +54,18 @@ const wrapperClass = computed(() => {
 </script>
 
 <template>
-	<div :class="wrapperClass" @click="close" @pointermove="onPointerMove" @touchmove="close">
+	<div
+		ref="wrapperEl"
+		:class="wrapperClass"
+		tabindex="-1"
+		role="dialog"
+		aria-modal="true"
+		aria-label="Fullscreen image viewer"
+		@click="close"
+		@keydown="onKeydown"
+		@pointermove="onPointerMove"
+		@touchmove="close"
+	>
 		<Transition>
 			<div class="w-full h-full flex items-center justify-center" v-if="fullscreenImage">
 				<img
