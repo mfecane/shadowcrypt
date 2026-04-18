@@ -40,15 +40,34 @@ export class BoardImageLayout {
 		}
 	}
 
+	/** Serialized layout for API / model sync; width and height are positive (extent), not signed scale. */
 	public toApi(): BoardImageLayoutApi {
 		return {
-			...this.toLayout(),
+			x: this.x,
+			y: this.y,
+			w: Math.abs(this.w),
+			h: Math.abs(this.h),
+			flipX: this.flipX,
+			flipY: this.flipY,
 			zIndex: this.zIndex,
 		}
 	}
 
+	/** Copy fields from a server/API payload into this instance. */
+	public applyFromApi(api: BoardImageLayoutApi): void {
+		this.zIndex = api.zIndex
+		this.x = api.x
+		this.y = api.y
+		this.w = api.w
+		this.h = api.h
+		this.flipX = api.flipX ?? false
+		this.flipY = api.flipY ?? false
+	}
+
 	public static fromApi(api: BoardImageLayoutApi): BoardImageLayout {
-		return new BoardImageLayout(api.zIndex, api.x, api.y, api.w, api.h, api.flipX, api.flipY)
+		const l = new BoardImageLayout(0, 0, 0, 0, 0, false, false)
+		l.applyFromApi(api)
+		return l
 	}
 
 	public getRect(): BoardRect {

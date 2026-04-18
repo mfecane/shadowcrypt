@@ -1,7 +1,6 @@
 import type { BoardViewportState } from '~~/lib/board/BoardViewport'
 import type { BoardImage } from '~~/lib/board/BoardImage'
 import type { BoardImageLayoutApi, BoardImageLayoutSaveRow } from '~~/lib/board/BoardImageApi'
-import { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
 
 /** Mutable collection snapshot for the board (decoupled from Vue). */
 export class CollectionBoardModel {
@@ -62,17 +61,7 @@ export class CollectionBoardModel {
 	public syncImageLayout(imageId: string, layout: BoardImageLayoutApi): void {
 		const im = this.images.find((i) => i.id === imageId)
 		if (im !== undefined) {
-			im.setLayout(
-				new BoardImageLayout(
-					layout.zIndex,
-					layout.x,
-					layout.y,
-					layout.w,
-					layout.h,
-					layout.flipX ?? false,
-					layout.flipY ?? false
-				)
-			)
+			im.layout.applyFromApi(layout)
 		}
 	}
 

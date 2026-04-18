@@ -9,6 +9,7 @@ export const users = pgTable('users', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	email: text('email').notNull().unique(),
 	name: text('name'),
+	/** Avatar: SHA-256 hex (uploaded WebP, {@link StorageKeyFactory.createUserAvatarKey}) or external `https` URL (e.g. OAuth). */
 	image: text('image'),
 	roles: userRole('roles')
 		.array()

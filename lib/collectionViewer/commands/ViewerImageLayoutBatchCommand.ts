@@ -1,9 +1,4 @@
-import type { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
-
-export interface ViewerImageLayoutBatchSnapshot {
-	imageId: string
-	snapshot: BoardImageLayout
-}
+import type { ViewerCommandApplier, ViewerImageLayoutBatchSnapshot } from './ViewerCommandApplier'
 
 export class ViewerImageLayoutBatchCommand {
 	public readonly id = 'viewer_image_layout_batch'
@@ -11,14 +6,14 @@ export class ViewerImageLayoutBatchCommand {
 	public constructor(
 		private readonly before: ViewerImageLayoutBatchSnapshot[],
 		private readonly after: ViewerImageLayoutBatchSnapshot[],
-		private readonly apply: (snapshots: ViewerImageLayoutBatchSnapshot[]) => void
+		private readonly applier: ViewerCommandApplier
 	) {}
 
 	public execute(): void {
-		this.apply(this.after)
+		this.applier.applyLayoutSnapshots(this.after)
 	}
 
 	public undo(): void {
-		this.apply(this.before)
+		this.applier.applyLayoutSnapshots(this.before)
 	}
 }

@@ -27,8 +27,7 @@ export class BoardRenderer {
 
 	public constructor(
 		private readonly mountEl: HTMLElement,
-		private readonly host: BoardHost,
-		private readonly log: (line: string) => void
+		private readonly host: BoardHost
 	) {}
 
 	private static spriteBaseSize(sprite: Sprite): { width: number; height: number } {
@@ -136,24 +135,16 @@ export class BoardRenderer {
 		this.destroy()
 
 		const viewport = this.host.getViewportSize()
-		this.log(`viewport ${Math.round(viewport.w)}x${Math.round(viewport.h)}`)
 
 		this.app = new Application()
-		this.log('initializing view layer')
-		try {
-			await this.app.init({
-				width: viewport.w,
-				height: viewport.h,
-				backgroundAlpha: 0,
-				antialias: true,
-				resolution: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
-				autoDensity: true,
-			})
-		} catch (error) {
-			this.log(`app.init failed: ${error instanceof Error ? error.message : String(error)}`)
-			throw error
-		}
-		this.log('view layer initialized')
+		await this.app.init({
+			width: viewport.w,
+			height: viewport.h,
+			backgroundAlpha: 0,
+			antialias: true,
+			resolution: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
+			autoDensity: true,
+		})
 
 		const canvas = this.app.canvas as HTMLCanvasElement
 		canvas.style.display = 'block'
@@ -161,7 +152,6 @@ export class BoardRenderer {
 		canvas.style.height = '100%'
 		canvas.style.touchAction = 'none'
 		this.mountEl.appendChild(canvas)
-		this.log('canvas attached to mount element')
 
 		this.worldContainer = new Container()
 		this.worldContainer.sortableChildren = true
@@ -189,49 +179,32 @@ export class BoardRenderer {
 			this.router!.dispatch(e)
 		)
 		this.preprocessor.attach()
-		this.log('interaction stack attached')
 
-		for (const [index, im] of sortedImages.entries()) {
-			this.log(`loading image ${index + 1}/${sortedImages.length} id=${im.id}`)
-			try {
-				const texture = await Assets.load(im.src)
-				im.width = texture.width
-				im.height = texture.height
-				const sprite = new Sprite(texture)
-				const L = im.layout
-				const flipX = L.flipX
-				const flipY = L.flipY
-				const scaleX = L.w / Math.max(1e-6, texture.width)
-				const scaleY = L.h / Math.max(1e-6, texture.height)
-				sprite.scale.x = flipX ? -scaleX : scaleX
-				sprite.scale.y = flipY ? -scaleY : scaleY
-				sprite.x = flipX ? L.x + L.w : L.x
-				sprite.y = flipY ? L.y + L.h : L.y
-				sprite.zIndex = L.zIndex
-				sprite.eventMode = 'static'
-				sprite.cursor = 'pointer'
-				this.worldContainer.addChild(sprite)
-				this.spriteById.set(im.id, sprite)
-				this.log(
-					`image ready ${index + 1}/${sortedImages.length} id=${im.id} tex=${texture.width}x${texture.height}`
-				)
-			} catch (error) {
-				this.log(
-					`image failed ${index + 1}/${sortedImages.length} id=${im.id}: ${
-						error instanceof Error ? error.message : String(error)
-					}`
-				)
-				throw error
-			}
+		for (const im of sortedImages) {
+			const texture = await Assets.load(im.src)
+			im.width = texture.width
+			im.height = texture.height
+			const sprite = new Sprite(texture)
+			const L = im.layout
+			const flipX = L.flipX
+			const flipY = L.flipY
+			const scaleX = L.w / Math.max(1e-6, texture.width)
+			const scaleY = L.h / Math.max(1e-6, texture.height)
+			sprite.scale.x = flipX ? -scaleX : scaleX
+			sprite.scale.y = flipY ? -scaleY : scaleY
+			sprite.x = flipX ? L.x + L.w : L.x
+			sprite.y = flipY ? L.y + L.h : L.y
+			sprite.zIndex = L.zIndex
+			sprite.eventMode = 'static'
+			sprite.cursor = 'pointer'
+			this.worldContainer.addChild(sprite)
+			this.spriteById.set(im.id, sprite)
 		}
-		this.log(`all sprites created count=${this.spriteById.size}`)
 		this.worldContainer.sortChildren()
 
 		this.navigationTool.setViewportFromSaved(initialViewportCenter, initialViewportZoom)
-		this.log('viewport initialized')
 
 		this.setupResizeObserver()
-		this.log('resize observer attached')
 	}
 
 	private setupResizeObserver(): void {

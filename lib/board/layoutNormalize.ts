@@ -1,4 +1,4 @@
-import type { ViewerImageLayoutBatchSnapshot } from '~~/lib/collectionViewer/commands/ViewerImageLayoutBatchCommand'
+import type { ViewerImageLayoutBatchSnapshot } from '~~/lib/collectionViewer/commands/ViewerCommandApplier'
 
 /**
  * Scales all rects so the average of every width and height equals `targetAvgDimension`,

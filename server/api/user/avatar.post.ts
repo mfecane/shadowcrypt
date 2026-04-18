@@ -38,10 +38,9 @@ export default defineEventHandler(async (event) => {
 	const hash = createHash('sha256').update(webp).digest('hex')
 	const storage = useStorageClient()
 	await storage.uploadUserAvatar(sub, hash, webp)
-	const publicUrl = storage.getUserAvatarUrl(sub, hash).getPublicUrl()
 
 	const db = useDb()
-	await db.update(users).set({ image: publicUrl, updatedAt: new Date() }).where(eq(users.id, sub))
+	await db.update(users).set({ image: hash, updatedAt: new Date() }).where(eq(users.id, sub))
 
-	return { ok: true as const, image: publicUrl }
+	return { ok: true as const, image: hash }
 })

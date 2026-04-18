@@ -1,4 +1,5 @@
 import type { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
+import type { ViewerCommandApplier } from './ViewerCommandApplier'
 
 export class ViewerImageTransformCommand {
 	public readonly id = 'viewer_image_transform'
@@ -7,14 +8,14 @@ export class ViewerImageTransformCommand {
 		public readonly imageId: string,
 		private readonly before: BoardImageLayout,
 		private readonly after: BoardImageLayout,
-		private readonly apply: (imageId: string, s: BoardImageLayout) => void
+		private readonly applier: ViewerCommandApplier
 	) {}
 
 	public execute(): void {
-		this.apply(this.imageId, this.after)
+		this.applier.applyImageLayout(this.imageId, this.after)
 	}
 
 	public undo(): void {
-		this.apply(this.imageId, this.before)
+		this.applier.applyImageLayout(this.imageId, this.before)
 	}
 }
