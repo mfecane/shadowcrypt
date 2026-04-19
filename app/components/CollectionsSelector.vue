@@ -98,10 +98,12 @@ function focusInput(): void {
 	}
 }
 
-function close(): void {
+function close(restoreFocus = false): void {
 	open.value = false
 	query.value = ''
-	void nextTick(() => focusInput())
+	if (restoreFocus) {
+		void nextTick(() => focusInput())
+	}
 }
 
 function openSelector(): void {
@@ -121,7 +123,7 @@ function onInput(value: string | number): void {
 
 function selectOption(id: string): void {
 	emit('update:modelValue', id)
-	close()
+	close(false)
 }
 
 function onDocumentPointerDown(event: MouseEvent): void {
@@ -137,7 +139,7 @@ function onDocumentPointerDown(event: MouseEvent): void {
 
 function onDocumentKeydown(event: KeyboardEvent): void {
 	if (event.key === 'Escape') {
-		close()
+		close(true)
 	}
 }
 
@@ -206,7 +208,7 @@ function onInputKeydown(e: KeyboardEvent): void {
 	if (e.key === 'Escape') {
 		if (open.value) {
 			e.preventDefault()
-			close()
+			close(true)
 		}
 		return
 	}
@@ -309,6 +311,7 @@ onBeforeUnmount(() => {
 					class="h-4 w-4 shrink-0 transition-transform"
 					:class="{ 'rotate-180': open }"
 					aria-hidden="true"
+					@click.stop="onInputClick"
 				/>
 			</template>
 		</UInput>
