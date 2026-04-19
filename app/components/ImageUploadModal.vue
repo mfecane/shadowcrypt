@@ -65,11 +65,28 @@ function dataTransferHasImage(dt: DataTransfer | null): boolean {
 		return false
 	}
 	for (const item of dt.items) {
-		if (item.kind === 'file' && item.type.startsWith('image/')) {
+		if (item.kind === 'file' && (item.type.startsWith('image/') || item.type === '')) {
+			return true
+		}
+	}
+	for (let i = 0; i < dt.files.length; i++) {
+		const f = dt.files.item(i)
+		if (f !== null && (f.type.startsWith('image/') || f.type === '')) {
 			return true
 		}
 	}
 	return false
+}
+
+function dataTransferMayContainImagePayload(dt: DataTransfer | null): boolean {
+	if (dt === null) {
+		return false
+	}
+	if (dataTransferHasImage(dt)) {
+		return true
+	}
+	const types = Array.from(dt.types ?? [])
+	return types.some((type) => ['text/uri-list', 'text/plain', 'text/html', 'text/x-moz-url'].includes(type))
 }
 
 function isHttpUrl(value: string): boolean {
@@ -81,21 +98,32 @@ function isHttpUrl(value: string): boolean {
 	}
 }
 
+function firstHttpUrlFromText(value: string): string | null {
+	const firstLine = value
+		.split('\n')
+		.map((line) => line.trim())
+		.find((line) => line.length > 0 && !line.startsWith('#'))
+
+	if (firstLine !== undefined && isHttpUrl(firstLine)) {
+		return firstLine
+	}
+
+	const match = value.match(/https?:\/\/[^\s"'<>]+/i)
+	return match?.[0] !== undefined && isHttpUrl(match[0]) ? match[0] : null
+}
+
 function firstImageUrlFromDataTransfer(dt: DataTransfer | null): string | null {
 	if (dt === null) {
 		return null
 	}
-	for (const type of ['text/uri-list', 'text/plain']) {
+	for (const type of ['text/uri-list', 'text/plain', 'text/html']) {
 		const value = dt.getData(type).trim()
 		if (value.length === 0) {
 			continue
 		}
-		const firstLine = value
-			.split('\n')
-			.map((line) => line.trim())
-			.find((line) => line.length > 0 && !line.startsWith('#'))
-		if (firstLine !== undefined && isHttpUrl(firstLine)) {
-			return firstLine
+		const url = firstHttpUrlFromText(value)
+		if (url !== null) {
+			return url
 		}
 	}
 	return null
@@ -110,7 +138,7 @@ function firstImageFromDataTransfer(dt: DataTransfer | null): File | null {
 		return null
 	}
 	for (const item of dt.items) {
-		if (item.kind === 'file' && item.type.startsWith('image/')) {
+		if (item.kind === 'file' && (item.type.startsWith('image/') || item.type === '')) {
 			const f = item.getAsFile()
 			if (f !== null) {
 				return f
@@ -121,7 +149,7 @@ function firstImageFromDataTransfer(dt: DataTransfer | null): File | null {
 	if (files !== null && files.length > 0) {
 		for (let i = 0; i < files.length; i++) {
 			const f = files.item(i)
-			if (f !== null && f.type.startsWith('image/')) {
+			if (f !== null && (f.type.startsWith('image/') || f.type === '')) {
 				return f
 			}
 		}
@@ -169,6 +197,8 @@ const uploading = ref(false)
 const selectedCollectionId = ref<string | null>(null)
 const inputSource = ref<'none' | 'file' | 'clipboard-image' | 'url'>('none')
 const fileInputEl = ref<HTMLInputElement | null>(null)
+const formEl = ref<HTMLElement | null>(null)
+const submitButtonEl = ref<HTMLElement | null>(null)
 
 const previewUrl = computed(() => imageUrl.value ?? localPreviewUrl.value)
 
@@ -234,6 +264,31 @@ function setImageUrl(next: string | null): void {
 	error.value = null
 }
 
+watch([open, imageUrl], ([isOpen, url]) => {
+	if (!isOpen || url === null) {
+		return
+	}
+	void nextTick(() => {
+		const input = formEl.value?.querySelector('input[type="url"]')
+		if (input instanceof HTMLInputElement) {
+			input.focus()
+			input.setSelectionRange(input.value.length, input.value.length)
+		}
+	})
+})
+
+watch([open, file, inputSource], ([isOpen, nextFile, source]) => {
+	if (!isOpen || nextFile === null || source !== 'clipboard-image') {
+		return
+	}
+	void nextTick(() => {
+		const button = submitButtonEl.value?.querySelector('button')
+		if (button instanceof HTMLButtonElement) {
+			button.focus()
+		}
+	})
+})
+
 function close(): void {
 	closeModalState()
 	clearImage()
@@ -250,7 +305,7 @@ function openFromClipboardOrDrag(): void {
 }
 
 function onWindowDragEnter(e: DragEvent): void {
-	if (!isTargetRoute.value || !dataTransferHasImagePayload(e.dataTransfer)) {
+	if (!isTargetRoute.value || !dataTransferMayContainImagePayload(e.dataTransfer)) {
 		return
 	}
 	e.preventDefault()
@@ -261,21 +316,33 @@ function onWindowDragOver(e: DragEvent): void {
 	if (!isTargetRoute.value) {
 		return
 	}
-	if (!dataTransferHasImagePayload(e.dataTransfer)) {
+	if (!dataTransferMayContainImagePayload(e.dataTransfer)) {
 		return
 	}
 	e.preventDefault()
 }
 
-function onPanelDrop(e: DragEvent): void {
-	const f = firstImageFromDataTransfer(e.dataTransfer)
+function applyDroppedPayload(dt: DataTransfer | null): boolean {
+	const f = firstImageFromDataTransfer(dt)
 	if (f !== null) {
+		openFromClipboardOrDrag()
 		setFile(f)
-		return
+		return true
 	}
-	const url = firstImageUrlFromDataTransfer(e.dataTransfer)
+
+	const url = firstImageUrlFromDataTransfer(dt)
 	if (url !== null) {
+		openFromClipboardOrDrag()
 		setImageUrl(url)
+		return true
+	}
+
+	return false
+}
+
+function onPanelDrop(e: DragEvent): void {
+	e.preventDefault()
+	if (applyDroppedPayload(e.dataTransfer)) {
 		return
 	}
 	if (imageUrl.value !== null) {
@@ -283,6 +350,16 @@ function onPanelDrop(e: DragEvent): void {
 		return
 	}
 	error.value = 'Drop an image file or image URL.'
+}
+
+function onWindowDrop(e: DragEvent): void {
+	if (!isTargetRoute.value || !dataTransferHasImagePayload(e.dataTransfer)) {
+		return
+	}
+	e.preventDefault()
+	void nextTick(() => {
+		applyDroppedPayload(e.dataTransfer)
+	})
 }
 
 function onPaste(e: ClipboardEvent): void {
@@ -375,6 +452,7 @@ onMounted(() => {
 	}
 	window.addEventListener('dragenter', onWindowDragEnter)
 	window.addEventListener('dragover', onWindowDragOver)
+	window.addEventListener('drop', onWindowDrop)
 	document.addEventListener('paste', onPaste)
 })
 
@@ -385,6 +463,7 @@ onBeforeUnmount(() => {
 		}
 		window.removeEventListener('dragenter', onWindowDragEnter)
 		window.removeEventListener('dragover', onWindowDragOver)
+		window.removeEventListener('drop', onWindowDrop)
 		document.removeEventListener('paste', onPaste)
 	}
 })
@@ -409,11 +488,11 @@ function onCollectionCreated(collection: { id: string }): void {
 			title="Upload image to collection"
 			@close="close"
 			@dragover.prevent
-			@drop="onPanelDrop"
+			@drop.prevent="onPanelDrop"
 			:modal="true"
 		>
 			<template #body>
-				<UForm id="image-upload-form" class="space-y-4" @submit.prevent="submitUpload">
+				<UForm ref="formEl" id="image-upload-form" class="space-y-4" @submit.prevent="submitUpload">
 					<p class="text-muted mt-1 text-xs">Drop, paste, pick or create a collection, then upload.</p>
 
 					<UFormField label="Collection">
@@ -506,6 +585,7 @@ function onCollectionCreated(collection: { id: string }): void {
 						Cancel
 					</UButton>
 					<UButton
+						ref="submitButtonEl"
 						type="submit"
 						form="image-upload-form"
 						:disabled="uploading || (file === null && imageUrl === null) || selectedCollectionId === null"

@@ -3,7 +3,12 @@ export function useImageUploadModal() {
 
 	const isTargetRoute = computed(() => {
 		const p = route.path
-		return p === '/list' || /^\/list\/[^/]+$/.test(p) || /^\/collections\/[^/]+$/.test(p)
+		return (
+			p === '/list' ||
+			/^\/list\/[^/]+$/.test(p) ||
+			/^\/collections\/[^/]+$/.test(p) ||
+			/^\/folder\/[^/]+$/.test(p)
+		)
 	})
 
 	const open = useState('image-upload-modal-open', () => false)
