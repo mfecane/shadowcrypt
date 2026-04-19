@@ -230,6 +230,7 @@ watch(selectedIndex, (i) => {
 				icon="i-lucide-search"
 				size="md"
 				autocomplete="off"
+				autofocus
 				:aria-controls="listboxId"
 				aria-autocomplete="list"
 			/>

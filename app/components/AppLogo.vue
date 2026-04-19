@@ -16,7 +16,7 @@ const textClass = computed(() => {
 </script>
 
 <template>
-	<div class="flex items-center gap-1">
+	<div class="flex items-center gap-1 text-primary">
 		<svg class="size-6 shrink-0" viewBox="0 0 81.3 85.88" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 			<path
 				d="M40,22.94c-10.22.34-18.18,9.07-18.18,19.3v28.56c0,3.28,2.66,5.95,5.95,5.95h25.75c3.28,0,5.95-2.66,5.95-5.95v-29.05c0-10.61-8.78-19.17-19.47-18.81Z"
@@ -27,6 +27,6 @@ const textClass = computed(() => {
 				fill="currentColor"
 			/>
 		</svg>
-		<span class="text-lg font-semibold uppercase md:text-xl" :class="textClass">Shadowcrypt</span>
+		<span class="text-lg font-semibold uppercase md:text-xl translate-y-[2px]" :class="textClass">Shadowcrypt</span>
 	</div>
 </template>

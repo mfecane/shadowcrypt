@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import type { ComponentPublicInstance } from 'vue'
 import CollectionsSelector from '~/components/CollectionsSelector.vue'
 import CreateCollectionModal from '~/components/CreateCollectionModal.vue'
 import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
+import { waitForNextPaint } from '~~/lib/asyncUtils'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
+import { resolveButtonEl } from '~~/lib/vueUtils'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
 	const seen = new Set<string>()
@@ -197,8 +200,7 @@ const uploading = ref(false)
 const selectedCollectionId = ref<string | null>(null)
 const inputSource = ref<'none' | 'file' | 'clipboard-image' | 'url'>('none')
 const fileInputEl = ref<HTMLInputElement | null>(null)
-const formEl = ref<HTMLElement | null>(null)
-const submitButtonEl = ref<HTMLElement | null>(null)
+const submitButtonEl = ref<ComponentPublicInstance | null>(null)
 
 const previewUrl = computed(() => imageUrl.value ?? localPreviewUrl.value)
 
@@ -264,29 +266,9 @@ function setImageUrl(next: string | null): void {
 	error.value = null
 }
 
-watch([open, imageUrl], ([isOpen, url]) => {
-	if (!isOpen || url === null) {
-		return
-	}
-	void nextTick(() => {
-		const input = formEl.value?.querySelector('input[type="url"]')
-		if (input instanceof HTMLInputElement) {
-			input.focus()
-			input.setSelectionRange(input.value.length, input.value.length)
-		}
-	})
-})
-
-watch([open, file, inputSource], ([isOpen, nextFile, source]) => {
-	if (!isOpen || nextFile === null || source !== 'clipboard-image') {
-		return
-	}
-	void nextTick(() => {
-		const button = submitButtonEl.value?.querySelector('button')
-		if (button instanceof HTMLButtonElement) {
-			button.focus()
-		}
-	})
+watch([open, imageUrl, file, inputSource, submitButtonEl], async () => {
+	await waitForNextPaint()
+	resolveButtonEl(submitButtonEl.value)?.focus()
 })
 
 function close(): void {
@@ -588,6 +570,7 @@ function onCollectionCreated(collection: { id: string }): void {
 						ref="submitButtonEl"
 						type="submit"
 						form="image-upload-form"
+						autofocus
 						:disabled="uploading || (file === null && imageUrl === null) || selectedCollectionId === null"
 					>
 						<template #leading>
