@@ -467,9 +467,17 @@ function onCollectionCreated(collection: { id: string }): void {
 					</div>
 
 					<div class="mt-3 space-y-3">
-						<div v-if="imageUrl !== null" class="flex items-center gap-2">
+						<div v-if="imageUrl !== null" class="flex items-stretch gap-2">
 							<UInput v-model="imageUrl" type="url" class="min-w-0 flex-1" />
-							<UButton type="button" variant="soft" color="neutral" @click="clearImage">Clear</UButton>
+							<UButton
+								type="button"
+								variant="outline"
+								color="neutral"
+								@click="clearImage"
+								icon="i-lucide-x"
+							>
+								Clear
+							</UButton>
 						</div>
 
 						<UFormField

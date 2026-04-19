@@ -19,16 +19,18 @@ const emit = defineEmits<{ confirm: [] }>()
 		</template>
 
 		<template #footer>
-			<UButton variant="soft" color="neutral" :disabled="deleting" @click="open = false">Cancel</UButton>
-			<UButton
-				color="error"
-				leading-icon="i-lucide-trash"
-				:loading="deleting"
-				:disabled="deleting"
-				@click="emit('confirm')"
-			>
-				Delete
-			</UButton>
+			<div class="flex justify-between gap-2 w-full">
+				<UButton variant="soft" color="neutral" :disabled="deleting" @click="open = false">Cancel</UButton>
+				<UButton
+					color="error"
+					leading-icon="i-lucide-trash"
+					:loading="deleting"
+					:disabled="deleting"
+					@click="emit('confirm')"
+				>
+					Delete
+				</UButton>
+			</div>
 		</template>
 	</UModal>
 </template>

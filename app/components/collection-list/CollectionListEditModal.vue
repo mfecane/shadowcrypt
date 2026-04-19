@@ -258,16 +258,20 @@ async function performDelete(): Promise<void> {
 		</template>
 
 		<template #footer>
-			<UButton variant="soft" color="neutral" :disabled="deleting" @click="cancelDeleteConfirm">Cancel</UButton>
-			<UButton
-				color="error"
-				leading-icon="i-lucide-trash"
-				:loading="deleting"
-				:disabled="deleting"
-				@click="performDelete"
-			>
-				{{ deleting ? 'Deleting…' : 'Delete' }}
-			</UButton>
+			<div class="flex justify-between gap-2 w-full">
+				<UButton variant="soft" color="neutral" :disabled="deleting" @click="cancelDeleteConfirm"
+					>Cancel</UButton
+				>
+				<UButton
+					color="error"
+					leading-icon="i-lucide-trash"
+					:loading="deleting"
+					:disabled="deleting"
+					@click="performDelete"
+				>
+					{{ deleting ? 'Deleting…' : 'Delete' }}
+				</UButton>
+			</div>
 		</template>
 	</UModal>
 </template>

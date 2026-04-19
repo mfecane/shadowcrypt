@@ -87,7 +87,6 @@ async function performDelete(): Promise<void> {
 		deleting.value = false
 	}
 }
-
 </script>
 
 <template>
@@ -96,7 +95,11 @@ async function performDelete(): Promise<void> {
 		title="Edit folder"
 		:close="!(saving || deleting || confirmDeleteOpen)"
 		:dismissible="!(saving || deleting || confirmDeleteOpen)"
-		@update:open="(value) => { if (!value) close() }"
+		@update:open="
+			(value) => {
+				if (!value) close()
+			}
+		"
 	>
 		<template #body>
 			<div class="space-y-4">
@@ -109,13 +112,29 @@ async function performDelete(): Promise<void> {
 		</template>
 
 		<template #footer>
-			<UButton color="error" variant="soft" size="sm" :disabled="saving || deleting" @click="openDeleteConfirm">
-				Delete
-			</UButton>
-			<UButton variant="soft" color="neutral" size="sm" :disabled="saving" @click="close">Cancel</UButton>
-			<UButton leading-icon="i-lucide-save" type="button" :loading="saving" :disabled="saving" @click="save">
-				{{ saving ? 'Saving…' : 'Save' }}
-			</UButton>
+			<div class="flex justify-between gap-2 w-full">
+				<UButton
+					color="error"
+					variant="soft"
+					size="sm"
+					:disabled="saving || deleting"
+					@click="openDeleteConfirm"
+				>
+					Delete
+				</UButton>
+				<div class="flex gap-2">
+					<UButton variant="soft" color="neutral" size="sm" :disabled="saving" @click="close">Cancel</UButton>
+					<UButton
+						leading-icon="i-lucide-save"
+						type="button"
+						:loading="saving"
+						:disabled="saving"
+						@click="save"
+					>
+						{{ saving ? 'Saving…' : 'Save' }}
+					</UButton>
+				</div>
+			</div>
 		</template>
 	</UModal>
 
@@ -124,7 +143,11 @@ async function performDelete(): Promise<void> {
 		title="Delete this folder?"
 		:close="!deleting"
 		:dismissible="!deleting"
-		@update:open="(value) => { if (!value) cancelDeleteConfirm() }"
+		@update:open="
+			(value) => {
+				if (!value) cancelDeleteConfirm()
+			}
+		"
 	>
 		<template #body>
 			<div class="space-y-4">
@@ -137,12 +160,14 @@ async function performDelete(): Promise<void> {
 		</template>
 
 		<template #footer>
-			<UButton variant="soft" color="neutral" size="sm" :disabled="deleting" @click="cancelDeleteConfirm">
-				Cancel
-			</UButton>
-			<UButton color="error" size="sm" :loading="deleting" :disabled="deleting" @click="performDelete">
-				{{ deleting ? 'Deleting…' : 'Delete' }}
-			</UButton>
+			<div class="flex justify-between gap-2 w-full">
+				<UButton variant="soft" color="neutral" size="sm" :disabled="deleting" @click="cancelDeleteConfirm">
+					Cancel
+				</UButton>
+				<UButton color="error" size="sm" :loading="deleting" :disabled="deleting" @click="performDelete">
+					{{ deleting ? 'Deleting…' : 'Delete' }}
+				</UButton>
+			</div>
 		</template>
 	</UModal>
 </template>
