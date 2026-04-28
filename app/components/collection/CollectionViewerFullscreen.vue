@@ -51,6 +51,15 @@ const wrapperClass = computed(() => {
 		(fullscreenImage.value ? '' : ' hidden')
 	)
 })
+
+const imageStyle = computed(() => {
+	const flipX = fullscreenImage.value?.layout.flipX === true ? -1 : 1
+	const flipY = fullscreenImage.value?.layout.flipY === true ? -1 : 1
+
+	return {
+		transform: `scale(${flipX}, ${flipY})`,
+	}
+})
 </script>
 
 <template>
@@ -70,6 +79,7 @@ const wrapperClass = computed(() => {
 			<div class="w-full h-full flex items-center justify-center" v-if="fullscreenImage">
 				<img
 					:src="fullscreenImage.src"
+					:style="imageStyle"
 					class="max-w-full max-h-full object-contain rounded-md shadow-md"
 					alt=""
 				/>

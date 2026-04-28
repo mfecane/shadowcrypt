@@ -54,12 +54,12 @@ onMounted(() => {
 </script>
 
 <template>
-	<div class="fixed inset-0 z-40">
+	<div class="fixed inset-0 z-0">
 		<CollectionViewerFullscreen />
 		<CollectionToolbar />
 		<div
 			v-if="autoLayoutPending"
-			class="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
+			class="absolute inset-0 z-5 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
 			aria-live="polite"
 			aria-busy="true"
 		>

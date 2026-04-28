@@ -24,7 +24,7 @@ const attrs = useAttrs()
 			:leading-icon="icon"
 			:aria-label="tooltip"
 			:class="[
-				'rounded-full shadow-lg text-primary bg-primary-950/60 backdrop-blur-sm border border-primary-700 flex',
+				'relative z-30 rounded-full shadow-lg text-primary bg-primary-950/60 backdrop-blur-sm border border-primary-700 flex',
 				'items-center justify-center size-14 hover:bg-neutral-950/60 transition-colors duration-400 ',
 				'hover:text-primary-200 hover:border-primary-500',
 			]"
