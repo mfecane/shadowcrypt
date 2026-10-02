@@ -8,6 +8,9 @@ import { waitForNextPaint } from '~~/lib/asyncUtils'
 import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 import { resolveButtonEl } from '~~/lib/vueUtils'
+import { ServiceAlias } from '~~/lib/di/ServiceAlias'
+import { container } from '~~/lib/di/container'
+import type { BoardUploadTracker } from '~~/lib/services/BoardUploadTracker'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
 	const seen = new Set<string>()
@@ -177,14 +180,18 @@ function firstImageFromClipboard(cb: DataTransfer | null): File | null {
 
 const route = useRoute()
 const queryClient = useQueryClient()
-const { open, openModal, closeModal: closeModalState, isTargetRoute } = useImageUploadModal()
-const showFab = computed(() => isTargetRoute.value && !open.value)
+const boardUploadTracker = container.resolve<BoardUploadTracker>(ServiceAlias.BoardUploadTracker)
+const {
+	open,
+	openModalAt,
+	closeModal: closeModalState,
+	isTargetRoute,
+	pointerPosition,
+	dropWorldPoint,
+	boardIdFromRoute,
+	collectionIdFromRoute,
+} = useImageUploadModal()
 const createCollectionModal = ref(false)
-
-const collectionIdFromRoute = computed(() => {
-	const m = /^\/collections\/([^/]+)$/.exec(route.path)
-	return m?.[1] ?? null
-})
 
 /** When on `/list/:folderId`, new collections are created inside that folder. */
 const folderIdFromRoute = computed(() => {
@@ -198,6 +205,7 @@ const imageUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 const uploading = ref(false)
 const selectedCollectionId = ref<string | null>(null)
+const selectedBoardId = ref<string | null>(null)
 const inputSource = ref<'none' | 'file' | 'clipboard-image' | 'url'>('none')
 const fileInputEl = ref<HTMLInputElement | null>(null)
 const submitButtonEl = ref<ComponentPublicInstance | null>(null)
@@ -219,19 +227,44 @@ const collectionGroups = computed(() =>
 )
 
 watch(
-	[flatCollections, collectionIdFromRoute],
+	[flatCollections, collectionIdFromRoute, boardIdFromRoute],
 	() => {
-		const fromRoute = collectionIdFromRoute.value
-		if (fromRoute !== null && flatCollections.value.some((c) => c.id === fromRoute)) {
-			selectedCollectionId.value = fromRoute
+		const boardId = boardIdFromRoute.value
+		const collectionId = collectionIdFromRoute.value
+
+		// If on a board route, use that board's collection
+		if (boardId !== null && collectionId !== null) {
+			selectedBoardId.value = boardId
+			selectedCollectionId.value = collectionId
 			return
 		}
+
+		// Clear board if not on board route
+		selectedBoardId.value = null
+
+		// If on a collection route, use that collection
+		if (collectionId !== null && flatCollections.value.some((c) => c.id === collectionId)) {
+			selectedCollectionId.value = collectionId
+			return
+		}
+
+		// Try to use last board upload if available
+		const lastBoardId = boardUploadTracker.getLastBoardId()
+		const lastCollectionId = boardUploadTracker.getLastCollectionId()
+		if (lastBoardId !== null && lastCollectionId !== null && flatCollections.value.some((c) => c.id === lastCollectionId)) {
+			selectedBoardId.value = lastBoardId
+			selectedCollectionId.value = lastCollectionId
+			return
+		}
+
+		// Fallback to current or first collection
 		const current = selectedCollectionId.value
 		if (current !== null && flatCollections.value.some((c) => c.id === current)) {
 			return
 		}
 		const first = flatCollections.value[0]
 		selectedCollectionId.value = first !== undefined ? first.id : null
+		selectedBoardId.value = null
 	},
 	{ immediate: true }
 )
@@ -277,13 +310,17 @@ function close(): void {
 	uploading.value = false
 	error.value = null
 	createCollectionModal.value = false
+	// Only clear board if not currently on a board route
+	if (boardIdFromRoute.value === null) {
+		selectedBoardId.value = null
+	}
 }
 
-function openFromClipboardOrDrag(): void {
+function openFromClipboardOrDrag(clientX: number, clientY: number): void {
 	if (!isTargetRoute.value) {
 		return
 	}
-	openModal()
+	openModalAt(clientX, clientY)
 }
 
 function onWindowDragEnter(e: DragEvent): void {
@@ -291,7 +328,7 @@ function onWindowDragEnter(e: DragEvent): void {
 		return
 	}
 	e.preventDefault()
-	openFromClipboardOrDrag()
+	openFromClipboardOrDrag(e.clientX, e.clientY)
 }
 
 function onWindowDragOver(e: DragEvent): void {
@@ -302,19 +339,20 @@ function onWindowDragOver(e: DragEvent): void {
 		return
 	}
 	e.preventDefault()
+	pointerPosition.value = { x: e.clientX, y: e.clientY }
 }
 
-function applyDroppedPayload(dt: DataTransfer | null): boolean {
+function applyDroppedPayload(dt: DataTransfer | null, clientX: number, clientY: number): boolean {
 	const f = firstImageFromDataTransfer(dt)
 	if (f !== null) {
-		openFromClipboardOrDrag()
+		openFromClipboardOrDrag(clientX, clientY)
 		setFile(f)
 		return true
 	}
 
 	const url = firstImageUrlFromDataTransfer(dt)
 	if (url !== null) {
-		openFromClipboardOrDrag()
+		openFromClipboardOrDrag(clientX, clientY)
 		setImageUrl(url)
 		return true
 	}
@@ -324,7 +362,7 @@ function applyDroppedPayload(dt: DataTransfer | null): boolean {
 
 function onPanelDrop(e: DragEvent): void {
 	e.preventDefault()
-	if (applyDroppedPayload(e.dataTransfer)) {
+	if (applyDroppedPayload(e.dataTransfer, e.clientX, e.clientY)) {
 		return
 	}
 	if (imageUrl.value !== null) {
@@ -340,7 +378,7 @@ function onWindowDrop(e: DragEvent): void {
 	}
 	e.preventDefault()
 	void nextTick(() => {
-		applyDroppedPayload(e.dataTransfer)
+		applyDroppedPayload(e.dataTransfer, e.clientX, e.clientY)
 	})
 }
 
@@ -358,7 +396,7 @@ function onPaste(e: ClipboardEvent): void {
 	const f = firstImageFromClipboard(e.clipboardData)
 	if (f !== null) {
 		e.preventDefault()
-		openFromClipboardOrDrag()
+		openFromClipboardOrDrag(pointerPosition.value.x, pointerPosition.value.y)
 		setFile(f, 'clipboard-image')
 		return
 	}
@@ -367,12 +405,13 @@ function onPaste(e: ClipboardEvent): void {
 		return
 	}
 	e.preventDefault()
-	openFromClipboardOrDrag()
+	openFromClipboardOrDrag(pointerPosition.value.x, pointerPosition.value.y)
 	setImageUrl(url)
 }
 
 async function submitUpload(): Promise<void> {
 	const cid = selectedCollectionId.value
+	const bid = selectedBoardId.value
 	const f = file.value
 	const url = imageUrl.value?.trim() ?? ''
 	if (cid === null || (f === null && url === '')) {
@@ -391,13 +430,29 @@ async function submitUpload(): Promise<void> {
 	} else {
 		body.append('url', url)
 	}
+	// World point is only meaningful for the board it was captured on.
+	const worldPoint = bid !== null && bid === boardIdFromRoute.value ? dropWorldPoint.value : null
+	if (worldPoint !== null) {
+		body.append('worldX', worldPoint.x.toString())
+		body.append('worldY', worldPoint.y.toString())
+	}
 	try {
-		await $fetch<CollectionImageUploadResponse>(`/api/collections/${cid}/images`, {
+		const endpoint = bid !== null ? `/api/boards/${bid}/images` : `/api/collections/${cid}/images`
+		await $fetch<CollectionImageUploadResponse>(endpoint, {
 			method: 'POST',
 			body,
 		})
+
+		// Record board upload for auto-selection
+		if (bid !== null) {
+			boardUploadTracker.recordBoardUpload(bid, cid)
+		}
+
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', cid] })
+		if (bid !== null) {
+			await queryClient.invalidateQueries({ queryKey: ['board', bid] })
+		}
 		close()
 	} catch (e: unknown) {
 		error.value = fetchFormErrorMessage(e, 'Upload failed')
@@ -428,6 +483,10 @@ function onFileInputChange(event: Event): void {
 	setFile(next)
 }
 
+function onWindowMouseMove(e: MouseEvent): void {
+	pointerPosition.value = { x: e.clientX, y: e.clientY }
+}
+
 onMounted(() => {
 	if (!import.meta.client) {
 		return
@@ -435,6 +494,7 @@ onMounted(() => {
 	window.addEventListener('dragenter', onWindowDragEnter)
 	window.addEventListener('dragover', onWindowDragOver)
 	window.addEventListener('drop', onWindowDrop)
+	window.addEventListener('mousemove', onWindowMouseMove)
 	document.addEventListener('paste', onPaste)
 })
 
@@ -446,6 +506,7 @@ onBeforeUnmount(() => {
 		window.removeEventListener('dragenter', onWindowDragEnter)
 		window.removeEventListener('dragover', onWindowDragOver)
 		window.removeEventListener('drop', onWindowDrop)
+		window.removeEventListener('mousemove', onWindowMouseMove)
 		document.removeEventListener('paste', onPaste)
 	}
 })
@@ -460,14 +521,11 @@ function onCollectionCreated(collection: { id: string }): void {
 }
 </script>
 <template>
-	<div v-show="showFab">
-		<GlassFabButton aria-label="Add image to collection" @click="openModal" tooltip="Add image to collection" />
-	</div>
 	<Teleport to="body">
 		<UModal
 			v-model:open="open"
 			:transition="false"
-			title="Upload image to collection"
+			:title="boardIdFromRoute !== null ? 'Upload image to board' : 'Upload image to collection'"
 			@close="close"
 			@dragover.prevent
 			@drop.prevent="onPanelDrop"
@@ -475,9 +533,10 @@ function onCollectionCreated(collection: { id: string }): void {
 		>
 			<template #body>
 				<UForm ref="formEl" id="image-upload-form" class="space-y-4" @submit.prevent="submitUpload">
-					<p class="text-muted mt-1 text-xs">Drop, paste, pick or create a collection, then upload.</p>
+					<p v-if="boardIdFromRoute === null" class="text-muted mt-1 text-xs">Drop, paste, pick or create a collection, then upload.</p>
+					<p v-else class="text-muted mt-1 text-xs">Drop, paste or pick an image, then upload to this board.</p>
 
-					<UFormField label="Collection">
+					<UFormField v-if="boardIdFromRoute === null" label="Collection">
 						<p v-if="collectionsPending" class="text-muted flex items-center gap-2 text-sm">
 							<Icon name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
 							Loading collections…
@@ -571,7 +630,7 @@ function onCollectionCreated(collection: { id: string }): void {
 						type="submit"
 						form="image-upload-form"
 						autofocus
-						:disabled="uploading || (file === null && imageUrl === null) || selectedCollectionId === null"
+						:disabled="uploading || (file === null && imageUrl === null) || (selectedBoardId === null && selectedCollectionId === null)"
 					>
 						<template #leading>
 							<Icon v-if="!uploading" name="i-lucide-upload" class="size-4" aria-hidden="true" />

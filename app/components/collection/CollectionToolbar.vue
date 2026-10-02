@@ -73,7 +73,7 @@ function groupsExcludingCollectionId(
 		.filter((g) => g.options.length > 0)
 }
 
-const { collectionId, collectionName, selectedImageId, canUndo, canRedo, bridge, autoLayoutPending } =
+const { boardId, boardName, collectionId, selectedImageId, canUndo, canRedo, bridge, autoLayoutPending } =
 	storeToRefs(useCollectionViewerStore())
 
 const selected = computed(() => selectedImageId.value)
@@ -108,6 +108,17 @@ const moveCollectionGroups = computed(() => {
 	return groupsExcludingCollectionId(g, cid)
 })
 
+const collectionName = computed(() => {
+	if (collectionsData.value === undefined) {
+		return null
+	}
+	const cid = collectionId.value
+	if (cid === null) {
+		return null
+	}
+	return flattenCollectionsDeduped(collectionsData.value).find((c) => c.id === cid)?.name ?? null
+})
+
 const hasAnotherCollection = computed(() => {
 	if (collectionsData.value === undefined) {
 		return false
@@ -120,7 +131,7 @@ const hasAnotherCollection = computed(() => {
 })
 
 function openEdit(): void {
-	editName.value = collectionName.value
+	editName.value = boardName.value
 	editError.value = null
 	editOpen.value = true
 }
@@ -133,11 +144,11 @@ async function saveEdit(): Promise<void> {
 	saving.value = true
 	editError.value = null
 	try {
-		await $fetch(`/api/collections/${collectionId.value}`, {
+		await $fetch(`/api/boards/${boardId.value}`, {
 			method: 'PATCH',
 			body: { name },
 		})
-		bridge.value?.setCollectionName(name)
+		bridge.value?.setBoardName(name)
 		await queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		editOpen.value = false
@@ -174,11 +185,12 @@ async function confirmMoveImage(): Promise<void> {
 	moving.value = true
 	moveError.value = null
 	try {
-		await $fetch(`/api/collections/${collectionId.value}/images/${imageId}/move`, {
+		await $fetch(`/api/boards/${boardId.value}/images/${imageId}/move`, {
 			method: 'POST',
 			body: { targetCollectionId: targetId },
 		})
 		bridge.value?.removeImage(imageId)
+		await queryClient.invalidateQueries({ queryKey: ['board', boardId.value] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', targetId] })
 		await queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
@@ -195,11 +207,11 @@ async function confirmDeleteImage(): Promise<void> {
 	deleting.value = true
 	deleteError.value = null
 	try {
-		await $fetch(`/api/collections/${collectionId.value}/images/${imageId}`, {
+		await $fetch(`/api/boards/${boardId.value}/images/${imageId}`, {
 			method: 'DELETE',
 		})
 		bridge.value?.removeImage(imageId)
-		await queryClient.invalidateQueries({ queryKey: ['collection', collectionId.value] })
+		await queryClient.invalidateQueries({ queryKey: ['board', boardId.value] })
 		await queryClient.invalidateQueries({ queryKey: collectionsQueryKey })
 		deleteOpen.value = false
 		// Board owns selection; no-op here.
@@ -212,107 +224,76 @@ async function confirmDeleteImage(): Promise<void> {
 </script>
 
 <template>
-	<div :class="['absolute left-2 top-2 z-20 flex flex-wrap p-2 transition-all duration-300 ease-in-out gap-2']">
+	<div :class="['absolute left-2 top-2 z-20 flex flex-wrap transition-all duration-300 ease-in-out gap-2']">
 		<div
-			:class="[
-				'flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-1.5',
-				'border border-neutral-700/40',
-			]"
-		>
+			:class="['flex gap-2 items-center bg-default/70 backdrop-blur-sm  rounded-lg p-1.5', 'border border-default/40']">
 			<CollectionToolbarButton :icon="'i-lucide-chevron-left'" tooltip="Back" @click="router.push('/list')" />
 
-			<div :class="['mx-2 text-sm min-w-0 text-toned sm:min-w-40']">{{ collectionName }}</div>
+			<USeparator orientation="vertical" />
 
-			<CollectionToolbarButton :icon="'i-heroicons-pencil-square'" tooltip="Edit" @click="openEdit" />
+			<div class="flex gap-2 items-center mx-2">
+				<UIcon name="i-lucide-layout-dashboard" class="size-6 shrink-0" />
+				<div class="flex flex-col shrink-0 gap-1" data-id="collection-toolbar-titles">
+					<h2 class="text-toned text-sm leading-none">{{ collectionName ?? 'Collection' }}</h2>
+					<span class="text-dimmed text-xs leading-none">{{ boardName }}</span>
+				</div>
+				<UTooltip text="Edit">
+					<UButton variant="ghost" color="neutral" :icon="'i-lucide-ellipsis-vertical'" @click="openEdit">
+					</UButton>
+				</UTooltip>
+			</div>
+
+			<USeparator orientation="vertical" />
 
 			<SaveWidget />
 
 			<CollectionToolbarButton
-				:icon="'i-lucide-undo'"
-				tooltip="Undo"
-				:disabled="!canUndo"
-				@click="bridge?.undo()"
-			/>
+:icon="'i-lucide-undo'" tooltip="Undo" :disabled="!canUndo"
+				@click="bridge?.undo()" />
 
 			<CollectionToolbarButton
-				:icon="'i-lucide-redo'"
-				tooltip="Redo"
-				:disabled="!canRedo"
-				@click="bridge?.redo()"
-			/>
+:icon="'i-lucide-redo'" tooltip="Redo" :disabled="!canRedo"
+				@click="bridge?.redo()" />
 
 			<CollectionToolbarButton
-				:icon="autoLayoutPending ? 'i-lucide-loader-2' : 'i-lucide-layout-template'"
-				tooltip="Auto layout"
-				:spin="autoLayoutPending"
-				:disabled="bridge === null"
-				@click="bridge?.autoLayout()"
-			/>
+:icon="autoLayoutPending ? 'i-lucide-loader-2' : 'i-lucide-layout-template'"
+				tooltip="Auto layout" :spin="autoLayoutPending" :disabled="bridge === null"
+				@click="bridge?.autoLayout()" />
 
 			<CollectionToolbarButton
-				:icon="'i-lucide-scan-search'"
-				tooltip="Fit into view"
-				:disabled="bridge === null"
-				@click="bridge?.fitIntoView()"
-			/>
+:icon="'i-lucide-scan-search'" tooltip="Fit into view" :disabled="bridge === null"
+				@click="bridge?.fitIntoView()" />
 		</div>
 
 		<div
-			:class="[
-				'flex items-center bg-neutral-900/70 backdrop-blur-sm  rounded-lg p-1.5',
-				'border border-neutral-700/40',
-			]"
-		>
+			:class="['flex gap-2 items-center bg-default/70 backdrop-blur-sm  rounded-lg p-1.5', 'border border-default/40']">
 			<CollectionToolbarButton
-				:icon="'i-lucide-flip-horizontal'"
-				tooltip="Flip X"
-				:disabled="selected === null"
-				@click="bridge?.flipSelectedImageX()"
-			/>
+:icon="'i-lucide-flip-horizontal'" tooltip="Flip X" :disabled="selected === null"
+				@click="bridge?.flipSelectedImageX()" />
 
 			<CollectionToolbarButton
-				:icon="'i-lucide-folder-input'"
-				tooltip="Move to collection"
+:icon="'i-lucide-folder-input'" tooltip="Move to collection"
 				:disabled="selected === null || collectionsListPending || !hasAnotherCollection"
-				@click="openMoveImage"
-			/>
+				@click="openMoveImage" />
 
 			<CollectionToolbarButton
-				:icon="'i-lucide-trash'"
-				tooltip="Delete image"
-				:disabled="selected === null"
-				@click="openDeleteImage"
-			/>
+:icon="'i-lucide-trash'" tooltip="Delete image" :disabled="selected === null"
+				@click="openDeleteImage" />
 		</div>
 	</div>
 
-	<!-- <div class="absolute right-6 top-6 z-20">
-		<UserAvatarMenu />
-	</div> -->
 
 	<CollectionEditModal
-		v-model:open="editOpen"
-		v-model:name="editName"
-		:saving="saving"
-		:error="editError"
-		@save="saveEdit"
-	/>
+v-model:open="editOpen" v-model:name="editName" :saving="saving" :error="editError"
+		@save="saveEdit" />
 
 	<CollectionDeleteImageModal
-		v-model:open="deleteOpen"
-		:deleting="deleting"
-		:error="deleteError"
-		@confirm="confirmDeleteImage"
-	/>
+v-model:open="deleteOpen" :deleting="deleting" :error="deleteError"
+		@confirm="confirmDeleteImage" />
 
 	<CollectionMoveImageModal
-		v-model:open="moveOpen"
-		v-model:target-collection-id="moveTargetCollectionId"
-		:groups="moveCollectionGroups"
-		:collections-pending="collectionsListPending"
-		:has-another-collection="hasAnotherCollection"
-		:moving="moving"
-		:error="moveError"
-		@confirm="confirmMoveImage"
-	/>
+v-model:open="moveOpen" v-model:target-collection-id="moveTargetCollectionId"
+		:groups="moveCollectionGroups" :collections-pending="collectionsListPending"
+		:has-another-collection="hasAnotherCollection" :moving="moving" :error="moveError"
+		@confirm="confirmMoveImage" />
 </template>

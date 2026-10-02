@@ -1,6 +1,6 @@
-import { inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import type { CollectionListItem } from '~/types/collections'
-import { collections, images } from '~~/server/db/schema'
+import { boards, collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import type { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import type { useDb } from '~~/server/utils/db'
@@ -23,21 +23,22 @@ export async function buildCollectionListItemMap(
 
 	const collectionIds = collectionRows.map((r) => r.id)
 	const imageRows = await db
-		.select()
+		.select({ image: images, collectionId: boards.collectionId })
 		.from(images)
-		.where(inArray(images.collectionId, collectionIds))
+		.innerJoin(boards, eq(images.boardId, boards.id))
+		.where(inArray(boards.collectionId, collectionIds))
 
 	const countByCollection = new Map<string, number>()
 	const byCollection = new Map<string, typeof imageRows>()
-	for (const img of imageRows) {
-		countByCollection.set(img.collectionId, (countByCollection.get(img.collectionId) ?? 0) + 1)
-		const list = byCollection.get(img.collectionId) ?? []
-		list.push(img)
-		byCollection.set(img.collectionId, list)
+	for (const row of imageRows) {
+		countByCollection.set(row.collectionId, (countByCollection.get(row.collectionId) ?? 0) + 1)
+		const list = byCollection.get(row.collectionId) ?? []
+		list.push(row)
+		byCollection.set(row.collectionId, list)
 	}
 
 	for (const [cid, list] of byCollection) {
-		list.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+		list.sort((a, b) => b.image.updatedAt.getTime() - a.image.updatedAt.getTime())
 		byCollection.set(cid, list.slice(0, 5))
 	}
 
@@ -53,13 +54,13 @@ export async function buildCollectionListItemMap(
 			lastSeenAt: col.lastSeenAt?.toISOString() ?? null,
 			updatedAt: col.updatedAt.toISOString(),
 			imageCount: countByCollection.get(col.id) ?? 0,
-			images: imgs.map((img) => ({
-				id: img.id,
+			images: imgs.map((row) => ({
+				id: row.image.id,
 				url: storageKeyFactory
-					.createCollectionImageKey(col.id, ImageSizeVariant.SMALL, img.hash)
+					.createCollectionImageKey(col.id, ImageSizeVariant.SMALL, row.image.hash)
 					.getPublicUrl(),
-				width: img.width,
-				height: img.height,
+				width: row.image.width,
+				height: row.image.height,
 			})),
 		}
 		out.set(col.id, item)

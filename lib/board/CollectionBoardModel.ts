@@ -7,11 +7,6 @@ export class CollectionBoardModel {
 	public constructor(
 		public id: string,
 		public name: string,
-		public pinned: boolean,
-		public archived: boolean,
-		public folderId: string | null,
-		public lastSeenAt: string | null,
-		public updatedAt: string,
 		public viewportCenter: { x: number; y: number } | null,
 		public viewportZoom: number | null,
 		public images: BoardImage[]
@@ -21,11 +16,6 @@ export class CollectionBoardModel {
 		const c = new CollectionBoardModel(
 			this.id,
 			this.name,
-			this.pinned,
-			this.archived,
-			this.folderId,
-			this.lastSeenAt,
-			this.updatedAt,
 			this.viewportCenter === null ? null : { x: this.viewportCenter.x, y: this.viewportCenter.y },
 			this.viewportZoom,
 			this.images.map((im) => im.clone())

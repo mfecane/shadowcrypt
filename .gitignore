@@ -26,3 +26,8 @@ drizzle.config.prod.ts
 # Zig
 .zig-cache/
 zig-out/
+
+
+# claude artifacts
+.claude/worktrees
+.claude/scheduled_tasks.lock

@@ -14,28 +14,20 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 		selectedImageId: null,
 		canUndo: false,
 		canRedo: false,
+		boardId: null,
+		boardName: '',
 		collectionId: null,
-		collectionName: '',
 		fullscreenImage: null,
 		collectionSaveStatus: 'idle',
 		collectionSaveError: null,
 		imageCount: 0,
 		ready: false,
 		autoLayoutPending: false,
+		dragOut: null,
 	}),
 	actions: {
-		clear(): void {
-			this.destroyBoard()
-			this.loading = true
-		},
-
 		setBoard(b: Board) {
 			this.board = b
-		},
-
-		destroyBoard(): void {
-			this.board?.destroy()
-			this.board = null
 		},
 
 		setLoading(v: boolean): void {
@@ -50,28 +42,32 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 			this.selectedImageId = state.selectedImageId
 			this.canUndo = state.canUndo
 			this.canRedo = state.canRedo
+			this.boardId = state.boardId
+			this.boardName = state.boardName
 			this.collectionId = state.collectionId
-			this.collectionName = state.collectionName
 			this.fullscreenImage = state.fullscreenImage
 			this.collectionSaveStatus = state.collectionSaveStatus
 			this.collectionSaveError = state.collectionSaveError
 			this.imageCount = state.imageCount
 			this.ready = state.ready
 			this.autoLayoutPending = state.autoLayoutPending
+			this.dragOut = state.dragOut
 		},
 
 		reset(): void {
 			this.selectedImageId = null
 			this.canUndo = false
 			this.canRedo = false
+			this.boardId = null
+			this.boardName = ''
 			this.collectionId = null
-			this.collectionName = ''
 			this.fullscreenImage = null
 			this.collectionSaveStatus = 'idle'
 			this.collectionSaveError = null
 			this.imageCount = 0
 			this.ready = false
 			this.autoLayoutPending = false
+			this.dragOut = null
 			this.board = null
 			this.loading = true
 		},

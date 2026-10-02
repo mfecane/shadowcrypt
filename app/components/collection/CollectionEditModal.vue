@@ -10,14 +10,14 @@ const emit = defineEmits<{ save: [] }>()
 <template>
 	<UModal
 		v-model:open="open"
-		title="Edit collection"
-		description="Rename the current collection."
+		title="Edit board"
+		description="Rename the current board."
 		:close="!saving"
 		:dismissible="!saving"
 	>
 		<template #body>
 			<UForm :state="{ name }" id="collection-edit-form" class="space-y-4" @submit.prevent="emit('save')">
-				<UFormField label="Collection name">
+				<UFormField label="Board name">
 					<UInput id="collection-name-input" v-model="name" type="text" autocomplete="off" class="w-full" />
 				</UFormField>
 				<UAlert v-if="error" color="error" variant="soft" :title="error" />

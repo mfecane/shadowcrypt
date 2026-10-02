@@ -11,8 +11,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
 			icon: 'i-lucide-settings',
 			to: '/user',
 		},
-	],
-	[
 		{
 			label: 'Log out',
 			icon: 'i-lucide-log-out',
@@ -27,7 +25,13 @@ const items = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-	<UDropdownMenu v-if="user" :items="items">
+	<UDropdownMenu v-if="user" :items="items" :content="{ align: 'end' }">
+		<template #content-top="{ sub }">
+			<div v-if="!sub" class="p-1 border-t border-default">
+				<ColorModeTabs />
+			</div>
+		</template>
+
 		<UButton
 			color="neutral"
 			variant="ghost"

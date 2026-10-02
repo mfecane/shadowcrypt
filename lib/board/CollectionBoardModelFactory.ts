@@ -1,20 +1,15 @@
-import type { CollectionDetail } from '~~/app/types/collections'
+import type { BoardDetail } from '~~/app/types/boards'
 import { BoardImage } from '~~/lib/board/BoardImage'
 import { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
 import { CollectionBoardModel } from '~~/lib/board/CollectionBoardModel'
 
 export class CollectionBoardModelFactory {
-	public create(detail: CollectionDetail): CollectionBoardModel {
+	public create(detail: BoardDetail): CollectionBoardModel {
 		const hasViewport =
 			detail.viewportCenter !== null && detail.viewportZoom !== null
 		const m = new CollectionBoardModel(
 			detail.id,
 			detail.name,
-			detail.pinned,
-			detail.archived,
-			detail.folderId,
-			detail.lastSeenAt,
-			detail.updatedAt,
 			hasViewport ? { x: detail.viewportCenter!.x, y: detail.viewportCenter!.y } : null,
 			hasViewport ? detail.viewportZoom! : null,
 			detail.images.map(

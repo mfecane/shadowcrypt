@@ -49,19 +49,30 @@ export const collections = pgTable('collections', {
 	pinned: boolean('pinned').notNull().default(false),
 	archived: boolean('archived').notNull().default(false),
 	lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const boards = pgTable('boards', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	collectionId: uuid('collection_id')
+		.notNull()
+		.references(() => collections.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(),
+	isDefault: boolean('is_default').notNull().default(false),
 	/** World-space point at the viewport center (Pixi world container local space). */
 	viewportCenterX: doublePrecision('viewport_center_x'),
 	viewportCenterY: doublePrecision('viewport_center_y'),
 	/** Uniform scale of the world container (same range as NavigationTool clamp). */
 	viewportZoom: doublePrecision('viewport_zoom'),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
 export const images = pgTable('images', {
 	id: uuid('id').defaultRandom().primaryKey(),
-	collectionId: uuid('collection_id')
+	boardId: uuid('board_id')
 		.notNull()
-		.references(() => collections.id, { onDelete: 'cascade' }),
+		.references(() => boards.id, { onDelete: 'cascade' }),
 	userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
 	hash: text('hash').notNull(),
 	width: integer('width'),
@@ -133,13 +144,21 @@ export const collectionsRelations = relations(collections, ({ one, many }) => ({
 		fields: [collections.folderId],
 		references: [folders.id],
 	}),
+	boards: many(boards),
+}))
+
+export const boardsRelations = relations(boards, ({ one, many }) => ({
+	collection: one(collections, {
+		fields: [boards.collectionId],
+		references: [collections.id],
+	}),
 	images: many(images),
 }))
 
 export const imagesRelations = relations(images, ({ one }) => ({
-	collection: one(collections, {
-		fields: [images.collectionId],
-		references: [collections.id],
+	board: one(boards, {
+		fields: [images.boardId],
+		references: [boards.id],
 	}),
 	user: one(users, {
 		fields: [images.userId],

@@ -1,4 +1,5 @@
-import type { BoardImageApi, BoardImageLayoutApi } from '~~/lib/board/BoardImageApi'
+import type { BoardImageLayoutApi } from '~~/lib/board/BoardImageApi'
+import type { CollectionBoardSummary } from '~/types/boards'
 
 export interface CollectionListItem {
 	id: string
@@ -62,7 +63,7 @@ export interface CollectionImageUploadResponse {
 	}
 }
 
-export interface CollectionDetail {
+export interface CollectionMeta {
 	id: string
 	name: string
 	pinned: boolean
@@ -70,9 +71,5 @@ export interface CollectionDetail {
 	folderId: string | null
 	lastSeenAt: string | null
 	updatedAt: string
-	/** World-space center of the viewport when last saved; null = use fit-to-view on load. */
-	viewportCenter: { x: number; y: number } | null
-	/** Uniform zoom; null = use fit-to-view on load. */
-	viewportZoom: number | null
-	images: BoardImageApi[]
+	boards: CollectionBoardSummary[]
 }

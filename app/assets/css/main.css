@@ -30,7 +30,7 @@
 }
 
 :root {
-	color-scheme: dark;
+	color-scheme: light;
 
 	--neutral-50: #f5f7f7;
 	--neutral-100: #e7ebec;
@@ -58,6 +58,11 @@
 	--ui-border-inverted: var(--ui-color-beige-50);
 
 	/* page-only tokens */
+	--app-background-image: linear-gradient(-135deg, var(--neutral-50) 0%, var(--neutral-200) 100%);
+}
+
+.dark {
+	color-scheme: dark;
 	--app-background-image: linear-gradient(-135deg, #191c1d 0%, #090a0a 100%);
 }
 

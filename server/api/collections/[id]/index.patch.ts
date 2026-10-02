@@ -17,33 +17,9 @@ const patchBodySchema = z
 		folderId: z.string().uuid().nullable().optional(),
 		pinned: z.boolean().optional(),
 		archived: z.boolean().optional(),
-		viewportCenterX: z.number().finite().optional(),
-		viewportCenterY: z.number().finite().optional(),
-		viewportZoom: z.number().min(0.25).max(4).optional(),
 	})
-	.superRefine((data, ctx) => {
-		const hasName = data.name !== undefined
-		const hasFolder = data.folderId !== undefined
-		const hasPinned = data.pinned !== undefined
-		const hasArchived = data.archived !== undefined
-		const vx = data.viewportCenterX
-		const vy = data.viewportCenterY
-		const vz = data.viewportZoom
-		const hasAnyViewport = vx !== undefined || vy !== undefined || vz !== undefined
-		const hasFullViewport = vx !== undefined && vy !== undefined && vz !== undefined
-		if (hasAnyViewport && !hasFullViewport) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'viewportCenterX, viewportCenterY, and viewportZoom must be sent together',
-			})
-		}
-		if (!hasName && !hasFullViewport && !hasFolder && !hasPinned && !hasArchived) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message:
-					'Provide name, folderId, pinned, archived, and/or a full viewport (center x, center y, zoom)',
-			})
-		}
+	.refine((data) => Object.keys(data).length > 0, {
+		message: 'Provide name, folderId, pinned, and/or archived',
 	})
 
 export default defineEventHandler(async (event) => {
@@ -82,11 +58,6 @@ export default defineEventHandler(async (event) => {
 		}
 	}
 
-	const hasViewport =
-		parsed.viewportCenterX !== undefined &&
-		parsed.viewportCenterY !== undefined &&
-		parsed.viewportZoom !== undefined
-
 	const oldFolderId = col.folderId
 
 	const nextArchived = parsed.archived !== undefined ? parsed.archived : col.archived
@@ -102,13 +73,6 @@ export default defineEventHandler(async (event) => {
 				? {
 						pinned: nextPinned,
 						archived: nextArchived,
-					}
-				: {}),
-			...(hasViewport
-				? {
-						viewportCenterX: parsed.viewportCenterX,
-						viewportCenterY: parsed.viewportCenterY,
-						viewportZoom: parsed.viewportZoom,
 					}
 				: {}),
 			updatedAt: new Date(),

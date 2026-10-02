@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { assertAllowed, canCreateResourceRoles } from '~~/server/auth/permissions'
-import { collections, folders } from '~~/server/db/schema'
+import { boards, collections, folders } from '~~/server/db/schema'
 import { refreshFolderLastSeen } from '~~/server/utils/refreshFolderLastSeen'
 import { useDb } from '~~/server/utils/db'
 import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
@@ -51,6 +51,13 @@ export default defineEventHandler(async (event) => {
 	if (row === undefined) {
 		throw createError({ statusCode: 500, statusMessage: 'Insert failed' })
 	}
+
+	await db.insert(boards).values({
+		collectionId: row.id,
+		name: 'Board 1',
+		isDefault: true,
+		updatedAt: now,
+	})
 
 	if (resolvedFolderId !== null) {
 		await refreshFolderLastSeen(db, resolvedFolderId, sub)

@@ -1,5 +1,6 @@
 import type { BoardForBridge } from './BoardForBridge'
 import type { BoardImage } from './BoardImage'
+import type { BoardImageDragOutUiState } from './BoardImageDragOutController'
 
 export type CollectionSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -7,14 +8,17 @@ export interface BoardBridgeState {
 	selectedImageId: string | null
 	canUndo: boolean
 	canRedo: boolean
+	boardId: string | null
+	boardName: string
 	collectionId: string | null
-	collectionName: string
 	fullscreenImage: BoardImage | null
 	collectionSaveStatus: CollectionSaveStatus
 	collectionSaveError: string | null
 	imageCount: number
 	ready: boolean
 	autoLayoutPending: boolean
+	/** Ephemeral drag-out-of-canvas UI state (ghost position, hovered board, pending move). */
+	dragOut: BoardImageDragOutUiState | null
 }
 
 export class BoardVueBridge {
@@ -23,8 +27,9 @@ export class BoardVueBridge {
 
 	public selectedImageId: string | null = null
 
+	public boardId: string | null = null
+	public boardName: string = ''
 	public collectionId: string | null = null
-	public collectionName: string = ''
 
 	public fullscreenImage: BoardImage | null = null
 
@@ -39,9 +44,15 @@ export class BoardVueBridge {
 
 	public autoLayoutPending = false
 
+	public dragOut: BoardImageDragOutUiState | null = null
+
 	private readonly subscribers = new Set<() => void>()
 
 	private readonly onPersistSuccessSubscribers = new Set<() => void>()
+
+	private readonly onImageMovedToBoardSubscribers = new Set<(targetBoardId: string) => void>()
+
+	private readonly onDragOutErrorSubscribers = new Set<(message: string) => void>()
 
 	public constructor(private readonly board: BoardForBridge) {}
 
@@ -53,6 +64,18 @@ export class BoardVueBridge {
 	public subscribeOnPersistSuccess(callback: () => void): () => void {
 		this.onPersistSuccessSubscribers.add(callback)
 		return () => this.onPersistSuccessSubscribers.delete(callback)
+	}
+
+	/** Fires after a drag-out-of-canvas move successfully lands on another board. */
+	public subscribeOnImageMovedToBoard(callback: (targetBoardId: string) => void): () => void {
+		this.onImageMovedToBoardSubscribers.add(callback)
+		return () => this.onImageMovedToBoardSubscribers.delete(callback)
+	}
+
+	/** Fires once per failed drag-out-of-canvas move; not persisted in state (one-shot toast). */
+	public subscribeOnDragOutError(callback: (message: string) => void): () => void {
+		this.onDragOutErrorSubscribers.add(callback)
+		return () => this.onDragOutErrorSubscribers.delete(callback)
 	}
 
 	public notify(): void {
@@ -67,19 +90,38 @@ export class BoardVueBridge {
 		}
 	}
 
+	public setDragOut(state: BoardImageDragOutUiState | null): void {
+		this.dragOut = state
+		this.notify()
+	}
+
+	public notifyImageMovedToBoard(targetBoardId: string): void {
+		for (const callback of this.onImageMovedToBoardSubscribers) {
+			callback(targetBoardId)
+		}
+	}
+
+	public setDragOutError(message: string): void {
+		for (const callback of this.onDragOutErrorSubscribers) {
+			callback(message)
+		}
+	}
+
 	public getState(): BoardBridgeState {
 		return {
 			selectedImageId: this.selectedImageId,
 			canUndo: this.canUndo,
 			canRedo: this.canRedo,
+			boardId: this.boardId,
+			boardName: this.boardName,
 			collectionId: this.collectionId,
-			collectionName: this.collectionName,
 			fullscreenImage: this.fullscreenImage,
 			collectionSaveStatus: this.collectionSaveStatus,
 			collectionSaveError: this.collectionSaveError,
 			imageCount: this.imageCount,
 			ready: this.ready,
 			autoLayoutPending: this.autoLayoutPending,
+			dragOut: this.dragOut,
 		}
 	}
 
@@ -101,10 +143,12 @@ export class BoardVueBridge {
 		this.notify()
 	}
 
-	public setCollection(id: string, name: string): void {
-		const changed = this.collectionId !== id || this.collectionName !== name
-		this.collectionId = id
-		this.collectionName = name
+	public setBoard(id: string, name: string, collectionId: string): void {
+		const changed =
+			this.boardId !== id || this.boardName !== name || this.collectionId !== collectionId
+		this.boardId = id
+		this.boardName = name
+		this.collectionId = collectionId
 		if (changed) this.notify()
 	}
 
@@ -171,8 +215,8 @@ export class BoardVueBridge {
 		this.notify()
 	}
 
-	public setCollectionName(name: string): void {
-		this.board.setCollectionName(name)
+	public setBoardName(name: string): void {
+		this.board.setBoardName(name)
 		this.notify()
 	}
 

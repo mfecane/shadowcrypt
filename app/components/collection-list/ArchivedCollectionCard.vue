@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useQueryClient } from '@tanstack/vue-query'
-import type { CollectionListItem } from '~/types/collections'
-import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
+import { useQueryClient } from '@tanstack/vue-query';
+import type { CollectionListItem } from '~/types/collections';
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage';
 
 const props = defineProps<{ collection: CollectionListItem }>()
 

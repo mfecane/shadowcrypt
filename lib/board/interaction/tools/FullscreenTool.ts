@@ -1,7 +1,7 @@
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
-import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
+import { HitKind } from '~~/lib/board/interaction/InteractionInfo'
 import type { Tool } from '~~/lib/board/interaction/Tool'
 import type { BoardHost } from '~~/lib/board/BoardHost'
 
@@ -23,7 +23,7 @@ export class FullscreenTool implements Tool {
 		if (event.type !== CanvasEventType.DoubleClick) {
 			return r
 		}
-		const hit = event.context.hitResult
+		const hit = event.info.hitResult
 		if ((hit.kind === HitKind.sprite || hit.kind === HitKind.widget) && hit.imageId !== undefined) {
 			this.board.openFullscreenById(hit.imageId)
 			return r.setHandled()

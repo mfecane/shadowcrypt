@@ -1,5 +1,6 @@
 import type { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
-import type { PixiInteractionContext } from '~~/lib/board/interaction/PixiInteractionContext'
+import type { InteractionContext } from '~~/lib/board/interaction/InteractionContext'
+import type { InteractionInfo } from '~~/lib/board/interaction/InteractionInfo'
 
 export interface InteractionEventModifiers {
 	shift: boolean
@@ -17,7 +18,8 @@ export class InteractionEvent {
 		public readonly dy: number,
 		public readonly modifiers: InteractionEventModifiers,
 		public readonly raw: PointerEvent | WheelEvent,
-		public readonly context: PixiInteractionContext,
+		public readonly info: InteractionInfo,
+		public readonly context: InteractionContext,
 		public readonly pinchDistSqDelta?: number,
 		public readonly rotationDelta?: number
 	) {}

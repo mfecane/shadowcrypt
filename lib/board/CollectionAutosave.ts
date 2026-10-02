@@ -21,14 +21,14 @@ export class CollectionAutosave {
 	public constructor(
 		private readonly board: Board,
 		private readonly bridge: BoardVueBridge,
-		private readonly collectionId: string,
+		private readonly boardId: string,
 		baseline: CollectionBoardModel
 	) {
 		this.persistedBaseline = baseline
 	}
 
 	private async patchImageLayouts(rows: BoardImageLayoutSaveRow[]): Promise<void> {
-		const res = await fetch(`/api/collections/${this.collectionId}/images`, {
+		const res = await fetch(`/api/boards/${this.boardId}/images`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -52,7 +52,7 @@ export class CollectionAutosave {
 	}
 
 	private async patchCollectionViewport(body: BoardViewportState): Promise<void> {
-		const res = await fetch(`/api/collections/${this.collectionId}`, {
+		const res = await fetch(`/api/boards/${this.boardId}`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

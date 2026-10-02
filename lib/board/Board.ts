@@ -2,10 +2,11 @@ import { waitForNextPaint } from '~~/lib/asyncUtils'
 import type { BoardForBridge } from '~~/lib/board/BoardForBridge'
 import type { BoardHost } from '~~/lib/board/BoardHost'
 import type { BoardImageLayoutSaveRow } from '~~/lib/board/BoardImageApi'
+import { BoardImageDragOutController, type DragOutGhostRect } from '~~/lib/board/BoardImageDragOutController'
 import { BoardRenderer } from '~~/lib/board/BoardRenderer'
 import type { BoardViewportState } from '~~/lib/board/BoardViewport'
 import type { NavigationTool } from '~~/lib/board/interaction/tools/NavigationTool'
-import type { CollectionDetail } from '../../app/types/collections'
+import type { BoardDetail } from '../../app/types/boards'
 import { ImageCommandController } from '../collectionViewer/commands/ImageCommandController'
 import { ViewerImageTransformCommand } from '../collectionViewer/commands/ImageTransformCommand'
 import type {
@@ -32,6 +33,8 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 
 	public readonly autosave: CollectionAutosave
 
+	private readonly dragOutController: BoardImageDragOutController
+
 	private renderer: BoardRenderer | null = null
 
 	private selectedImageId: string | null = null
@@ -50,17 +53,21 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 
 	public constructor(
 		private readonly mountEl: HTMLElement,
-		detail: CollectionDetail
+		detail: BoardDetail,
+		private readonly collectionId: string
 	) {
 		this.model = new CollectionBoardModelFactory().create(detail)
 		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id, this.model.clone())
-		this.bridge.setCollection(this.model.id, this.model.name)
+		this.dragOutController = new BoardImageDragOutController(this.bridge, this.model.id, (imageId) =>
+			this.removeImage(imageId)
+		)
+		this.bridge.setBoard(this.model.id, this.model.name, this.collectionId)
 		this.bridge.setImageCount(this.model.images.length)
 	}
 
-	public setCollectionName(name: string): void {
+	public setBoardName(name: string): void {
 		this.model.setName(name)
-		this.bridge.setCollection(this.model.id, name)
+		this.bridge.setBoard(this.model.id, name, this.collectionId)
 	}
 
 	public saveNow(): void {
@@ -121,6 +128,7 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 	}
 
 	private teardownRenderer(): void {
+		this.dragOutController.cancel()
 		this.renderer?.destroy()
 		this.renderer = null
 		this.selectedImageId = null
@@ -269,6 +277,12 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 		return { w: r.width || 800, h: r.height || 600 }
 	}
 
+	/** World point under the given client position; null while the board has no renderer (empty board). */
+	public clientToWorld(clientX: number, clientY: number): { x: number; y: number } | null {
+		const p = this.navigationTool?.clientToWorld(clientX, clientY)
+		return p === undefined ? null : { x: p.x, y: p.y }
+	}
+
 	public applyImageLayout(imageId: string, layout: BoardImageLayout): void {
 		this.renderer?.applySnapshotToSprite(imageId, layout)
 		const bi = this.images.get(imageId)
@@ -352,9 +366,30 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 		this.renderer?.syncTransformWidgetFromParentSprite()
 	}
 
+	public getImageThumbnailUrl(imageId: string): string | undefined {
+		return this.images.get(imageId)?.src
+	}
+
+	public updateImageDragOut(ghost: DragOutGhostRect, hoveredBoardId: string | null): void {
+		this.dragOutController.publish(ghost, hoveredBoardId, false)
+	}
+
+	public async endImageDragOut(ghost: DragOutGhostRect, hoveredBoardId: string | null): Promise<boolean> {
+		return this.dragOutController.end(ghost, hoveredBoardId)
+	}
+
+	public cancelImageDragOut(): void {
+		this.dragOutController.cancel()
+	}
+
+	/** Rebuilds the cross-board drop-target candidates; call when the boards panel opens/closes. */
+	public refreshDropTargets(): void {
+		this.renderer?.refreshDropTargets()
+	}
+
 	private async buildRenderer(): Promise<void> {
 		this.teardownRenderer()
-		this.bridge.setCollection(this.model.id, this.model.name)
+		this.bridge.setBoard(this.model.id, this.model.name, this.collectionId)
 		this.bridge.setReady(false)
 
 		const items = [...this.model.images].sort(
@@ -383,7 +418,7 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 			initialZoom = vz
 		}
 
-		this.renderer = new BoardRenderer(this.mountEl, this)
+		this.renderer = new BoardRenderer(this.mountEl, this, this.model.id)
 		await this.renderer.mount(items, initialCenter, initialZoom)
 
 		this.selectImage(null)

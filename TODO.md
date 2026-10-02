@@ -13,3 +13,4 @@
 - revalidate queries on user relogin
 - auto focus on Ctrp+P
 - focus on submit after image pasted does not fuking work
+- cycle < / > images in fullscreen

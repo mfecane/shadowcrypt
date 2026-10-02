@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
 import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
-import type { CollectionDetail } from '~/types/collections'
+import type { BoardDetail } from '~/types/boards'
 
-const { createBoard, unsubscribe } = useBoard()
+const { createBoard, disposeBoard } = useBoard()
 
-const props = defineProps<{ collection: CollectionDetail }>()
+const props = defineProps<{ board: BoardDetail }>()
 
 const store = useCollectionViewerStore()
 
@@ -15,27 +15,45 @@ const queryClient = useQueryClient()
 
 const containerEl = ref<HTMLDivElement>()
 
+const toast = useToast()
+
 let unsubscribePersist: (() => void) | null = null
+let unsubscribeImageMoved: (() => void) | null = null
+let unsubscribeDragOutError: (() => void) | null = null
 
 watch(state.board, (b) => {
+	unsubscribePersist?.()
+	unsubscribeImageMoved?.()
+	unsubscribeDragOutError?.()
 	unsubscribePersist =
 		b?.bridge.subscribeOnPersistSuccess(() => {
-			const cid = props.collection.id
-			void queryClient.invalidateQueries({ queryKey: ['collection', cid] })
+			const bid = props.board.id
+			void queryClient.invalidateQueries({ queryKey: ['board', bid] })
+		}) ?? null
+
+	unsubscribeImageMoved =
+		b?.bridge.subscribeOnImageMovedToBoard(() => {
+			void queryClient.invalidateQueries({ queryKey: ['collection', props.board.collectionId] })
+			toast.add({ title: 'Image moved', description: 'Moved to the other board.', icon: 'i-lucide-check', color: 'success' })
+		}) ?? null
+
+	unsubscribeDragOutError =
+		b?.bridge.subscribeOnDragOutError((message) => {
+			toast.add({ title: 'Could not move image', description: message, icon: 'i-lucide-triangle-alert', color: 'error' })
 		}) ?? null
 })
 
 onMounted(() => {
 	const el = containerEl.value
 	if (!el) return
-	createBoard(el, props.collection)
+	void createBoard(el, props.board, props.board.collectionId)
 })
 
 onBeforeUnmount(() => {
-	state.board.value?.destroy()
-	store.reset()
-	unsubscribe?.()
+	disposeBoard()
 	unsubscribePersist?.()
+	unsubscribeImageMoved?.()
+	unsubscribeDragOutError?.()
 })
 </script>
 

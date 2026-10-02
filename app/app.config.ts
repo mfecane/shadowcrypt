@@ -24,7 +24,7 @@ export default defineAppConfig({
 		button: UButton,
 		switch: {
 			slots: {
-				base: 'data-[state=unchecked]:bg-neutral-900',
+				base: 'data-[state=unchecked]:bg-accented',
 				thumb: 'bg-neutral-500',
 			},
 		},

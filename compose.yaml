@@ -1,0 +1,142 @@
+name: shadowcrypt
+
+services:
+    # A prison for claude coding agent
+    prison:
+        container_name: shadowcrypt-prison
+        build:
+            context: .
+            dockerfile: Dockerfile.prison
+        profiles: ['tools']
+        working_dir: /app
+        volumes:
+            - .:/app
+        tty: true
+        stdin_open: true
+
+    postgres:
+        image: postgres:16-alpine
+        container_name: shadowcrypt-postgres
+        environment:
+            POSTGRES_USER: shadowcrypt
+            POSTGRES_PASSWORD: zzzz
+            POSTGRES_DB: shadowcrypt
+            # Suppress logical replication launcher messages
+            POSTGRES_INITDB_ARGS: '--no-locale'
+        ports:
+            - '127.0.0.1:5432:5432'
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U shadowcrypt']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    minio:
+        image: minio/minio:latest
+        container_name: shadowcrypt-minio
+        command: server /data --console-address ":9001"
+        environment:
+            MINIO_ROOT_USER: minioadmin
+            MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+            - '127.0.0.1:9002:9000' # S3 API
+            - '127.0.0.1:9001:9001' # Console UI
+        volumes:
+            - minio_data:/data
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    adminer:
+        image: adminer:latest
+        container_name: shadowcrypt-adminer
+        ports:
+            - '127.0.0.1:8084:8080'
+        environment:
+            ADMINER_DEFAULT_SERVER: postgres
+        depends_on:
+            postgres:
+                condition: service_healthy
+        restart: unless-stopped
+
+    # mailpit:
+    #     image: axllent/mailpit
+    #     container_name: shadowcrypt-mailpit
+    #     ports:
+    #         - '1025:1025' # SMTP
+    #         - '8025:8025' # Web UI
+
+    migrate:
+        image: node:22-alpine
+        container_name: shadowcrypt-migrate
+        working_dir: /app
+        restart: 'no'
+        command: sh -c "npm install && npm run db:migrate"
+        depends_on:
+            postgres:
+                condition: service_healthy
+        volumes:
+            - type: bind
+              source: .
+              target: /app
+            - app_node_modules:/app/node_modules
+        env_file:
+            - .env
+            - .env.local
+
+    frontend:
+        image: node:22-alpine
+        container_name: shadowcrypt-frontend
+        working_dir: /app
+        volumes:
+            - type: bind
+              source: .
+              target: /app
+            - app_node_modules:/app/node_modules
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+            postgres:
+                condition: service_healthy
+            minio:
+                condition: service_healthy
+            # mailpit:
+            #     condition: service_started
+        ports:
+            - '127.0.0.1:3000:3000'
+        env_file:
+            - .env
+            - .env.local
+        command: sh -c "npm install && npm run dev"
+        restart: unless-stopped
+
+    seed:
+        image: node:22-alpine
+        container_name: shadowcrypt-seed
+        working_dir: /app
+        restart: 'no'
+        command: sh -c "npm install && npm run db:seed"
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+            postgres:
+                condition: service_healthy
+            minio:
+                condition: service_healthy
+        volumes:
+            - type: bind
+              source: .
+              target: /app
+            - app_node_modules:/app/node_modules
+        env_file:
+            - .env
+            - .env.local
+
+volumes:
+    postgres_data:
+    minio_data:
+    app_node_modules:

@@ -5,7 +5,7 @@ export interface BoardForBridge {
 	commandController: ImageCommandController
 	navigationTool: NavigationTool | null
 	removeImage: (imageId: string) => void
-	setCollectionName: (name: string) => void
+	setBoardName: (name: string) => void
 	autoLayout: () => Promise<void>
 	flipSelectedImageX: () => void
 	undo: () => void

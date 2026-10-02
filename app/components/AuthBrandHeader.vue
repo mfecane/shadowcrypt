@@ -1,6 +1,6 @@
 <template>
 	<div class="text-2xl">
-		<NuxtLink to="/" class="text-beige-400 hover:text-beige-300 flex items-center gap-2 transition-colors">
+		<NuxtLink to="/" class="text-primary hover:text-highlighted flex items-center gap-2 transition-colors">
 			<AppLogo collapsible />
 		</NuxtLink>
 	</div>

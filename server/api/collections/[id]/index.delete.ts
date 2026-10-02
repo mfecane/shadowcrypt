@@ -1,9 +1,9 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { container } from '~~/lib/di/container'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
-import { collections, images } from '~~/server/db/schema'
+import { boards, collections, images } from '~~/server/db/schema'
 import type { StorageClient } from '~~/server/storage/client/StorageClient'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
@@ -37,7 +37,12 @@ export default defineEventHandler(async (event) => {
 			throw createError({ statusCode: 404, statusMessage: 'Not found' })
 		}
 
-		const imagesRows = await db.select().from(images).where(eq(images.collectionId, parsed.id))
+		const boardRows = await db.select({ id: boards.id }).from(boards).where(eq(boards.collectionId, parsed.id))
+		const boardIds = boardRows.map((b) => b.id)
+		const imagesRows =
+			boardIds.length > 0
+				? await db.select().from(images).where(inArray(images.boardId, boardIds))
+				: []
 
 		for (const image of imagesRows) {
 			for (const variant of [ImageSizeVariant.ORIGINAL, ImageSizeVariant.SMALL]) {

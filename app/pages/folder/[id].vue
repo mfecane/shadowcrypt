@@ -95,7 +95,7 @@ const archivedFolderSummary = computed(() => {
 
 			<p v-if="pending" class="text-muted text-sm">Loading folder…</p>
 
-			<p v-else-if="error || folder === null" class="text-beige-400 text-lg font-medium">
+			<p v-else-if="error || folder === null" class="text-primary text-lg font-medium">
 				Folder not found or you do not have access.
 			</p>
 

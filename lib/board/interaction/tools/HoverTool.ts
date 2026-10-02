@@ -1,7 +1,7 @@
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
-import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
+import { HitKind } from '~~/lib/board/interaction/InteractionInfo'
 import type { Tool } from '~~/lib/board/interaction/Tool'
 import { WidgetCorner, type WidgetPart } from '~~/lib/board/interaction/widgets/WidgetPart'
 
@@ -33,7 +33,7 @@ export class HoverTool implements Tool {
 		if (event.type !== CanvasEventType.Hover) {
 			return r
 		}
-		const hit = event.context.hitResult
+		const hit = event.info.hitResult
 		let cursor = 'default'
 		if (hit.kind === HitKind.widget && hit.widgetPart !== undefined) {
 			cursor = cursorForWidgetPart(hit.widgetPart)

@@ -15,28 +15,18 @@ const emit = defineEmits<{ edit: [] }>()
 <template>
 	<div class="mb-4 flex min-w-0 flex-wrap items-center gap-4">
 		<NuxtLink
-			v-if="link"
-			:to="link"
-			class="text-dimmed hover:text-beige-300 min-w-0 text-left transition-colors flex items-center gap-2"
-		>
+v-if="link" :to="link"
+			class="text-dimmed hover:text-primary min-w-0 text-left transition-colors flex items-center gap-2">
 			<Icon :name="icon" class="h-4 w-4 text-dimmed" />
 			<h2 class="truncate text-lg font-semibold uppercase tracking-wider">{{ name }}</h2>
 		</NuxtLink>
 		<h2
-			v-else
-			class="text-dimmed min-w-0 truncate text-lg font-semibold uppercase tracking-wider flex items-center gap-2"
-		>
+v-else
+			class="text-dimmed min-w-0 truncate text-lg font-semibold uppercase tracking-wider flex items-center gap-2">
 			<Icon :name="icon" class="h-4 w-4 text-dimmed" />{{ name }}
 		</h2>
-		<UButton
-			v-if="editable"
-			variant="ghost"
-			color="neutral"
-			size="xs"
-			square
-			@click="emit('edit')"
-		>
-			<Icon name="i-lucide-pencil" class="h-4 w-4" />
+		<UButton v-if="editable" variant="ghost" color="neutral" size="xs" square @click="emit('edit')">
+			<Icon name="i-lucide-ellipsis-vertical" class="h-4 w-4" />
 		</UButton>
 	</div>
 </template>

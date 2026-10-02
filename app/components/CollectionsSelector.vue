@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
 			v-if="open"
 			:id="listboxId"
 			role="listbox"
-			class="bg-neutral-900 border-muted absolute left-0 top-[calc(100%+0.5rem)] z-20 max-h-80 w-full overflow-y-auto rounded-xl border p-2 shadow-2xl"
+			class="bg-default border-muted absolute left-0 top-[calc(100%+0.5rem)] z-20 max-h-80 w-full overflow-y-auto rounded-xl border p-2 shadow-2xl"
 		>
 			<div v-if="props.groups.length === 0" class="text-muted px-3 py-2 text-sm">No collections available.</div>
 			<div v-else-if="listRows.length === 0" class="text-muted px-3 py-2 text-sm">No matching collections.</div>

@@ -19,7 +19,7 @@ import { container } from '../lib/di/container'
 import { registerSeedServices } from '../lib/di/registerSeedServices'
 import { ServiceAlias } from '../lib/di/ServiceAlias'
 import { createSeededIdGenerator, createSeededRandom } from '../lib/math/random'
-import { collections, folders, images, userProfiles, users } from '../server/db/schema'
+import { boards, collections, folders, images, userProfiles, users } from '../server/db/schema'
 import type { StorageClient } from '../server/storage/client/StorageClient'
 
 const REQUEST_SEED = process.env.REQUEST_SEED === 'true'
@@ -213,9 +213,28 @@ async function main(): Promise<void> {
 			)
 		}
 
-		const imageRows: { collectionId: string; userId: string; hash: string; width: number; height: number }[] = []
+		const boardValues = insertedCols.map((col) => ({
+			collectionId: col.id,
+			name: 'Board 1',
+			isDefault: true,
+		}))
+		const insertedBoards = await tx.insert(boards).values(boardValues).returning()
+		const boardByCollectionId = new Map(insertedBoards.map((b) => [b.collectionId, b]))
+
+		const imageRows: {
+			boardId: string
+			collectionId: string
+			userId: string
+			hash: string
+			width: number
+			height: number
+		}[] = []
 		const uploads: { collectionId: string; hash: string; buffer: Buffer }[] = []
 		for (const col of insertedCols) {
+			const board = boardByCollectionId.get(col.id)
+			if (board === undefined) {
+				throw new Error(`[seed] board missing for collection ${col.id}`)
+			}
 			const n = randomIntInclusive(rng, IMAGES_PER_COLLECTION_MIN, IMAGES_PER_COLLECTION_MAX)
 			console.info(`[seed] "${col.name}" → ${n} images`)
 			for (let i = 0; i < n; i++) {
@@ -223,6 +242,7 @@ async function main(): Promise<void> {
 				const hash = nextImageHash()
 				console.info(`[seed]   #${i + 1} ${width}×${height} → hash ${hash}`)
 				imageRows.push({
+					boardId: board.id,
 					collectionId: col.id,
 					userId: user.id,
 					hash,
@@ -233,7 +253,10 @@ async function main(): Promise<void> {
 			}
 		}
 
-		const insertedImages = await tx.insert(images).values(imageRows).returning()
+		const insertedImages = await tx
+			.insert(images)
+			.values(imageRows.map(({ collectionId: _collectionId, ...row }) => row))
+			.returning()
 
 		const insertedByHash = new Map(insertedImages.map((img) => [img.hash, img]))
 

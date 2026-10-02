@@ -1,10 +1,14 @@
 import { Application, Assets, Container, Rectangle, Sprite } from 'pixi.js'
+import { BoardBackground } from '~~/lib/board/BoardBackground'
 import type { BoardHost } from '~~/lib/board/BoardHost'
 import type { BoardImage } from '~~/lib/board/BoardImage'
 import { BoardImageLayout } from '~~/lib/board/BoardImageLayout'
+import { BoardDropTargetRepository } from '~~/lib/board/interaction/BoardDropTargetRepository'
 import { EventPreprocessor } from '~~/lib/board/interaction/EventPreprocessor'
 import { EventRouter } from '~~/lib/board/interaction/EventRouter'
-import { PixiInteractionContext } from '~~/lib/board/interaction/PixiInteractionContext'
+import { InteractionContext } from '~~/lib/board/interaction/InteractionContext'
+import { InteractionInfo } from '~~/lib/board/interaction/InteractionInfo'
+import { globalToClientCoords } from '~~/lib/board/interaction/screenCoords'
 import { FullscreenTool } from '~~/lib/board/interaction/tools/FullscreenTool'
 import { HoverTool } from '~~/lib/board/interaction/tools/HoverTool'
 import { NavigationTool } from '~~/lib/board/interaction/tools/NavigationTool'
@@ -18,17 +22,24 @@ export class BoardRenderer {
 
 	private app: Application | null = null
 	private worldContainer: Container | null = null
+	private background: BoardBackground | null = null
 	private preprocessor: EventPreprocessor | null = null
 	private router: EventRouter | null = null
-	private interactionContext: PixiInteractionContext | null = null
+	private interactionInfo: InteractionInfo | null = null
 	private resizeObserver: ResizeObserver | null = null
 	private readonly spriteById = new Map<string, Sprite>()
 	private transformWidget: TransformWidget | null = null
 
 	public constructor(
 		private readonly mountEl: HTMLElement,
-		private readonly host: BoardHost
+		private readonly host: BoardHost,
+		private readonly boardId: string
 	) {}
+
+	/** Rebuilds the cross-board drop-target candidates; call when the boards panel opens/closes. */
+	public refreshDropTargets(): void {
+		this.interactionInfo?.rebuildDropTargets()
+	}
 
 	private static spriteBaseSize(sprite: Sprite): { width: number; height: number } {
 		const texture = sprite.texture
@@ -65,6 +76,10 @@ export class BoardRenderer {
 		sprite.scale.y = snapshot.flipY ? -scaleY : scaleY
 		sprite.x = snapshot.flipX ? snapshot.x + Math.abs(snapshot.w) : snapshot.x
 		sprite.y = snapshot.flipY ? snapshot.y + Math.abs(snapshot.h) : snapshot.y
+	}
+
+	private readonly syncBackground = (): void => {
+		this.background?.sync()
 	}
 
 	public getSprite(imageId: string): Sprite | undefined {
@@ -155,12 +170,22 @@ export class BoardRenderer {
 
 		this.worldContainer = new Container()
 		this.worldContainer.sortableChildren = true
+		this.background = new BoardBackground(this.worldContainer)
+		this.background.resize(viewport.w, viewport.h)
+		this.app.stage.addChild(this.background.view)
 		this.app.stage.addChild(this.worldContainer)
+		this.app.ticker.add(this.syncBackground)
 
 		this.app.stage.eventMode = 'static'
 		this.app.stage.hitArea = new Rectangle(0, 0, viewport.w, viewport.h)
 
-		this.interactionContext = new PixiInteractionContext(this.worldContainer, this.spriteById)
+		this.interactionInfo = new InteractionInfo(
+			this.worldContainer,
+			this.spriteById,
+			canvas,
+			new BoardDropTargetRepository(this.boardId)
+		)
+		const interactionContext = new InteractionContext()
 
 		this.transformWidget = new TransformWidget()
 		this.transformWidget.hide()
@@ -170,12 +195,14 @@ export class BoardRenderer {
 		this.router = new EventRouter([
 			new HoverTool(canvas),
 			new FullscreenTool(this.host),
-			new TransformTool(this.worldContainer, canvas, this.host, () => this.transformWidget),
+			new TransformTool(this.worldContainer, canvas, this.host, () => this.transformWidget, (gx, gy) =>
+				globalToClientCoords(canvas, this.app!.renderer, gx, gy)
+			),
 			new SelectTool(this.host),
 			this.navigationTool,
 		])
 
-		this.preprocessor = new EventPreprocessor(canvas, this.app.renderer, this.interactionContext, (e) =>
+		this.preprocessor = new EventPreprocessor(canvas, this.app.renderer, this.interactionInfo, interactionContext, (e) =>
 			this.router!.dispatch(e)
 		)
 		this.preprocessor.attach()
@@ -223,6 +250,7 @@ export class BoardRenderer {
 			}
 			this.app.renderer.resize(w, h)
 			this.app.stage.hitArea = new Rectangle(0, 0, w, h)
+			this.background?.resize(w, h)
 			this.navigationTool?.applyViewport()
 			this.transformWidget?.syncFromParentSprite()
 		})
@@ -239,14 +267,17 @@ export class BoardRenderer {
 		this.navigationTool?.destroy()
 		this.navigationTool = null
 		this.router = null
-		this.interactionContext = null
+		this.interactionInfo = null
 		if (this.transformWidget !== null) {
 			this.transformWidget.destroy({ children: true })
 			this.transformWidget = null
 		}
 		this.spriteById.clear()
 		this.worldContainer = null
+		this.background?.destroy()
+		this.background = null
 		if (this.app !== null) {
+			this.app.ticker.remove(this.syncBackground)
 			this.app.destroy(true)
 			this.app = null
 		}

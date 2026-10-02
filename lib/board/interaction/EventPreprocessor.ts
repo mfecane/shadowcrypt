@@ -1,7 +1,9 @@
 import type { Renderer } from 'pixi.js'
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
+import type { InteractionContext } from '~~/lib/board/interaction/InteractionContext'
 import { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
-import type { PixiInteractionContext } from '~~/lib/board/interaction/PixiInteractionContext'
+import type { InteractionInfo } from '~~/lib/board/interaction/InteractionInfo'
+import { clientToGlobalCoords } from '~~/lib/board/interaction/screenCoords'
 import { Vector2 } from '~~/lib/math/Vector2'
 import { normalizeAngleDelta } from '~~/lib/math/utils'
 
@@ -56,16 +58,14 @@ export class EventPreprocessor {
 	public constructor(
 		private readonly canvas: HTMLCanvasElement,
 		private readonly renderer: Renderer,
-		private readonly context: PixiInteractionContext,
+		private readonly info: InteractionInfo,
+		private readonly context: InteractionContext,
 		private readonly emit: (event: InteractionEvent) => void | Promise<void>
 	) {}
 
-	/** Maps client coordinates to Pixi global space (matches `renderer.screen` and `getBounds()`). */
-	private clientToGlobalCoords(clientX: number, clientY: number): Vector2 {
-		const rect = this.canvas.getBoundingClientRect()
-		const sw = this.renderer.screen.width
-		const sh = this.renderer.screen.height
-		return Vector2.from((clientX - rect.left) * (sw / rect.width), (clientY - rect.top) * (sh / rect.height))
+	private toGlobal(clientX: number, clientY: number): Vector2 {
+		const { x, y } = clientToGlobalCoords(this.canvas, this.renderer, clientX, clientY)
+		return Vector2.from(x, y)
 	}
 
 	private readonly onPointerDownBound = (e: PointerEvent) => {
@@ -116,8 +116,9 @@ export class EventPreprocessor {
 		pinchDistSqDelta?: number,
 		rotationDelta?: number
 	): Promise<void> {
-		const { x, y } = this.clientToGlobalCoords(clientX, clientY)
-		this.context.updateHitFromRendererCoords(x, y)
+		const { x, y } = this.toGlobal(clientX, clientY)
+		this.info.updateHitFromRendererCoords(x, y)
+		this.info.updatePointerLocation(clientX, clientY)
 		const ev = new InteractionEvent(
 			type,
 			x,
@@ -126,6 +127,7 @@ export class EventPreprocessor {
 			dy,
 			EventPreprocessor.modifiersFrom(raw),
 			raw,
+			this.info,
 			this.context,
 			pinchDistSqDelta,
 			rotationDelta
@@ -222,8 +224,8 @@ export class EventPreprocessor {
 			const panDx = now.cx - this.prevPinch.cx
 			const panDy = now.cy - this.prevPinch.cy
 			this.prevPinch = now
-			const { x, y } = this.clientToGlobalCoords(now.cx, now.cy)
-			this.context.updateHitFromRendererCoords(x, y)
+			const { x, y } = this.toGlobal(now.cx, now.cy)
+			this.info.updateHitFromRendererCoords(x, y)
 			const ev = new InteractionEvent(
 				CanvasEventType.PinchMove,
 				x,
@@ -232,6 +234,7 @@ export class EventPreprocessor {
 				panDy,
 				EventPreprocessor.modifiersFrom(event),
 				event,
+				this.info,
 				this.context,
 				pinchDistSqDelta,
 				rotationDelta
@@ -254,6 +257,7 @@ export class EventPreprocessor {
 
 		if (!this.isDragging && this.dragPointerId === event.pointerId && this.isMoved(event.clientX, event.clientY)) {
 			this.isDragging = true
+			this.info.rebuildDropTargets()
 			await this.dispatch(CanvasEventType.MoveStart, event.clientX, event.clientY, 0, 0, event)
 		}
 

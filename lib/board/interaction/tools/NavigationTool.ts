@@ -6,7 +6,8 @@ import { computeFitViewportSnapshot } from '~~/lib/board/layoutGeometry'
 import { CanvasEventType } from '~~/lib/board/interaction/CanvasEventType'
 import type { InteractionEvent } from '~~/lib/board/interaction/InteractionEvent'
 import { InteractionHandlerResult } from '~~/lib/board/interaction/InteractionHandlerResult'
-import { HitKind } from '~~/lib/board/interaction/PixiInteractionContext'
+import { HitKind } from '~~/lib/board/interaction/InteractionInfo'
+import { clientToGlobalCoords } from '~~/lib/board/interaction/screenCoords'
 import type { Tool } from '~~/lib/board/interaction/Tool'
 import { clamp } from '~~/lib/collectionViewer/viewerUtils'
 
@@ -15,6 +16,17 @@ const ZOOM_MAX = 4
 
 /** Ignore tiny wheel deltas (trackpad momentum tail) so pan does not coast. */
 const WHEEL_PAN_TAIL_EPS = 0.5
+
+const WHEEL_LINE_HEIGHT_PX = 33
+
+/** Log2 zoom change per wheel pixel: ~100px notch → ~19% step. */
+const WHEEL_ZOOM_RATE_MOUSE = 0.003
+
+/** Log2 zoom change per pinch pixel (ctrl+wheel emits small deltas at high frequency). */
+const WHEEL_ZOOM_RATE_TRACKPAD = 0.02
+
+/** Caps ctrl+mouse-wheel notches (~100px) so they don't jump several zoom levels at once. */
+const PINCH_MAX_PIXELS_PER_EVENT = 10
 
 /** Pan/zoom state: world-space point shown at the viewport center, plus uniform scale. */
 export class NavigationTool implements Tool {
@@ -62,6 +74,11 @@ export class NavigationTool implements Tool {
 		this.centerWorld.y = center.y
 		this.zoom = clamp(zoom, ZOOM_MIN, ZOOM_MAX)
 		this.applyViewport()
+	}
+
+	public clientToWorld(clientX: number, clientY: number): Point {
+		const global = clientToGlobalCoords(this.canvas, this.renderer, clientX, clientY)
+		return this.worldContainer.toLocal(new Point(global.x, global.y))
 	}
 
 	public getViewportStateForSave(): BoardViewportState {
@@ -129,7 +146,7 @@ export class NavigationTool implements Tool {
 
 	private shouldPan(e: InteractionEvent): boolean {
 		const raw = e.raw as PointerEvent
-		const k = e.context.hitResult.kind
+		const k = e.info.hitResult.kind
 		if (raw.pointerType === 'mouse') {
 			if ((raw.buttons & 4) !== 0) {
 				return true
@@ -155,15 +172,58 @@ export class NavigationTool implements Tool {
 		return new Point(x, y)
 	}
 
+	/**
+	 * macOS often reports a mouse wheel as {@link WheelEvent.DOM_DELTA_LINE}; Windows/Linux Chromium
+	 * usually use {@link WheelEvent.DOM_DELTA_PIXEL} with legacy ±120 `wheelDelta` steps. Trackpads
+	 * also use pixel mode but rarely expose 120-divisible legacy deltas or emit smaller deltas.
+	 */
+	private isVerticalMouseWheelZoom(wheel: WheelEvent): boolean {
+		if (wheel.deltaX !== 0) {
+			return false
+		}
+		if (wheel.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+			return true
+		}
+		if (wheel.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+			return false
+		}
+		const w = wheel as WheelEvent & { wheelDelta?: number; wheelDeltaY?: number }
+		const legacy = w.wheelDeltaY ?? w.wheelDelta
+		if (legacy !== undefined && legacy !== 0 && Math.abs(legacy) % 120 === 0) {
+			return true
+		}
+		// Chromium on Windows often omits line mode; fall back on typical notched pixel deltas only.
+		if (typeof navigator !== 'undefined' && /Windows/i.test(navigator.userAgent)) {
+			return wheel.deltaMode === WheelEvent.DOM_DELTA_PIXEL && Math.abs(wheel.deltaY) >= 24
+		}
+		return false
+	}
+
+	private wheelDeltaYInPixels(wheel: WheelEvent): number {
+		switch (wheel.deltaMode) {
+			case WheelEvent.DOM_DELTA_LINE:
+				return wheel.deltaY * WHEEL_LINE_HEIGHT_PX
+			case WheelEvent.DOM_DELTA_PAGE:
+				return wheel.deltaY * this.board.getViewportSize().h
+			default:
+				return wheel.deltaY
+		}
+	}
+
 	private onWheel(event: InteractionEvent): InteractionHandlerResult {
 		const r = new InteractionHandlerResult()
 		const wheel = event.raw as WheelEvent
 
 		const modifierZoom = wheel.ctrlKey || wheel.metaKey
-		const mouseWheelZoom = !modifierZoom && wheel.deltaX === 0 && wheel.deltaMode === WheelEvent.DOM_DELTA_LINE
+		const mouseWheelZoom = !modifierZoom && this.isVerticalMouseWheelZoom(wheel)
 
 		if (modifierZoom || mouseWheelZoom) {
-			this.zoom += 1 - 2 ** (wheel.deltaY * 0.005)
+			const pixels = this.wheelDeltaYInPixels(wheel)
+			// Mac pinch arrives as ctrl+wheel, often with 120-divisible legacy deltas, so it cannot be told apart from a mouse wheel.
+			const log2Step = modifierZoom
+				? clamp(pixels, -PINCH_MAX_PIXELS_PER_EVENT, PINCH_MAX_PIXELS_PER_EVENT) * WHEEL_ZOOM_RATE_TRACKPAD
+				: pixels * WHEEL_ZOOM_RATE_MOUSE
+			this.zoom *= 2 ** -log2Step
 			this.zoom = clamp(this.zoom, ZOOM_MIN, ZOOM_MAX)
 			const focal = this.wheelFocalInRenderSpace(wheel)
 			this.applyScaleAtRendererPoint(this.zoom, focal.x, focal.y)

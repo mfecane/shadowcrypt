@@ -138,7 +138,7 @@ const collectionExist = computed(() => {
 
 			<template v-else>
 				<template v-if="!collectionExist">
-					<p class="text-beige-400 text-lg font-medium">No collections</p>
+					<p class="text-primary text-lg font-medium">No collections</p>
 				</template>
 
 				<template v-else>

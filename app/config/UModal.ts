@@ -1,6 +1,6 @@
 export default {
 	slots: {
-		content: 'bg-neutral-800',
+		content: 'bg-elevated',
 	},
 	variants: {
 		overlay: {

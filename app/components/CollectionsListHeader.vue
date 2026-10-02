@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { openModal } = useCollectionQuickFind()
+const { openModal: openImageUploadModal } = useImageUploadModal()
 
 const headerRef = ref<HTMLElement | null>(null)
 const scrolled = ref(false)
@@ -31,34 +32,21 @@ onUnmounted(() => {
 
 <template>
 	<header
-		ref="headerRef"
+ref="headerRef"
 		class="collections-list-header sticky top-0 z-10 backdrop-blur-[6px] transition-[background-color,box-shadow] duration-300"
-		:class="scrolled ? 'bg-[rgba(15,16,16,0.5)] shadow-[0px_4px_10px_0px_rgba(0,0,0,0.4)]' : 'bg-transparent'"
-	>
+		:class="scrolled ? 'bg-[rgba(15,16,16,0.5)] shadow-[0px_4px_10px_0px_rgba(0,0,0,0.4)]' : 'bg-transparent'">
 		<div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
-			<div class="flex min-w-0 flex-1 items-center gap-6">
+			<div class="flex min-w-0 flex-1 items-center gap-4">
 				<NuxtLink
-					to="/list"
-					class="text-highlighted hover:text-beige-300 shrink-0 transition-colors"
-					aria-label="Home"
-				>
+to="/list" class="text-highlighted hover:text-primary shrink-0 transition-colors"
+					aria-label="Home">
 					<AppLogo collapsible />
 				</NuxtLink>
 				<UInput
-					ref="searchTriggerRef"
-					readonly
-					tabindex="0"
-					:model-value="''"
-					placeholder="Type to filter…"
-					icon="i-lucide-search"
-					size="md"
-					class="min-w-[200px] max-w-[600px] flex-1 cursor-pointer"
-					autocomplete="off"
-					aria-haspopup="dialog"
-					aria-label="Open find collection"
-					@click="onOpenSearch"
-					@keydown="onSearchTriggerKeydown"
-				>
+ref="searchTriggerRef" readonly tabindex="0" :model-value="''" placeholder="Type to filter…"
+					icon="i-lucide-search" size="md" class="min-w-[200px] max-w-[600px] flex-1 cursor-pointer"
+					autocomplete="off" aria-haspopup="dialog" aria-label="Open find collection" @click="onOpenSearch"
+					@keydown="onSearchTriggerKeydown">
 					<template #trailing>
 						<div class="pointer-events-none me-2 flex items-center gap-1">
 							<UKbd value="Ctrl" size="sm" />
@@ -66,8 +54,11 @@ onUnmounted(() => {
 						</div>
 					</template>
 				</UInput>
+				<UButton icon="i-lucide-plus" @click="openImageUploadModal()">Add to collection</UButton>
 			</div>
-			<UserAvatarMenu class="shrink-0" />
+			<div class="flex shrink-0 items-center gap-2">
+				<UserAvatarMenu />
+			</div>
 		</div>
 	</header>
 </template>

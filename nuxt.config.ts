@@ -8,6 +8,9 @@ export default defineNuxtConfig({
 		'/landing': { redirect: '/' },
 	},
 	css: ['~/assets/css/main.css'],
+	colorMode: {
+		preference: 'dark',
+	},
 	runtimeConfig: {
 		session: {
 			maxAge: 60 * 60 * 24 * 30,

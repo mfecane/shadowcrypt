@@ -11,6 +11,6 @@ defineProps<{
 		:icon="icon"
 		@click="onClick"
 		:class="uiClass"
-		class-name="rounded-full shadow-lg bg-neutral-900/70 backdrop-blur-sm border border-neutral-700/40"
+		class-name="rounded-full shadow-lg bg-default/70 backdrop-blur-sm border border-default/40"
 	/>
 </template>

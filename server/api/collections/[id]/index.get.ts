@@ -1,13 +1,14 @@
-import { and, asc, eq } from 'drizzle-orm'
-import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
 import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
-import { collections, images } from '~~/server/db/schema'
+import { boards, collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
 import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { refreshFolderLastSeen } from '~~/server/utils/refreshFolderLastSeen'
+
+const PREVIEW_IMAGES_PER_BOARD = 6
 
 const storageKeyFactory = new StorageKeyFactory(new EnvironmentResolver())
 
@@ -41,25 +42,32 @@ export default defineEventHandler(async (event) => {
 		await refreshFolderLastSeen(db, col.folderId, sub)
 	}
 
-	const imageRows = await db
-		.select()
-		.from(images)
-		.where(eq(images.collectionId, id))
-		.orderBy(asc(images.zIndex), asc(images.id))
+	const boardRows = await db.select().from(boards).where(eq(boards.collectionId, id))
+	const boardIds = boardRows.map((b) => b.id)
+	const imageRows =
+		boardIds.length > 0
+			? await db
+					.select({ boardId: images.boardId, hash: images.hash, width: images.width, height: images.height })
+					.from(images)
+					.where(inArray(images.boardId, boardIds))
+					.orderBy(asc(images.zIndex), asc(images.id))
+			: []
 
-	const layoutById = mergeImageLayouts(
-		imageRows.map((img) => ({
-			id: img.id,
-			width: img.width,
-			height: img.height,
-			layoutX: img.layoutX,
-			layoutY: img.layoutY,
-			layoutW: img.layoutW,
-			layoutH: img.layoutH,
-		}))
-	)
+	const imageCountByBoard = new Map<string, number>()
+	const previewImagesByBoard = new Map<string, { url: string; width: number | null; height: number | null }[]>()
+	for (const row of imageRows) {
+		imageCountByBoard.set(row.boardId, (imageCountByBoard.get(row.boardId) ?? 0) + 1)
 
-	const hasViewport = col.viewportCenterX !== null && col.viewportCenterY !== null && col.viewportZoom !== null
+		const previews = previewImagesByBoard.get(row.boardId) ?? []
+		if (previews.length < PREVIEW_IMAGES_PER_BOARD) {
+			previews.push({
+				url: storageKeyFactory.createCollectionImageKey(id, ImageSizeVariant.SMALL, row.hash).getPublicUrl(),
+				width: row.width,
+				height: row.height,
+			})
+			previewImagesByBoard.set(row.boardId, previews)
+		}
+	}
 
 	return {
 		collection: {
@@ -70,28 +78,16 @@ export default defineEventHandler(async (event) => {
 			folderId: col.folderId,
 			lastSeenAt: seenAt.toISOString(),
 			updatedAt: col.updatedAt.toISOString(),
-			viewportCenter: hasViewport ? { x: col.viewportCenterX!, y: col.viewportCenterY! } : null,
-			viewportZoom: hasViewport ? col.viewportZoom! : null,
-			images: imageRows.map((img) => {
-				const layout = layoutById.get(img.id)
-				if (layout === undefined) {
-					throw new Error(`layout missing for image ${img.id}`)
-				}
-				return {
-					id: img.id,
-					url: storageKeyFactory
-						.createCollectionImageKey(col.id, ImageSizeVariant.ORIGINAL, img.hash)
-						.getPublicUrl(),
-					width: img.width,
-					height: img.height,
-					layout: {
-						...layout,
-						flipX: img.layoutFlipX,
-						flipY: img.layoutFlipY,
-						zIndex: img.zIndex,
-					},
-				}
-			}),
+			boards: boardRows
+				.map((b) => ({
+					id: b.id,
+					name: b.name,
+					isDefault: b.isDefault,
+					imageCount: imageCountByBoard.get(b.id) ?? 0,
+					updatedAt: b.updatedAt.toISOString(),
+					previewImages: previewImagesByBoard.get(b.id) ?? [],
+				}))
+				.sort((a, b) => (a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1)),
 		},
 	}
 })
