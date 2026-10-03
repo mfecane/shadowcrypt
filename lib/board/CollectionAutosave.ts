@@ -1,6 +1,11 @@
 import type { BoardImageLayoutSaveRow } from '~~/lib/board/BoardImageApi'
 import type { BoardViewportState } from '~~/lib/board/BoardViewport'
 import type { CollectionBoardModel } from '~~/lib/board/CollectionBoardModel'
+import {
+	AUTOSAVE_DEBOUNCE_LAYOUT_MS,
+	AUTOSAVE_DEBOUNCE_VIEWPORT_MS,
+	AUTOSAVE_SAVED_STATUS_DURATION_MS,
+} from '~~/lib/config/autosave'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 import type { Board } from './Board'
 import type { BoardVueBridge } from './BoardVueBridge'
@@ -11,12 +16,12 @@ export class CollectionAutosave {
 	private savedIdleTimer: ReturnType<typeof setTimeout> | null = null
 	private disposed = false
 	private saving = false
-	private pending = false
+	/** Debounce to apply once the in-flight save finishes; 0 = save immediately, null = nothing queued. */
+	private pendingDelayMs: number | null = null
+	/** Bumped on every scheduled change; dirty clears only if no change arrived during the save. */
+	private changeVersion = 0
 
 	private persistedBaseline: CollectionBoardModel
-
-	private static readonly DEBOUNCE_LAYOUT_MS = 2_000
-	private static readonly DEBOUNCE_VIEWPORT_MS = 5_000
 
 	public constructor(
 		private readonly board: Board,
@@ -70,24 +75,26 @@ export class CollectionAutosave {
 
 	/** Layout / image mutations (faster). */
 	public schedule(): void {
-		this.scheduleAfter(CollectionAutosave.DEBOUNCE_LAYOUT_MS)
+		this.scheduleAfter(AUTOSAVE_DEBOUNCE_LAYOUT_MS)
 	}
 
 	/** Pan / zoom only (longer debounce). */
 	public scheduleViewport(): void {
-		this.scheduleAfter(CollectionAutosave.DEBOUNCE_VIEWPORT_MS)
+		this.scheduleAfter(AUTOSAVE_DEBOUNCE_VIEWPORT_MS)
 	}
 
 	private scheduleAfter(debounceMs: number): void {
 		if (this.disposed) {
 			return
 		}
+		this.changeVersion++
+		this.bridge.setCollectionDirty(true)
 		if (this.savedIdleTimer !== null) {
 			clearTimeout(this.savedIdleTimer)
 			this.savedIdleTimer = null
 		}
 		if (this.saving) {
-			this.pending = true
+			this.pendingDelayMs = this.pendingDelayMs === 0 ? 0 : debounceMs
 			return
 		}
 		if (this.timer !== null) {
@@ -113,7 +120,7 @@ export class CollectionAutosave {
 			this.timer = null
 		}
 		if (this.saving) {
-			this.pending = true
+			this.pendingDelayMs = 0
 			return
 		}
 		void this.runSave()
@@ -136,12 +143,16 @@ export class CollectionAutosave {
 			return
 		}
 		if (this.saving) {
-			this.pending = true
+			this.pendingDelayMs = 0
 			return
 		}
 		this.saving = true
-		this.pending = false
+		this.pendingDelayMs = null
 		this.bridge.setCollectionSaveState('saving')
+
+		await new Promise((resolve) => window.setTimeout(resolve, 200)) // for visual feedback, do not remove
+
+		const savedVersion = this.changeVersion
 		try {
 			this.board.syncViewportToModel()
 			this.board.prepareModelForSave()
@@ -167,6 +178,9 @@ export class CollectionAutosave {
 			if (this.disposed) {
 				return
 			}
+			if (this.changeVersion === savedVersion) {
+				this.bridge.setCollectionDirty(false)
+			}
 			this.bridge.setCollectionSaveState('saved')
 			if (this.savedIdleTimer !== null) {
 				clearTimeout(this.savedIdleTimer)
@@ -179,7 +193,7 @@ export class CollectionAutosave {
 				if (this.bridge.collectionSaveStatus === 'saved') {
 					this.bridge.setCollectionSaveState('idle')
 				}
-			}, 2000)
+			}, AUTOSAVE_SAVED_STATUS_DURATION_MS)
 		} catch (e) {
 			if (this.disposed) {
 				return
@@ -188,9 +202,12 @@ export class CollectionAutosave {
 			this.bridge.setCollectionSaveState('error', msg)
 		} finally {
 			this.saving = false
-			if (!this.disposed && this.pending) {
-				this.pending = false
+			const delayMs = this.pendingDelayMs
+			this.pendingDelayMs = null
+			if (delayMs === 0) {
 				void this.runSave()
+			} else if (delayMs !== null) {
+				this.scheduleAfter(delayMs)
 			}
 		}
 	}

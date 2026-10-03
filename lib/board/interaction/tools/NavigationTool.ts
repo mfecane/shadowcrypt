@@ -292,7 +292,6 @@ export class NavigationTool implements Tool {
 		this.worldContainer.position.y += event.dy
 		this.syncStateFromWorld()
 		this.board.syncTransformWidgetFromParentSprite()
-		this.board.autosave.scheduleViewport()
 		r.setHandled()
 		return r
 	}
@@ -310,6 +309,7 @@ export class NavigationTool implements Tool {
 			// ignore if already released
 		}
 		this.capturePointerId = null
+		this.board.autosave.scheduleViewport()
 		r.setReleaseCapture()
 		return r
 	}

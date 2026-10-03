@@ -14,6 +14,7 @@ export interface BoardBridgeState {
 	fullscreenImage: BoardImage | null
 	collectionSaveStatus: CollectionSaveStatus
 	collectionSaveError: string | null
+	collectionDirty: boolean
 	imageCount: number
 	ready: boolean
 	autoLayoutPending: boolean
@@ -35,6 +36,8 @@ export class BoardVueBridge {
 
 	public collectionSaveStatus: CollectionSaveStatus = 'idle'
 	public collectionSaveError: string | null = null
+	/** Changes exist that are not yet persisted. */
+	public collectionDirty = false
 
 	/** Mirrors Board image count for UI; updated when the collection changes on the Board. */
 	public imageCount = 0
@@ -118,6 +121,7 @@ export class BoardVueBridge {
 			fullscreenImage: this.fullscreenImage,
 			collectionSaveStatus: this.collectionSaveStatus,
 			collectionSaveError: this.collectionSaveError,
+			collectionDirty: this.collectionDirty,
 			imageCount: this.imageCount,
 			ready: this.ready,
 			autoLayoutPending: this.autoLayoutPending,
@@ -171,6 +175,12 @@ export class BoardVueBridge {
 		}
 		this.collectionSaveStatus = status
 		this.collectionSaveError = nextError
+		this.notify()
+	}
+
+	public setCollectionDirty(dirty: boolean): void {
+		if (this.collectionDirty === dirty) return
+		this.collectionDirty = dirty
 		this.notify()
 	}
 

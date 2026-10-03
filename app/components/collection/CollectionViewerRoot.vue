@@ -10,7 +10,7 @@ const store = useCollectionViewerStore()
 const { loading, autoLayoutPending, dragOut } = storeToRefs(store)
 const { openModal: openImageUploadModal } = useImageUploadModal()
 
-const open = ref(true)
+const open = useState('collectionSidebarOpen', () => false)
 
 watch(dragOut, (next, prev) => {
 	if (next !== null && prev === null) {
@@ -18,25 +18,13 @@ watch(dragOut, (next, prev) => {
 	}
 })
 
+// Post flush: board cards must be in the DOM before the drop-target candidates are rebuilt.
 watch(open, () => {
 	store.board?.refreshDropTargets()
-})
+}, { flush: 'post' })
 
 function onWindowWheel(event: WheelEvent): void {
 	if (event.ctrlKey || event.metaKey) {
-		event.preventDefault()
-	}
-}
-
-function onWindowKeyDown(event: KeyboardEvent): void {
-	if (event.key === 'Escape' && dragOut.value !== null) {
-		store.board?.cancelImageDragOut()
-		return
-	}
-	if (!event.ctrlKey && !event.metaKey) {
-		return
-	}
-	if (event.key === '+' || event.key === '=' || event.key === '-' || event.key === '_' || event.key === '0') {
 		event.preventDefault()
 	}
 }
@@ -47,7 +35,6 @@ function onGestureEvent(event: Event): void {
 
 onBeforeUnmount(() => {
 	window.removeEventListener('wheel', onWindowWheel, { capture: true })
-	window.removeEventListener('keydown', onWindowKeyDown, { capture: true })
 	window.removeEventListener('gesturestart', onGestureEvent)
 	window.removeEventListener('gesturechange', onGestureEvent)
 	window.removeEventListener('gestureend', onGestureEvent)
@@ -60,7 +47,6 @@ onMounted(() => {
 	}
 
 	window.addEventListener('wheel', onWindowWheel, { passive: false, capture: true })
-	window.addEventListener('keydown', onWindowKeyDown, { capture: true })
 	window.addEventListener('gesturestart', onGestureEvent, { passive: false })
 	window.addEventListener('gesturechange', onGestureEvent, { passive: false })
 	window.addEventListener('gestureend', onGestureEvent, { passive: false })
@@ -76,8 +62,7 @@ onMounted(() => {
 			<div class="absolute flex gap-2 items-center right-2 top-2 z-20">
 				<UserAvatarMenu />
 				<UTooltip text="View boards">
-					<UButton
-v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant="ghost"
+					<UButton v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant="ghost"
 						@click="open = true" />
 				</UTooltip>
 			</div>
@@ -91,26 +76,22 @@ v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant=
 		</div>
 
 
-		<USidebar
-v-model:open="open" collapsible="offcanvas" rail side="right" close-icon="i-lucide-panel-right-close"
+		<USidebar v-model:open="open" collapsible="offcanvas" rail side="right" close-icon="i-lucide-panel-right-close"
 			:ui="{
 				container: 'h-full',
 				inner: 'bg-elevated/25 divide-transparent',
 				body: 'py-0',
 			}">
 			<template #header>
-				<UButton
-icon="i-lucide-panel-right-close" size="md" color="neutral" variant="ghost"
+				<UButton icon="i-lucide-panel-right-close" size="md" color="neutral" variant="ghost"
 					@click="open = false" />
 			</template>
-			<CollectionBoardsSidebar
-:collection-id="collection.id" :collection-name="collection.name"
+			<CollectionBoardsSidebar :collection-id="collection.id" :collection-name="collection.name"
 				:boards="collection.boards" :active-board-id="board.id" />
 		</USidebar>
 		<CollectionViewerFullscreen />
 		<CollectionImageDragGhost />
-		<div
-v-if="autoLayoutPending"
+		<div v-if="autoLayoutPending"
 			class="absolute inset-0 z-5 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
 			aria-live="polite" aria-busy="true">
 			<div class="border-muted bg-elevated flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl">
@@ -121,8 +102,7 @@ v-if="autoLayoutPending"
 				</div>
 			</div>
 		</div>
-		<div
-v-if="loading" data-id="board-loading-overlay"
+		<div v-if="loading" data-id="board-loading-overlay"
 			class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm"
 			aria-live="polite" aria-busy="true">
 			<Icon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-toned" />

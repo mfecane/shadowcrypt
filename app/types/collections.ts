@@ -70,6 +70,8 @@ export interface CollectionMeta {
 	archived: boolean
 	folderId: string | null
 	lastSeenAt: string | null
+	/** Last opened board; null falls back to the oldest board. */
+	currentBoardId: string | null
 	updatedAt: string
 	boards: CollectionBoardSummary[]
 }

@@ -42,7 +42,11 @@ export default defineEventHandler(async (event) => {
 		await refreshFolderLastSeen(db, col.folderId, sub)
 	}
 
-	const boardRows = await db.select().from(boards).where(eq(boards.collectionId, id))
+	const boardRows = await db
+		.select()
+		.from(boards)
+		.where(eq(boards.collectionId, id))
+		.orderBy(asc(boards.createdAt))
 	const boardIds = boardRows.map((b) => b.id)
 	const imageRows =
 		boardIds.length > 0
@@ -77,17 +81,16 @@ export default defineEventHandler(async (event) => {
 			archived: col.archived,
 			folderId: col.folderId,
 			lastSeenAt: seenAt.toISOString(),
+			currentBoardId: col.currentBoardId,
 			updatedAt: col.updatedAt.toISOString(),
 			boards: boardRows
 				.map((b) => ({
 					id: b.id,
 					name: b.name,
-					isDefault: b.isDefault,
 					imageCount: imageCountByBoard.get(b.id) ?? 0,
 					updatedAt: b.updatedAt.toISOString(),
 					previewImages: previewImagesByBoard.get(b.id) ?? [],
-				}))
-				.sort((a, b) => (a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1)),
+				})),
 		},
 	}
 })

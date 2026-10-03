@@ -6,6 +6,7 @@ export default withNuxt({
 		'@typescript-eslint/consistent-type-imports': 'off',
 		'vue/html-self-closing': 'off',
 		'vue/attributes-order': 'off',
+		'vue/first-attribute-linebreak': 'off',
 	},
 	ignores: ['node_modules', 'dist', 'webpack.config.js', 'webpack'],
 })

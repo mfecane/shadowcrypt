@@ -1,4 +1,4 @@
-import { and, asc, eq, ne } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { container } from '~~/lib/di/container'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
@@ -33,13 +33,13 @@ export default defineEventHandler(async (event) => {
 
 	const board = row.board
 
-	const siblingBoards = await db
-		.select()
+	const [sibling] = await db
+		.select({ id: boards.id })
 		.from(boards)
 		.where(and(eq(boards.collectionId, board.collectionId), ne(boards.id, boardId)))
-		.orderBy(asc(boards.createdAt))
+		.limit(1)
 
-	if (siblingBoards.length === 0) {
+	if (sibling === undefined) {
 		throw createError({ statusCode: 400, statusMessage: 'Cannot delete the only board in a collection' })
 	}
 
@@ -54,12 +54,8 @@ export default defineEventHandler(async (event) => {
 		}
 	}
 
+	// FK resets the collection's `currentBoardId` to null when this was the current board.
 	await db.delete(boards).where(eq(boards.id, boardId))
-
-	if (board.isDefault) {
-		const promoted = siblingBoards[0]!
-		await db.update(boards).set({ isDefault: true, updatedAt: new Date() }).where(eq(boards.id, promoted.id))
-	}
 
 	return { ok: true }
 })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { collectionsQueryKey } from '~/composables/useCollectionsListQuery'
+import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
 import type { CollectionMeta } from '~/types/collections'
 import type { BoardDetail } from '~/types/boards'
 
@@ -32,6 +33,9 @@ const {
 } = useQuery({
 	queryKey: ['board', boardId],
 	queryFn: () => $fetch<{ board: BoardDetail }>(`/api/boards/${boardId.value}`),
+	// The live Board owns state while mounted; other boards change behind its back (drag-out moves),
+	// so never mount a board from cache.
+	gcTime: 0,
 })
 
 let hasLoadedBoardOnce = false
@@ -52,6 +56,31 @@ watch(
 
 const collection = computed(() => collectionData.value?.collection ?? null)
 const board = computed(() => boardData.value?.board ?? null)
+
+const viewerStore = useCollectionViewerStore()
+
+function viewerKeyFor(id: string, imageIds: string[]): string {
+	return `${id}:${[...imageIds].sort().join(',')}`
+}
+
+// Remount the viewer only when the server image set differs from the live board
+// (e.g. upload); a refetch after an in-viewer removal / drag-out must not remount.
+const viewerKey = ref<string | null>(null)
+watch(
+	board,
+	(b) => {
+		if (b === null) {
+			return
+		}
+		const next = viewerKeyFor(b.id, b.images.map((i) => i.id))
+		const live = viewerStore.board
+		if (viewerKey.value !== null && live !== null && viewerKeyFor(live.bridge.boardId ?? '', live.getImageIds()) === next) {
+			return
+		}
+		viewerKey.value = next
+	},
+	{ immediate: true }
+)
 const pending = computed(() => collectionPending.value || boardPending.value)
 const error = computed(() => collectionError.value ?? boardError.value)
 
@@ -75,7 +104,7 @@ v-if="pending" class="text-muted mx-auto flex max-w-6xl items-center justify-cen
 
 		<ClientOnly v-else-if="collection && board">
 			<CollectionViewerRoot
-				:key="`${board.id}:${board.images.map((i) => i.id).sort().join(',')}`"
+				:key="viewerKey ?? board.id"
 				:collection="collection"
 				:board="board"
 			/>

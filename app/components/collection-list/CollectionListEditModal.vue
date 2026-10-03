@@ -156,20 +156,17 @@ async function performDelete(): Promise<void> {
 		deleting.value = false
 	}
 }
+
+
 </script>
 
 <template>
-	<UModal
-		:open="open"
-		title="Edit collection"
-		:close="!(saving || creatingFolder || deleting || confirmDeleteOpen)"
-		:dismissible="!(saving || creatingFolder || deleting || confirmDeleteOpen)"
-		@update:open="
+	<UModal :open="open" title="Edit collection" :close="!(saving || creatingFolder || deleting || confirmDeleteOpen)"
+		:dismissible="!(saving || creatingFolder || deleting || confirmDeleteOpen)" @update:open="
 			(value) => {
 				if (!value) close()
 			}
-		"
-	>
+		">
 		<template #body>
 			<div class="space-y-6">
 				<UFormField label="Name">
@@ -179,37 +176,24 @@ async function performDelete(): Promise<void> {
 				<div class="space-y-2">
 					<UFormField label="Folder">
 						<p v-if="foldersLoading" class="text-muted text-sm">Loading folders…</p>
-						<USelect
-							v-else
-							v-model="selectedFolderIdStr"
-							:items="folderSelectItems"
-							value-key="value"
-							class="w-full"
-						/>
+						<USelect v-else v-model="selectedFolderIdStr" :items="folderSelectItems" value-key="value"
+							class="w-full" />
 					</UFormField>
 					<div class="flex gap-2">
-						<UInput
-							v-model="newFolderName"
-							type="text"
-							class="min-w-0 flex-1"
-							placeholder="New folder name"
-							autocomplete="off"
-							:disabled="creatingFolder"
-							@keydown.enter.prevent="createFolder"
-						/>
-						<UButton
-							leading-icon="i-lucide-folder-plus"
-							:loading="creatingFolder"
-							:disabled="creatingFolder || newFolderName.trim().length === 0"
-							@click="createFolder"
-						>
+						<UInput v-model="newFolderName" type="text" class="min-w-0 flex-1" placeholder="New folder name"
+							autocomplete="off" :disabled="creatingFolder" @keydown.enter.prevent="createFolder" />
+						<UButton leading-icon="i-lucide-folder-plus" :loading="creatingFolder"
+							:disabled="creatingFolder || newFolderName.trim().length === 0" @click="createFolder">
 							Add
 						</UButton>
 					</div>
 				</div>
 
 				<USwitch v-model="pinned" :label="pinned ? 'Pinned' : 'Unpinned'" />
-				<USwitch v-model="archived" :label="archived ? 'Archived' : 'Unarchived'" />
+
+				<UButton v-if="archived" variant="soft" label="Unarchive" icon="i-lucide-archive-restore"
+					@click="() => { archived = false }" />
+				<UButton v-else label="Archive" icon="i-lucide-archive" @click="() => { archived = true }" />
 
 				<p v-if="error !== null && !confirmDeleteOpen" class="text-error text-sm">{{ error }}</p>
 			</div>
@@ -217,14 +201,8 @@ async function performDelete(): Promise<void> {
 
 		<template #footer>
 			<div class="flex justify-between gap-2 w-full">
-				<UButton
-					color="error"
-					variant="soft"
-					size="sm"
-					leading-icon="i-lucide-trash"
-					:disabled="saving || deleting"
-					@click="openDeleteConfirm"
-				>
+				<UButton color="error" variant="soft" size="sm" leading-icon="i-lucide-trash"
+					:disabled="saving || deleting" @click="openDeleteConfirm">
 					Delete
 				</UButton>
 				<div class="flex gap-2">
@@ -237,17 +215,12 @@ async function performDelete(): Promise<void> {
 		</template>
 	</UModal>
 
-	<UModal
-		v-model:open="confirmDeleteOpen"
-		title="Delete this collection?"
-		:close="!deleting"
-		:dismissible="!deleting"
+	<UModal v-model:open="confirmDeleteOpen" title="Delete this collection?" :close="!deleting" :dismissible="!deleting"
 		@update:open="
 			(value) => {
 				if (!value) cancelDeleteConfirm()
 			}
-		"
-	>
+		">
 		<template #body>
 			<div class="space-y-4">
 				<p class="text-sm text-muted">
@@ -259,16 +232,10 @@ async function performDelete(): Promise<void> {
 
 		<template #footer>
 			<div class="flex justify-between gap-2 w-full">
-				<UButton variant="soft" color="neutral" :disabled="deleting" @click="cancelDeleteConfirm"
-					>Cancel</UButton
-				>
-				<UButton
-					color="error"
-					leading-icon="i-lucide-trash"
-					:loading="deleting"
-					:disabled="deleting"
-					@click="performDelete"
-				>
+				<UButton variant="soft" color="neutral" :disabled="deleting" @click="cancelDeleteConfirm">Cancel
+				</UButton>
+				<UButton color="error" leading-icon="i-lucide-trash" :loading="deleting" :disabled="deleting"
+					@click="performDelete">
 					{{ deleting ? 'Deleting…' : 'Delete' }}
 				</UButton>
 			</div>

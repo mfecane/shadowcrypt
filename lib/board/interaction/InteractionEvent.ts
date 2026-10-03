@@ -17,7 +17,7 @@ export class InteractionEvent {
 		public readonly dx: number,
 		public readonly dy: number,
 		public readonly modifiers: InteractionEventModifiers,
-		public readonly raw: PointerEvent | WheelEvent,
+		public readonly raw: PointerEvent | WheelEvent | KeyboardEvent,
 		public readonly info: InteractionInfo,
 		public readonly context: InteractionContext,
 		public readonly pinchDistSqDelta?: number,

@@ -33,6 +33,8 @@ export default defineEventHandler(async (event) => {
 
 	const { board } = row
 
+	await db.update(collections).set({ currentBoardId: board.id }).where(eq(collections.id, board.collectionId))
+
 	const imageRows = await db
 		.select()
 		.from(images)
@@ -59,7 +61,6 @@ export default defineEventHandler(async (event) => {
 			id: board.id,
 			collectionId: board.collectionId,
 			name: board.name,
-			isDefault: board.isDefault,
 			viewportCenter: hasViewport ? { x: board.viewportCenterX!, y: board.viewportCenterY! } : null,
 			viewportZoom: hasViewport ? board.viewportZoom! : null,
 			images: imageRows.map((img) => {

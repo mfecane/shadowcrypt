@@ -47,7 +47,6 @@ export default defineEventHandler(async (event) => {
 		.values({
 			collectionId,
 			name,
-			isDefault: false,
 			updatedAt: now,
 		})
 		.returning()
@@ -60,7 +59,6 @@ export default defineEventHandler(async (event) => {
 		board: {
 			id: row.id,
 			name: row.name,
-			isDefault: row.isDefault,
 			imageCount: 0,
 			updatedAt: row.updatedAt.toISOString(),
 			previewImages: [],

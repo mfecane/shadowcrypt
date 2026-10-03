@@ -55,6 +55,7 @@
 	--beige-800: #4f3c28;
 	--beige-900: #32261b;
 	--beige-950: #1d160f;
+
 	--ui-border-inverted: var(--ui-color-beige-50);
 
 	/* page-only tokens */
@@ -63,6 +64,7 @@
 
 .dark {
 	color-scheme: dark;
+
 	--app-background-image: linear-gradient(-135deg, #191c1d 0%, #090a0a 100%);
 }
 

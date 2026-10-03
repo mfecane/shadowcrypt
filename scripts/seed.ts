@@ -216,7 +216,6 @@ async function main(): Promise<void> {
 		const boardValues = insertedCols.map((col) => ({
 			collectionId: col.id,
 			name: 'Board 1',
-			isDefault: true,
 		}))
 		const insertedBoards = await tx.insert(boards).values(boardValues).returning()
 		const boardByCollectionId = new Map(insertedBoards.map((b) => [b.collectionId, b]))

@@ -1,4 +1,4 @@
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { assertAllowed, canCrudOwnResourceRoles } from '~~/server/auth/permissions'
 import { boards, collections } from '~~/server/db/schema'
@@ -13,7 +13,6 @@ const patchBodySchema = z
 			.max(256)
 			.transform((s: string) => s.trim())
 			.optional(),
-		isDefault: z.literal(true).optional(),
 		viewportCenterX: z.number().finite().optional(),
 		viewportCenterY: z.number().finite().optional(),
 		viewportZoom: z.number().min(0.25).max(4).optional(),
@@ -30,10 +29,10 @@ const patchBodySchema = z
 				message: 'viewportCenterX, viewportCenterY, and viewportZoom must be sent together',
 			})
 		}
-		if (data.name === undefined && data.isDefault === undefined && !hasFullViewport) {
+		if (data.name === undefined && !hasFullViewport) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: 'Provide name, isDefault, and/or a full viewport (center x, center y, zoom)',
+				message: 'Provide name and/or a full viewport (center x, center y, zoom)',
 			})
 		}
 	})
@@ -61,25 +60,15 @@ export default defineEventHandler(async (event) => {
 		throw createError({ statusCode: 404, statusMessage: 'Not found' })
 	}
 
-	const board = row.board
-
 	const hasViewport =
 		parsed.viewportCenterX !== undefined &&
 		parsed.viewportCenterY !== undefined &&
 		parsed.viewportZoom !== undefined
 
-	if (parsed.isDefault === true) {
-		await db
-			.update(boards)
-			.set({ isDefault: false, updatedAt: new Date() })
-			.where(and(eq(boards.collectionId, board.collectionId), ne(boards.id, boardId)))
-	}
-
 	await db
 		.update(boards)
 		.set({
 			...(parsed.name !== undefined ? { name: parsed.name } : {}),
-			...(parsed.isDefault !== undefined ? { isDefault: parsed.isDefault } : {}),
 			...(hasViewport
 				? {
 						viewportCenterX: parsed.viewportCenterX,

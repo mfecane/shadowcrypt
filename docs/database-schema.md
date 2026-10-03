@@ -46,6 +46,7 @@ Enums: **`upload_status`** — `tmp` \| `final` (used by `uploads.status`). **`u
 | `user_id`    | uuid        | FK → `users.id`, **ON DELETE CASCADE** |
 | `name`       | text        | Not null                               |
 | `pinned`     | boolean     | Not null, default false                |
+| `current_board_id` | uuid  | FK → `boards.id`, ON DELETE SET NULL. Last opened board; opened by default and targeted by collection-level uploads. Null falls back to the oldest board |
 | `updated_at` | timestamptz | Default now                            |
 
 Deleting a user removes their collections (and, via `images`, those rows too).

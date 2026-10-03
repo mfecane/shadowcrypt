@@ -114,6 +114,8 @@ export class TransformTool implements Tool {
 			case CanvasEventType.Move:
 			case CanvasEventType.MoveEnd:
 				return true
+			case CanvasEventType.KeyboardEscape:
+				return event.context.gesture.kind === 'translate'
 			default:
 				return false
 		}
@@ -127,6 +129,8 @@ export class TransformTool implements Tool {
 				return this.onMove(event)
 			case CanvasEventType.MoveEnd:
 				return await this.onMoveEnd(event)
+			case CanvasEventType.KeyboardEscape:
+				return this.onKeyboardEscape(event)
 			default:
 				return new InteractionHandlerResult()
 		}
@@ -143,7 +147,7 @@ export class TransformTool implements Tool {
 		) {
 			return r
 		}
-		this.board.touchImage(h.imageId)
+		this.board.raiseImage(h.imageId)
 		const startSnapshot = signedSnapshotFromSprite(h.sprite)
 		const raw = event.raw as PointerEvent
 
@@ -278,6 +282,9 @@ export class TransformTool implements Tool {
 		const before = g.startSnapshot
 		if (after.x !== before.x || after.y !== before.y || after.w !== before.w || after.h !== before.h) {
 			this.board.commitTransform(g.imageId, before, after)
+		} else {
+			// Z-order changed at drag start.
+			this.board.autosave.schedule()
 		}
 		this.endGesture(event, g.pointerId)
 		return r.setReleaseCapture()
@@ -345,5 +352,23 @@ export class TransformTool implements Tool {
 			this.board.updateImageDragOut(ghostRectFor(g, raw.clientX, raw.clientY), dropTargetBoardId)
 		}
 		return g
+	}
+
+	private onKeyboardEscape(event: InteractionEvent): InteractionHandlerResult {
+		const g = event.context.gesture
+		if (g.kind !== 'translate') {
+			return new InteractionHandlerResult()
+		}
+		if (g.dragOut !== null) {
+			this.board.cancelImageDragOut()
+		}
+		const s = g.startSnapshot
+		g.sprite.x = s.flipX ? s.x + s.w : s.x
+		g.sprite.y = s.flipY ? s.y + s.h : s.y
+		g.sprite.alpha = 1
+		this.getWidget()?.syncFromParentSprite()
+		this.board.autosave.schedule()
+		this.endGesture(event, g.pointerId)
+		return new InteractionHandlerResult().setReleaseCapture()
 	}
 }

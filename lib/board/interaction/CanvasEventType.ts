@@ -7,4 +7,5 @@ export const enum CanvasEventType {
 	Hover = 'hover',
 	Wheel = 'wheel',
 	PinchMove = 'pinch_move',
+	KeyboardEscape = 'keyboard_escape',
 }

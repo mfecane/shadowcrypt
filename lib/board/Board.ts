@@ -58,9 +58,10 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 	) {
 		this.model = new CollectionBoardModelFactory().create(detail)
 		this.autosave = new CollectionAutosave(this, this.bridge, this.model.id, this.model.clone())
-		this.dragOutController = new BoardImageDragOutController(this.bridge, this.model.id, (imageId) =>
-			this.removeImage(imageId)
-		)
+		this.dragOutController = new BoardImageDragOutController(this.bridge, this.model.id, (imageId) => {
+			this.removeImage(imageId, false)
+			this.autosave.saveNow()
+		})
 		this.bridge.setBoard(this.model.id, this.model.name, this.collectionId)
 		this.bridge.setImageCount(this.model.images.length)
 	}
@@ -77,6 +78,11 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 	/** Deep clone of the live collection model (read-only snapshot for consumers). */
 	public getModel(): CollectionBoardModel {
 		return this.model.clone()
+	}
+
+	/** Ids of images currently on the live board. */
+	public getImageIds(): string[] {
+		return this.model.images.map((im) => im.id)
 	}
 
 	/** Copies live navigation into the model (viewport center + zoom). */
@@ -96,7 +102,7 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 	}
 
 	// TODO: not undoable :(
-	public removeImage(imageId: string): void {
+	public removeImage(imageId: string, fitView = true): void {
 		if (!this.images.has(imageId)) {
 			return
 		}
@@ -113,7 +119,9 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 		this.bridge.setCanUndo(this.commandController.canUndo())
 		this.bridge.setCanRedo(this.commandController.canRedo())
 		this.bridge.setImageCount(this.model.images.length)
-		this.navigationTool?.fitWorldToView()
+		if (fitView) {
+			this.navigationTool?.fitWorldToView()
+		}
 		this.autosave.schedule()
 	}
 
@@ -429,11 +437,16 @@ export class Board implements BoardForBridge, BoardHost, ViewerCommandApplier {
 	}
 
 	public touchImage(imageId: string): void {
+		this.raiseImage(imageId)
+		this.autosave.schedule()
+	}
+
+	/** Brings the image to front without scheduling a save. */
+	public raiseImage(imageId: string): void {
 		if (!this.images.has(imageId)) {
 			return
 		}
 		this.setImageZIndex(imageId, this.getMaxImageZIndex() + 1)
-		this.autosave.schedule()
 	}
 
 	private getMaxImageZIndex(): number {

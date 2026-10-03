@@ -24,7 +24,7 @@ export class EventPreprocessor {
 
 	private static readonly DOUBLE_CLICK_TIME_MS = 250
 
-	private static modifiersFrom(e: PointerEvent | WheelEvent) {
+	private static modifiersFrom(e: PointerEvent | WheelEvent | KeyboardEvent) {
 		return {
 			shift: e.shiftKey,
 			ctrl: e.ctrlKey,
@@ -88,6 +88,12 @@ export class EventPreprocessor {
 		this.canvas.style.cursor = ''
 	}
 
+	private onKeyDownHandler = (e: KeyboardEvent): void => {
+		if (e.key === 'Escape') {
+			void this.handleKeyDown(e)
+		}
+	}
+
 	public attach(): void {
 		this.canvas.addEventListener('pointerdown', this.onPointerDownBound)
 		this.canvas.addEventListener('pointermove', this.onPointerMoveBound)
@@ -95,6 +101,7 @@ export class EventPreprocessor {
 		this.canvas.addEventListener('pointercancel', this.onPointerUpBound)
 		this.canvas.addEventListener('pointerleave', this.onPointerLeaveBound)
 		this.canvas.addEventListener('wheel', this.onWheelBound, { passive: false })
+		window.addEventListener('keydown', this.onKeyDownHandler)
 	}
 
 	public detach(): void {
@@ -104,6 +111,7 @@ export class EventPreprocessor {
 		this.canvas.removeEventListener('pointercancel', this.onPointerUpBound)
 		this.canvas.removeEventListener('pointerleave', this.onPointerLeaveBound)
 		this.canvas.removeEventListener('wheel', this.onWheelBound)
+		window.removeEventListener('keydown', this.onKeyDownHandler)
 	}
 
 	private async dispatch(
@@ -364,5 +372,20 @@ export class EventPreprocessor {
 		event.preventDefault()
 		await this.dispatch(CanvasEventType.Wheel, event.clientX, event.clientY, event.deltaX, event.deltaY, event)
 		await this.dispatch(CanvasEventType.Hover, event.clientX, event.clientY, 0, 0, event)
+	}
+
+	private async handleKeyDown(event: KeyboardEvent): Promise<void> {
+		const ev = new InteractionEvent(
+			CanvasEventType.KeyboardEscape,
+			0,
+			0,
+			0,
+			0,
+			EventPreprocessor.modifiersFrom(event),
+			event,
+			this.info,
+			this.context
+		)
+		await this.emit(ev)
 	}
 }

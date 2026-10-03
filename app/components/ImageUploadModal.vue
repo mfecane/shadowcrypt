@@ -10,7 +10,7 @@ import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
 import { resolveButtonEl } from '~~/lib/vueUtils'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { container } from '~~/lib/di/container'
-import type { BoardUploadTracker } from '~~/lib/services/BoardUploadTracker'
+import type { LastUploadCollectionTracker } from '~~/lib/services/LastUploadCollectionTracker'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
 	const seen = new Set<string>()
@@ -180,7 +180,9 @@ function firstImageFromClipboard(cb: DataTransfer | null): File | null {
 
 const route = useRoute()
 const queryClient = useQueryClient()
-const boardUploadTracker = container.resolve<BoardUploadTracker>(ServiceAlias.BoardUploadTracker)
+const lastUploadCollectionTracker = container.resolve<LastUploadCollectionTracker>(
+	ServiceAlias.LastUploadCollectionTracker
+)
 const {
 	open,
 	openModalAt,
@@ -191,6 +193,7 @@ const {
 	boardIdFromRoute,
 	collectionIdFromRoute,
 } = useImageUploadModal()
+const { showImageUploadedToast } = useImageUploadedToast()
 const createCollectionModal = ref(false)
 
 /** When on `/list/:folderId`, new collections are created inside that folder. */
@@ -248,11 +251,9 @@ watch(
 			return
 		}
 
-		// Try to use last board upload if available
-		const lastBoardId = boardUploadTracker.getLastBoardId()
-		const lastCollectionId = boardUploadTracker.getLastCollectionId()
-		if (lastBoardId !== null && lastCollectionId !== null && flatCollections.value.some((c) => c.id === lastCollectionId)) {
-			selectedBoardId.value = lastBoardId
+		// Board is left null: the server targets the collection's current board.
+		const lastCollectionId = lastUploadCollectionTracker.getLastCollectionId()
+		if (lastCollectionId !== null && flatCollections.value.some((c) => c.id === lastCollectionId)) {
 			selectedCollectionId.value = lastCollectionId
 			return
 		}
@@ -443,15 +444,19 @@ async function submitUpload(): Promise<void> {
 			body,
 		})
 
-		// Record board upload for auto-selection
-		if (bid !== null) {
-			boardUploadTracker.recordBoardUpload(bid, cid)
-		}
+		lastUploadCollectionTracker.record(cid)
 
 		await queryClient.invalidateQueries({ queryKey: ['collections'] })
 		await queryClient.invalidateQueries({ queryKey: ['collection', cid] })
 		if (bid !== null) {
 			await queryClient.invalidateQueries({ queryKey: ['board', bid] })
+		}
+		if (collectionIdFromRoute.value === null) {
+			showImageUploadedToast({
+				collectionId: cid,
+				collectionName: flatCollections.value.find((c) => c.id === cid)?.name ?? null,
+				boardId: bid,
+			})
 		}
 		close()
 	} catch (e: unknown) {

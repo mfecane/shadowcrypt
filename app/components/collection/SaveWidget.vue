@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 
-const { bridge, collectionSaveStatus, collectionSaveError } = storeToRefs(useCollectionViewerStore())
+const { bridge, collectionSaveStatus, collectionSaveError, collectionDirty } =storeToRefs(useCollectionViewerStore())
 
 const status = computed(() => collectionSaveStatus.value)
 let savedDisplayTimer: ReturnType<typeof setTimeout> | null = null
@@ -88,6 +88,7 @@ const saveDisabled = computed(() => bridge.value === null || isSaving.value)
 		:color="buttonColor"
 		:disabled="saveDisabled"
 		:spin="isSaving"
+		:badge="collectionDirty && !isSaving"
 		@click="bridge?.saveNow()"
 	/>
 </template>

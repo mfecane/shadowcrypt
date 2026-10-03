@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { boolean, doublePrecision, integer, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, doublePrecision, integer, pgEnum, pgTable, text, timestamp, uuid, type AnyPgColumn } from 'drizzle-orm/pg-core'
 
 export const userRole = pgEnum('user_role', ['user', 'demo', 'admin', 'moderator'])
 
@@ -49,6 +49,8 @@ export const collections = pgTable('collections', {
 	pinned: boolean('pinned').notNull().default(false),
 	archived: boolean('archived').notNull().default(false),
 	lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+	/** Last opened board: opened by default and targeted by collection-level uploads. Null falls back to the oldest board. */
+	currentBoardId: uuid('current_board_id').references((): AnyPgColumn => boards.id, { onDelete: 'set null' }),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -58,7 +60,6 @@ export const boards = pgTable('boards', {
 		.notNull()
 		.references(() => collections.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
-	isDefault: boolean('is_default').notNull().default(false),
 	/** World-space point at the viewport center (Pixi world container local space). */
 	viewportCenterX: doublePrecision('viewport_center_x'),
 	viewportCenterY: doublePrecision('viewport_center_y'),

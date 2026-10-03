@@ -12,22 +12,24 @@ definePageMeta({
 const route = useRoute()
 const id = computed(() => route.params.id as string)
 
-const { data, isPending: pending, error } = useQuery({
+const { data, isPending: pending, isFetching, error } = useQuery({
 	queryKey: ['collection', id],
 	queryFn: () => $fetch<{ collection: CollectionMeta }>(`/api/collections/${id.value}`),
+	// Cached `currentBoardId` may predate the last board visit.
+	staleTime: 0,
 })
 
 watch(
-	() => data.value?.collection,
-	(col) => {
-		if (col === undefined || col === null) {
+	[() => data.value?.collection, isFetching],
+	([col, fetching]) => {
+		if (col === undefined || fetching) {
 			return
 		}
-		const target = col.boards.find((b) => b.isDefault) ?? col.boards[0]
-		if (target === undefined) {
-			return
+		const targetId = col.currentBoardId ?? col.boards[0]?.id
+		if (targetId === undefined) {
+			throw new Error(`collection ${col.id} has no boards`)
 		}
-		void navigateTo(`/collections/${col.id}/boards/${target.id}`, { replace: true })
+		void navigateTo(`/collections/${col.id}/boards/${targetId}`, { replace: true })
 	},
 	{ immediate: true }
 )

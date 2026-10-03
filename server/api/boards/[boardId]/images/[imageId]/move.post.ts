@@ -6,6 +6,7 @@ import { boards, collections, images } from '~~/server/db/schema'
 import { ImageSizeVariant } from '~~/server/storage/ImageSizeVariant'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { useDb } from '~~/server/utils/db'
+import { resolveCollectionTargetBoardId } from '~~/server/utils/resolveCollectionTargetBoardId'
 import { requireSessionUserRoles } from '~~/server/utils/sessionUserId'
 import { useStorageClient } from '~~/server/utils/storage'
 
@@ -53,15 +54,7 @@ export default defineEventHandler(async (event) => {
 		throw createError({ statusCode: 404, statusMessage: 'Target collection not found' })
 	}
 
-	const [targetBoard] = await db
-		.select({ id: boards.id })
-		.from(boards)
-		.where(and(eq(boards.collectionId, targetCollectionId), eq(boards.isDefault, true)))
-		.limit(1)
-
-	if (!targetBoard) {
-		throw createError({ statusCode: 404, statusMessage: 'Target collection has no default board' })
-	}
+	const targetBoardId = await resolveCollectionTargetBoardId(db, targetCollectionId)
 
 	const [img] = await db
 		.select()
@@ -87,7 +80,7 @@ export default defineEventHandler(async (event) => {
 		await db
 			.update(images)
 			.set({
-				boardId: targetBoard.id,
+				boardId: targetBoardId,
 				updatedAt: new Date(),
 			})
 			.where(eq(images.id, imageId))

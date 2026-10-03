@@ -1,7 +1,7 @@
 import { LogPanel } from '~~/lib/LogPanel'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { EnvironmentResolver } from '../EnvironmentResolver'
-import { BoardUploadTracker } from '../services/BoardUploadTracker'
+import { LastUploadCollectionTracker } from '../services/LastUploadCollectionTracker'
 import { container } from './container'
 import { ServiceAlias } from './ServiceAlias'
 
@@ -22,5 +22,5 @@ export function registerClientServices(config: Config): void {
 		return new LogPanel(config.public.debugPixiCanvas)
 	})
 
-	container.registerSingleton(ServiceAlias.BoardUploadTracker, () => new BoardUploadTracker())
+	container.registerSingleton(ServiceAlias.LastUploadCollectionTracker, () => new LastUploadCollectionTracker())
 }

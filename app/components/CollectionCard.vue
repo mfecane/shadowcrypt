@@ -37,11 +37,9 @@ const itemWrapperClass = computed(() => {
 </script>
 
 <template>
-	<div
-class="border-muted bg-elevated flex min-h-0 flex-col overflow-hidden rounded-md border shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)] p-1 relative"
+	<div class="border-muted bg-elevated flex min-h-0 flex-col overflow-hidden rounded-md border shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)] p-1 relative"
 		:class="itemWrapperClass">
-		<UButton
-v-if="showEdit" variant="ghost" color="neutral" size="xs" square class="absolute top-1.5 right-1.5 z-1"
+		<UButton v-if="showEdit" variant="ghost" color="neutral" size="xs" square class="absolute top-1.5 right-1.5 z-1"
 			@click="emit('edit')">
 			<Icon name="i-lucide-ellipsis-vertical" class="h-4 w-4" />
 		</UButton>
@@ -52,8 +50,7 @@ v-if="showEdit" variant="ghost" color="neutral" size="xs" square class="absolute
 			</div>
 			<ImageMosaicGrid :images="collection.images" :size="size" />
 		</NuxtLink>
-		<UButton
-v-if="folderName && folderId" :to="`/folder/${folderId}`" variant="soft" size="sm" color="neutral"
+		<UButton v-if="folderName && folderId" :to="`/folder/${folderId}`" variant="soft" size="sm" color="neutral"
 			class="mt-2 self-start">
 			<Icon name="i-lucide-folder" class="h-3 w-3" />
 			<span>{{ folderName }}</span>

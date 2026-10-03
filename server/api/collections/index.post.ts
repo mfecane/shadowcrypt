@@ -55,7 +55,6 @@ export default defineEventHandler(async (event) => {
 	await db.insert(boards).values({
 		collectionId: row.id,
 		name: 'Board 1',
-		isDefault: true,
 		updatedAt: now,
 	})
 

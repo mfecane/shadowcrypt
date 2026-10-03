@@ -15,6 +15,7 @@ export interface BoardHost {
 	openFullscreenById(imageId: string): void
 	selectImage(id: string | null): void
 	touchImage(imageId: string): void
+	raiseImage(imageId: string): void
 	commitTransform(imageId: string, before: BoardImageLayout, after: BoardImageLayout): void
 
 	/** Thumbnail src for the drag-out ghost; undefined if the image no longer exists. */

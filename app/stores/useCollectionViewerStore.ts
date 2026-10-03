@@ -20,6 +20,7 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 		fullscreenImage: null,
 		collectionSaveStatus: 'idle',
 		collectionSaveError: null,
+		collectionDirty: false,
 		imageCount: 0,
 		ready: false,
 		autoLayoutPending: false,
@@ -48,6 +49,7 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 			this.fullscreenImage = state.fullscreenImage
 			this.collectionSaveStatus = state.collectionSaveStatus
 			this.collectionSaveError = state.collectionSaveError
+			this.collectionDirty = state.collectionDirty
 			this.imageCount = state.imageCount
 			this.ready = state.ready
 			this.autoLayoutPending = state.autoLayoutPending
@@ -64,6 +66,7 @@ export const useCollectionViewerStore = defineStore('collectionViewer', {
 			this.fullscreenImage = null
 			this.collectionSaveStatus = 'idle'
 			this.collectionSaveError = null
+			this.collectionDirty = false
 			this.imageCount = 0
 			this.ready = false
 			this.autoLayoutPending = false

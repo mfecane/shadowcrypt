@@ -5,5 +5,5 @@ export const enum ServiceAlias {
 	StorageKeyFactory = 'StorageKeyFactory',
 	EmailNonceService = 'EmailNonceService',
 	LogPanel = 'LogPanel',
-	BoardUploadTracker = 'BoardUploadTracker',
+	LastUploadCollectionTracker = 'LastUploadCollectionTracker',
 }
