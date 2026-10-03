@@ -3,14 +3,17 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { ComponentPublicInstance } from 'vue'
 import CollectionsSelector from '~/components/CollectionsSelector.vue'
 import CreateCollectionModal from '~/components/CreateCollectionModal.vue'
+import ImageCropper from '~/components/ImageCropper.vue'
 import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { waitForNextPaint } from '~~/lib/asyncUtils'
-import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
-import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
-import { resolveButtonEl } from '~~/lib/vueUtils'
+import { FULL_IMAGE_QUALITY, FULL_IMAGE_WIDTH, MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { container } from '~~/lib/di/container'
+import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
+import type { CropArea } from '~~/lib/imageCropper/types'
+import type { ClientImagePreprocessor } from '~~/lib/services/ClientImagePreprocessor'
 import type { LastUploadCollectionTracker } from '~~/lib/services/LastUploadCollectionTracker'
+import { resolveButtonEl } from '~~/lib/vueUtils'
 
 function flattenCollectionsDeduped(res: CollectionsListResponse): CollectionListItem[] {
 	const seen = new Set<string>()
@@ -183,6 +186,7 @@ const queryClient = useQueryClient()
 const lastUploadCollectionTracker = container.resolve<LastUploadCollectionTracker>(
 	ServiceAlias.LastUploadCollectionTracker
 )
+const clientImagePreprocessor = container.resolve<ClientImagePreprocessor>(ServiceAlias.ClientImagePreprocessor)
 const {
 	open,
 	openModalAt,
@@ -210,6 +214,8 @@ const uploading = ref(false)
 const selectedCollectionId = ref<string | null>(null)
 const selectedBoardId = ref<string | null>(null)
 const inputSource = ref<'none' | 'file' | 'clipboard-image' | 'url'>('none')
+const cropEnabled = ref(false)
+const cropArea = ref<CropArea | null>(null)
 const fileInputEl = ref<HTMLInputElement | null>(null)
 const submitButtonEl = ref<ComponentPublicInstance | null>(null)
 
@@ -287,6 +293,8 @@ function setFile(next: File | null, source: 'file' | 'clipboard-image' = 'file')
 	if (next === null && fileInputEl.value !== null) {
 		fileInputEl.value.value = ''
 	}
+	cropEnabled.value = false
+	cropArea.value = null
 	error.value = null
 }
 
@@ -297,6 +305,8 @@ function setImageUrl(next: string | null): void {
 	if (fileInputEl.value !== null) {
 		fileInputEl.value.value = ''
 	}
+	cropEnabled.value = false
+	cropArea.value = null
 	error.value = null
 }
 
@@ -419,15 +429,24 @@ async function submitUpload(): Promise<void> {
 		error.value = 'Choose a collection and provide an image.'
 		return
 	}
-	if (f !== null && f.size > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
-		error.value = `Image is too large (max ${Math.round(MAX_COLLECTION_IMAGE_UPLOAD_BYTES / (1024 * 1024))} MB).`
-		return
-	}
 	uploading.value = true
 	error.value = null
 	const body = new FormData()
 	if (f !== null) {
-		body.append('file', f)
+		try {
+			const source = cropEnabled.value && cropArea.value !== null ? await clientImagePreprocessor.crop(f, cropArea.value) : f
+			const resized = await clientImagePreprocessor.resize(source, FULL_IMAGE_WIDTH, FULL_IMAGE_QUALITY)
+			if (resized.size > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
+				error.value = `Image is too large (max ${Math.round(MAX_COLLECTION_IMAGE_UPLOAD_BYTES / (1024 * 1024))} MB).`
+				uploading.value = false
+				return
+			}
+			body.append('file', resized, f.name)
+		} catch {
+			error.value = 'Could not process image'
+			uploading.value = false
+			return
+		}
 	} else {
 		body.append('url', url)
 	}
@@ -527,19 +546,15 @@ function onCollectionCreated(collection: { id: string }): void {
 </script>
 <template>
 	<Teleport to="body">
-		<UModal
-			v-model:open="open"
-			:transition="false"
-			:title="boardIdFromRoute !== null ? 'Upload image to board' : 'Upload image to collection'"
-			@close="close"
-			@dragover.prevent
-			@drop.prevent="onPanelDrop"
-			:modal="true"
-		>
+		<UModal v-model:open="open" :transition="false"
+			:title="boardIdFromRoute !== null ? 'Upload image to board' : 'Upload image to collection'" @close="close"
+			@dragover.prevent @drop.prevent="onPanelDrop" :modal="true" :ui="{ content: 'max-w-3xl' }">
 			<template #body>
 				<UForm ref="formEl" id="image-upload-form" class="space-y-4" @submit.prevent="submitUpload">
-					<p v-if="boardIdFromRoute === null" class="text-muted mt-1 text-xs">Drop, paste, pick or create a collection, then upload.</p>
-					<p v-else class="text-muted mt-1 text-xs">Drop, paste or pick an image, then upload to this board.</p>
+					<p v-if="boardIdFromRoute === null" class="text-muted mt-1 text-xs">Drop, paste, pick or create a
+						collection, then upload.</p>
+					<p v-else class="text-muted mt-1 text-xs">Drop, paste or pick an image, then upload to this board.
+					</p>
 
 					<UFormField v-if="boardIdFromRoute === null" label="Collection">
 						<p v-if="collectionsPending" class="text-muted flex items-center gap-2 text-sm">
@@ -548,17 +563,10 @@ function onCollectionCreated(collection: { id: string }): void {
 						</p>
 						<template v-else>
 							<div v-if="flatCollections.length > 0" class="flex items-stretch gap-2">
-								<CollectionsSelector
-									v-model="selectedCollectionId"
-									:groups="collectionGroups"
-									placeholder="Select collection"
-								/>
-								<UButton
-									type="button"
-									class="grid w-12 flex-none place-items-center self-stretch"
-									@click="openCreateCollectionModal"
-									icon="i-lucide-plus"
-								>
+								<CollectionsSelector v-model="selectedCollectionId" :groups="collectionGroups"
+									placeholder="Select collection" />
+								<UButton type="button" class="grid w-12 flex-none place-items-center self-stretch"
+									@click="openCreateCollectionModal" icon="i-lucide-plus">
 								</UButton>
 							</div>
 							<div v-else class="text-muted mb-2 flex flex-col items-start gap-2 text-sm">
@@ -571,18 +579,22 @@ function onCollectionCreated(collection: { id: string }): void {
 					</UFormField>
 
 					<div
-						class="border-muted bg-muted/30 flex h-96 min-h-0 flex-col rounded-lg border border-dashed p-3"
-					>
+						class="border-muted bg-neutral-900 flex h-[65vh] min-h-0 flex-col rounded-lg border border-dashed p-3">
 						<div v-if="previewUrl !== null" class="relative min-h-0 flex-1 overflow-hidden rounded-md">
-							<UButton
-								type="button"
-								variant="ghost"
+							<UButton v-if="file !== null" type="button" data-id="image-upload-crop-toggle"
+								:variant="cropEnabled ? 'solid' : 'outline'"
+								:color="cropEnabled ? 'primary' : 'neutral'" class="absolute top-2 left-2 z-10"
+								icon="i-lucide-crop" @click="cropEnabled = !cropEnabled">
+								Crop
+							</UButton>
+							<UButton type="button" variant="ghost"
 								class="absolute top-2 right-2 z-10 grid h-8 w-8 place-items-center rounded-full border-none p-0"
-								@click="clearImage()"
-							>
+								@click="clearImage()">
 								<Icon name="i-lucide-x" class="size-4" aria-hidden="true" />
 							</UButton>
-							<img :src="previewUrl" alt="" class="h-full w-full object-cover" />
+							<ImageCropper v-if="cropEnabled" :image="previewUrl" :aspect-ratio="null"
+								class="h-full w-full" @crop-complete="cropArea = $event" />
+							<img v-else :src="previewUrl" alt="" class="h-full w-full object-contain" />
 						</div>
 						<div v-else class="flex min-h-0 flex-1 items-center justify-center">
 							<p class="text-muted mx-auto max-w-sm text-center text-sm">
@@ -594,30 +606,16 @@ function onCollectionCreated(collection: { id: string }): void {
 					<div class="mt-3 space-y-3">
 						<div v-if="imageUrl !== null" class="flex items-stretch gap-2">
 							<UInput v-model="imageUrl" type="url" class="min-w-0 flex-1" />
-							<UButton
-								type="button"
-								variant="outline"
-								color="neutral"
-								@click="clearImage"
-								icon="i-lucide-x"
-							>
+							<UButton type="button" variant="outline" color="neutral" @click="clearImage"
+								icon="i-lucide-x">
 								Clear
 							</UButton>
 						</div>
 
-						<UFormField
-							label="Upload from drive"
-							v-if="imageUrl === null && inputSource !== 'clipboard-image'"
-						>
-							<UInput
-								size="md"
-								ref="fileInputEl"
-								type="file"
-								accept="image/*"
-								class="w-full"
-								:disabled="uploading"
-								@change="onFileInputChange"
-							/>
+						<UFormField label="Upload from drive"
+							v-if="imageUrl === null && inputSource !== 'clipboard-image'">
+							<UInput size="md" ref="fileInputEl" type="file" accept="image/*" class="w-full"
+								:disabled="uploading" @change="onFileInputChange" />
 						</UFormField>
 					</div>
 
@@ -630,13 +628,8 @@ function onCollectionCreated(collection: { id: string }): void {
 					<UButton type="button" color="neutral" variant="outline" :disabled="uploading" @click="close">
 						Cancel
 					</UButton>
-					<UButton
-						ref="submitButtonEl"
-						type="submit"
-						form="image-upload-form"
-						autofocus
-						:disabled="uploading || (file === null && imageUrl === null) || (selectedBoardId === null && selectedCollectionId === null)"
-					>
+					<UButton ref="submitButtonEl" type="submit" form="image-upload-form" autofocus
+						:disabled="uploading || (file === null && imageUrl === null) || (selectedBoardId === null && selectedCollectionId === null)">
 						<template #leading>
 							<Icon v-if="!uploading" name="i-lucide-upload" class="size-4" aria-hidden="true" />
 							<Icon v-else name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
@@ -648,10 +641,6 @@ function onCollectionCreated(collection: { id: string }): void {
 		</UModal>
 	</Teleport>
 
-	<CreateCollectionModal
-		v-model:open="createCollectionModal"
-		:folders="collectionsData?.folders ?? []"
-		:initial-folder-id="folderIdFromRoute"
-		@created="onCollectionCreated"
-	/>
+	<CreateCollectionModal v-model:open="createCollectionModal" :folders="collectionsData?.folders ?? []"
+		:initial-folder-id="folderIdFromRoute" @created="onCollectionCreated" />
 </template>

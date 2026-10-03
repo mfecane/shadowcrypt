@@ -1,6 +1,7 @@
 import { LogPanel } from '~~/lib/LogPanel'
 import { StorageKeyFactory } from '~~/server/storage/key/StorageKeyFactory'
 import { EnvironmentResolver } from '../EnvironmentResolver'
+import { ClientImagePreprocessor } from '../services/ClientImagePreprocessor'
 import { LastUploadCollectionTracker } from '../services/LastUploadCollectionTracker'
 import { container } from './container'
 import { ServiceAlias } from './ServiceAlias'
@@ -23,4 +24,6 @@ export function registerClientServices(config: Config): void {
 	})
 
 	container.registerSingleton(ServiceAlias.LastUploadCollectionTracker, () => new LastUploadCollectionTracker())
+
+	container.registerSingleton(ServiceAlias.ClientImagePreprocessor, () => new ClientImagePreprocessor())
 }

@@ -6,4 +6,5 @@ export const enum ServiceAlias {
 	EmailNonceService = 'EmailNonceService',
 	LogPanel = 'LogPanel',
 	LastUploadCollectionTracker = 'LastUploadCollectionTracker',
+	ClientImagePreprocessor = 'ClientImagePreprocessor',
 }
