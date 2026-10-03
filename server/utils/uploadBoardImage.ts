@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import { desc, eq } from 'drizzle-orm'
 import { mergeImageLayouts } from '~~/lib/collectionLayout/mergeImageLayout'
-import { MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
+import { COLLECTION_IMAGE_UPLOAD } from '~~/lib/config/image'
 import { EnvironmentResolver } from '~~/lib/EnvironmentResolver'
 import { getCollectionImageStoredDimensions } from '~~/lib/imageSharpProcessing'
 import { images } from '~~/server/db/schema'
@@ -49,7 +49,7 @@ function readWorldPoint(parts: MultipartParts): { x: number; y: number } | null 
 async function readUploadSource(parts: MultipartParts): Promise<UploadSource> {
 	const file = parts?.find((p) => p.name === 'file')
 	if (file !== undefined && file.data.length > 0) {
-		if (file.data.length > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
+		if (file.data.length > COLLECTION_IMAGE_UPLOAD.MAX_BYTES) {
 			throw createError({ statusCode: 400, statusMessage: 'File too large' })
 		}
 		const mime = file.type ?? ''
@@ -88,7 +88,7 @@ async function readUploadSource(parts: MultipartParts): Promise<UploadSource> {
 	if (data.length === 0) {
 		throw createError({ statusCode: 400, statusMessage: 'Fetched image is empty' })
 	}
-	if (data.length > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
+	if (data.length > COLLECTION_IMAGE_UPLOAD.MAX_BYTES) {
 		throw createError({ statusCode: 400, statusMessage: 'Fetched image is too large' })
 	}
 

@@ -6,7 +6,7 @@ import CreateCollectionModal from '~/components/CreateCollectionModal.vue'
 import ImageCropper from '~/components/ImageCropper.vue'
 import type { CollectionImageUploadResponse, CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { waitForNextPaint } from '~~/lib/asyncUtils'
-import { FULL_IMAGE_QUALITY, FULL_IMAGE_WIDTH, MAX_COLLECTION_IMAGE_UPLOAD_BYTES } from '~~/lib/config/image'
+import { CLIENT_PREUPLOAD, COLLECTION_IMAGE_UPLOAD } from '~~/lib/config/image'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { container } from '~~/lib/di/container'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
@@ -435,9 +435,9 @@ async function submitUpload(): Promise<void> {
 	if (f !== null) {
 		try {
 			const source = cropEnabled.value && cropArea.value !== null ? await clientImagePreprocessor.crop(f, cropArea.value) : f
-			const resized = await clientImagePreprocessor.resize(source, FULL_IMAGE_WIDTH, FULL_IMAGE_QUALITY)
-			if (resized.size > MAX_COLLECTION_IMAGE_UPLOAD_BYTES) {
-				error.value = `Image is too large (max ${Math.round(MAX_COLLECTION_IMAGE_UPLOAD_BYTES / (1024 * 1024))} MB).`
+			const resized = await clientImagePreprocessor.resize(source, CLIENT_PREUPLOAD.MAX_EDGE, CLIENT_PREUPLOAD.QUALITY)
+			if (resized.size > COLLECTION_IMAGE_UPLOAD.MAX_BYTES) {
+				error.value = `Image is too large (max ${Math.round(COLLECTION_IMAGE_UPLOAD.MAX_BYTES / (1024 * 1024))} MB).`
 				uploading.value = false
 				return
 			}

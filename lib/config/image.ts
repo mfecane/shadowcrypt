@@ -1,14 +1,38 @@
-/** Max bytes accepted for a collection image upload, checked after client-side resize and again on the server. */
-export const MAX_COLLECTION_IMAGE_UPLOAD_BYTES = 3 * 1024 * 1024
+/** Budgets enforced on a collection image upload, checked after client-side resize and again on the server. */
+export const COLLECTION_IMAGE_UPLOAD = {
+	/** Max bytes accepted for the upload. */
+	MAX_BYTES: 5 * 1024 * 1024,
+	/** Max decoded pixel count (width × height); guards against decompression-bomb inputs before sharp decodes pixel data. */
+	MAX_PIXELS: 20_000_000,
+}
 
-/** Max edge length (px) for the stored “original” WebP variant in collection uploads. */
-export const FULL_IMAGE_WIDTH = 1024
+/** Stored “original” WebP variant of a collection image. */
+export const FULL_IMAGE = {
+	/** Max edge length (px). */
+	WIDTH: 1400,
+	/** WebP encode quality. */
+	QUALITY: 0.8,
+	/** Sharpen sigma. Mild, since this one isn't downscaled as much. */
+	SHARPEN_SIGMA: 0.5,
+}
 
-/** Quality of the stored “original” WebP variant in collection uploads. */
-export const FULL_IMAGE_QUALITY = 0.6
+/** Stored “small” WebP variant of a collection image. */
+export const SMALL_IMAGE = {
+	/** Max edge length (px). */
+	WIDTH: 256,
+	/** WebP encode quality. */
+	QUALITY: 0.6,
+	/** Sharpen sigma. Stronger, since the heavier downscale to {@link SMALL_IMAGE.WIDTH} softens detail more. */
+	SHARPEN_SIGMA: 1.2,
+}
 
-/** Max edge length (px) for the stored “small” WebP variant in collection uploads. */
-export const PREVIEW_IMAGE_WIDTH = 256
-
-/** Quality of the stored “small” WebP variant in collection uploads. */
-export const SMALL_IMAGE_QUALITY = 0.6
+/**
+ * The client's pre-upload downscale + encode, done before the file is sent to the server.
+ * Max edge kept at ~1.5× {@link FULL_IMAGE.WIDTH} so the server's resize to the final master still has
+ * supersampled detail to work with instead of being a 1:1 re-encode. Quality kept high since this is a
+ * transfer intermediate, not the final stored master — the server re-encodes it again.
+ */
+export const CLIENT_PREUPLOAD = {
+	MAX_EDGE: Math.round(FULL_IMAGE.WIDTH * 1.5),
+	QUALITY: 0.92,
+}

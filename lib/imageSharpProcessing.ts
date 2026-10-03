@@ -3,14 +3,20 @@
  */
 
 import sharp from 'sharp'
-import { FULL_IMAGE_QUALITY, FULL_IMAGE_WIDTH, PREVIEW_IMAGE_WIDTH, SMALL_IMAGE_QUALITY } from './config/image'
+import { COLLECTION_IMAGE_UPLOAD, FULL_IMAGE, SMALL_IMAGE } from './config/image'
+
+/** sharp() with a decompression-bomb guard: rejects input whose pixel count exceeds the budget before decoding pixel data. */
+function openImage(inputPath: string | Buffer): sharp.Sharp {
+	return sharp(inputPath, { limitInputPixels: COLLECTION_IMAGE_UPLOAD.MAX_PIXELS })
+}
 
 export async function processImageToWebP(
 	inputPath: string | Buffer,
 	maxWidth: number,
-	quality: number = FULL_IMAGE_QUALITY
+	quality: number = FULL_IMAGE.QUALITY,
+	sharpenSigma: number = FULL_IMAGE.SHARPEN_SIGMA
 ): Promise<Buffer> {
-	const image = sharp(inputPath)
+	const image = openImage(inputPath)
 	const metadata = await image.metadata()
 
 	if (!metadata.width || !metadata.height) {
@@ -26,6 +32,7 @@ export async function processImageToWebP(
 			fit: 'inside',
 			withoutEnlargement: true,
 		})
+		.sharpen({ sigma: sharpenSigma })
 		.webp({ quality: Math.round(quality * 100) })
 		.toBuffer()
 
@@ -33,11 +40,11 @@ export async function processImageToWebP(
 }
 
 export async function processImageToOriginal(inputPath: string | Buffer): Promise<Buffer> {
-	return processImageToWebP(inputPath, FULL_IMAGE_WIDTH, FULL_IMAGE_QUALITY)
+	return processImageToWebP(inputPath, FULL_IMAGE.WIDTH, FULL_IMAGE.QUALITY, FULL_IMAGE.SHARPEN_SIGMA)
 }
 
 export async function processImageToSmall(inputPath: string | Buffer): Promise<Buffer> {
-	return processImageToWebP(inputPath, PREVIEW_IMAGE_WIDTH, SMALL_IMAGE_QUALITY)
+	return processImageToWebP(inputPath, SMALL_IMAGE.WIDTH, SMALL_IMAGE.QUALITY, SMALL_IMAGE.SHARPEN_SIGMA)
 }
 
 export async function processImageToBothSizes(inputPath: string | Buffer): Promise<{
@@ -54,14 +61,14 @@ export async function getCollectionImageStoredDimensions(inputPath: string | Buf
 	width: number
 	height: number
 }> {
-	const image = sharp(inputPath)
+	const image = openImage(inputPath)
 	const metadata = await image.metadata()
 
 	if (!metadata.width || !metadata.height) {
 		throw new Error('INVALID_IMAGE_DIMENSIONS')
 	}
 
-	const scale = Math.min(1, FULL_IMAGE_WIDTH / Math.max(metadata.width, metadata.height))
+	const scale = Math.min(1, FULL_IMAGE.WIDTH / Math.max(metadata.width, metadata.height))
 	return {
 		width: Math.round(metadata.width * scale),
 		height: Math.round(metadata.height * scale),
