@@ -55,26 +55,22 @@ onMounted(() => {
 
 <template>
 	<div class="fixed inset-0 z-0 flex">
-		<div class="flex-1 flex flex-col relative">
-			<CollectionToolbar />
+		<CollectionToolbar />
 
+		<CollectionBottombar @open-image-upload-modal="openImageUploadModal" />
 
-			<div class="absolute flex gap-2 items-center right-2 top-2 z-20">
-				<UserAvatarMenu />
-				<UTooltip text="View boards">
-					<UButton v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant="ghost"
-						@click="open = true" />
-				</UTooltip>
-			</div>
-
-
-			<div class="absolute right-2 bottom-2 z-20">
-				<UButton icon="i-lucide-plus" @click="openImageUploadModal">Add to collection</UButton>
-			</div>
-
-			<CollectionViewerStateMessage :has-images="board.images.length > 0" />
+		<div class="absolute flex gap-2 items-center right-2 top-2 z-20">
+			<UserAvatarMenu class="hidden sm:block" />
+			<UTooltip text="View boards">
+				<UButton v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant="soft"
+					class="rounded-full" @click="() => { open = true }" />
+			</UTooltip>
 		</div>
 
+		<UButton class="hidden sm:inline-flex absolute right-2 bottom-2 z-20" icon="i-lucide-plus"
+			@click="openImageUploadModal">
+			Add to collection
+		</UButton>
 
 		<USidebar v-model:open="open" collapsible="offcanvas" rail side="right" close-icon="i-lucide-panel-right-close"
 			:ui="{
@@ -84,29 +80,26 @@ onMounted(() => {
 			}">
 			<template #header>
 				<UButton icon="i-lucide-panel-right-close" size="md" color="neutral" variant="ghost"
-					@click="open = false" />
+					@click="() => { open = false }" />
 			</template>
 			<CollectionBoardsSidebar :collection-id="collection.id" :collection-name="collection.name"
 				:boards="collection.boards" :active-board-id="board.id" />
 		</USidebar>
+
 		<CollectionViewerFullscreen />
+
 		<CollectionImageDragGhost />
-		<div v-if="autoLayoutPending"
-			class="absolute inset-0 z-5 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
-			aria-live="polite" aria-busy="true">
-			<div class="border-muted bg-elevated flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl">
-				<Icon name="i-lucide-loader-2" class="h-5 w-5 animate-spin text-toned" />
-				<div>
-					<p class="text-highlighted text-sm font-medium">Auto-layout in progress</p>
-					<p class="text-muted text-xs">Interactions are temporarily disabled.</p>
-				</div>
-			</div>
-		</div>
+
+		<CollectionViewerStateMessage :has-images="board.images.length > 0" />
+
+		<CollectionAutoLayoutPendingOverlay v-if="autoLayoutPending" />
+
 		<div v-if="loading" data-id="board-loading-overlay"
 			class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm"
 			aria-live="polite" aria-busy="true">
 			<Icon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-toned" />
 		</div>
+
 		<CollectionViewerPixi v-if="board.images.length > 0" :board="board" />
 	</div>
 </template>

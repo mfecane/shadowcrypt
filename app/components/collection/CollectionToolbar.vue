@@ -224,9 +224,11 @@ async function confirmDeleteImage(): Promise<void> {
 </script>
 
 <template>
-	<div :class="['absolute left-2 top-2 z-20 flex flex-wrap transition-all duration-300 ease-in-out gap-2']">
+	<div :class="['absolute left-2 top-2 z-20 max-w-[calc(100vw-6rem)] flex flex-wrap transition-all duration-300 ease-in-out gap-2']"
+		data-id="collection-toolbar">
 		<div
 			:class="['flex gap-2 items-center bg-default/70 backdrop-blur-sm  rounded-lg p-1.5', 'border border-default/40']">
+
 			<CollectionToolbarButton :icon="'i-lucide-chevron-left'" tooltip="Back" @click="router.push('/list')" />
 
 			<USeparator orientation="vertical" />
@@ -237,62 +239,50 @@ async function confirmDeleteImage(): Promise<void> {
 					<h2 class="text-toned text-sm leading-none">{{ collectionName ?? 'Collection' }}</h2>
 					<span class="text-dimmed text-xs leading-none">{{ boardName }}</span>
 				</div>
-				<UTooltip text="Edit">
-					<UButton variant="ghost" color="neutral" :icon="'i-lucide-ellipsis-vertical'" @click="openEdit">
-					</UButton>
-				</UTooltip>
+
+				<CollectionDropdownMenu @open-edit="openEdit" />
 			</div>
 
-			<USeparator orientation="vertical" />
+			<USeparator orientation="vertical" class="hidden sm:flex" />
 
-			<SaveWidget />
+			<SaveWidget class="hidden sm:inline-flex" />
 
-			<CollectionToolbarButton
-:icon="'i-lucide-undo'" tooltip="Undo" :disabled="!canUndo"
-				@click="bridge?.undo()" />
+			<CollectionToolbarButton class="hidden sm:inline-flex" :icon="'i-lucide-undo'" tooltip="Undo"
+				:disabled="!canUndo" @click="bridge?.undo()" />
 
-			<CollectionToolbarButton
-:icon="'i-lucide-redo'" tooltip="Redo" :disabled="!canRedo"
-				@click="bridge?.redo()" />
+			<CollectionToolbarButton class="hidden sm:inline-flex" :icon="'i-lucide-redo'" tooltip="Redo"
+				:disabled="!canRedo" @click="bridge?.redo()" />
 
-			<CollectionToolbarButton
-:icon="autoLayoutPending ? 'i-lucide-loader-2' : 'i-lucide-layout-template'"
-				tooltip="Auto layout" :spin="autoLayoutPending" :disabled="bridge === null"
-				@click="bridge?.autoLayout()" />
+			<CollectionToolbarButton class="hidden sm:inline-flex"
+				:icon="autoLayoutPending ? 'i-lucide-loader-2' : 'i-lucide-layout-template'" tooltip="Auto layout"
+				:spin="autoLayoutPending" :disabled="bridge === null" @click="bridge?.autoLayout()" />
 
-			<CollectionToolbarButton
-:icon="'i-lucide-scan-search'" tooltip="Fit into view" :disabled="bridge === null"
-				@click="bridge?.fitIntoView()" />
+			<CollectionToolbarButton class="hidden sm:inline-flex" :icon="'i-lucide-scan-search'"
+				tooltip="Fit into view" :disabled="bridge === null" @click="bridge?.fitIntoView()" />
 		</div>
 
-		<div
-			:class="['flex gap-2 items-center bg-default/70 backdrop-blur-sm  rounded-lg p-1.5', 'border border-default/40']">
-			<CollectionToolbarButton
-:icon="'i-lucide-flip-horizontal'" tooltip="Flip X" :disabled="selected === null"
+		<div class="flex gap-2 items-center bg-default/70 backdrop-blur-sm  rounded-lg p-1.5 border border-default/40"
+			:class="{ 'hidden': selected === null }">
+			<CollectionToolbarButton :icon="'i-lucide-flip-horizontal'" tooltip="Flip X" :disabled="selected === null"
 				@click="bridge?.flipSelectedImageX()" />
 
-			<CollectionToolbarButton
-:icon="'i-lucide-folder-input'" tooltip="Move to collection"
+			<CollectionToolbarButton :icon="'i-lucide-folder-input'" tooltip="Move to collection"
 				:disabled="selected === null || collectionsListPending || !hasAnotherCollection"
 				@click="openMoveImage" />
 
-			<CollectionToolbarButton
-:icon="'i-lucide-trash'" tooltip="Delete image" :disabled="selected === null"
+			<CollectionToolbarButton :icon="'i-lucide-trash'" tooltip="Delete image" :disabled="selected === null"
 				@click="openDeleteImage" />
 		</div>
 	</div>
 
 
-	<CollectionEditModal
-v-model:open="editOpen" v-model:name="editName" :saving="saving" :error="editError"
+	<CollectionEditModal v-model:open="editOpen" v-model:name="editName" :saving="saving" :error="editError"
 		@save="saveEdit" />
 
-	<CollectionDeleteImageModal
-v-model:open="deleteOpen" :deleting="deleting" :error="deleteError"
+	<CollectionDeleteImageModal v-model:open="deleteOpen" :deleting="deleting" :error="deleteError"
 		@confirm="confirmDeleteImage" />
 
-	<CollectionMoveImageModal
-v-model:open="moveOpen" v-model:target-collection-id="moveTargetCollectionId"
+	<CollectionMoveImageModal v-model:open="moveOpen" v-model:target-collection-id="moveTargetCollectionId"
 		:groups="moveCollectionGroups" :collections-pending="collectionsListPending"
 		:has-another-collection="hasAnotherCollection" :moving="moving" :error="moveError"
 		@confirm="confirmMoveImage" />

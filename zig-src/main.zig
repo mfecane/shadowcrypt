@@ -98,7 +98,7 @@ const layout_grid_bucket_count: usize = 8192;
 const layout_grid_max_nodes: usize = max_layout_rects * 32;
 var layout_grid_bucket_heads: [layout_grid_bucket_count]i32 = undefined;
 var layout_grid_nodes: [layout_grid_max_nodes]GridNode = undefined;
-var layout_candidate_seen_stamp: [max_layout_rects]u32 = [_]u32{0} ** max_layout_rects;
+var layout_candidate_seen_stamp: [max_layout_rects]u32 = @splat(0);
 var layout_grid_cell_size_current: f32 = layout_grid_cell_size_min;
 var layout_grid_cell_size_inv_current: f32 = 1.0 / layout_grid_cell_size_min;
 
