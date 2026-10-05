@@ -1,4 +1,4 @@
-import type { CropCorner, Rect } from '~~/lib/imageCropper/types'
+import type { CropCorner, CropEdge, Rect } from '~~/lib/imageCropper/types'
 import { Container, Graphics } from 'pixi.js'
 
 const OVERLAY_COLOR = 0x000000
@@ -10,6 +10,9 @@ const HANDLE_ARM_LENGTH = 14
 const HANDLE_THICKNESS = 3
 const HANDLE_INSET = 3
 const COLLIDER_SIZE = 28
+const EDGE_HANDLE_LENGTH = 20
+const EDGE_COLLIDER_LENGTH = 40
+const EDGE_COLLIDER_THICKNESS = 24
 
 /** Inward direction (toward the rect's center) along each axis, per corner. */
 const CORNER_DIRECTION: Record<CropCorner, { signX: 1 | -1; signY: 1 | -1 }> = {
@@ -20,6 +23,7 @@ const CORNER_DIRECTION: Record<CropCorner, { signX: 1 | -1; signY: 1 | -1 }> = {
 }
 
 const CORNERS: CropCorner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+const EDGES: CropEdge[] = ['top', 'right', 'bottom', 'left']
 
 function cornerPoint(rect: Rect, corner: CropCorner): { x: number; y: number } {
 	switch (corner) {
@@ -34,14 +38,28 @@ function cornerPoint(rect: Rect, corner: CropCorner): { x: number; y: number } {
 	}
 }
 
+function edgeMidpoint(rect: Rect, edge: CropEdge): { x: number; y: number } {
+	switch (edge) {
+		case 'top':
+			return { x: rect.x + rect.width / 2, y: rect.y }
+		case 'bottom':
+			return { x: rect.x + rect.width / 2, y: rect.y + rect.height }
+		case 'left':
+			return { x: rect.x, y: rect.y + rect.height / 2 }
+		case 'right':
+			return { x: rect.x + rect.width, y: rect.y + rect.height / 2 }
+	}
+}
+
 /**
  * Draws the dimmed overlay over discarded pixels, the crop rect border, the
- * visible corner handles, the invisible move collider covering the crop
- * rect's body, and the larger invisible corner colliders used for hit
- * testing - each collider is its own Graphics so it can carry its own
- * cursor and pointerdown listener (see CropCanvasEventHandler). The move
- * collider is added before the corner colliders so corner drags win in the
- * corners' overlapping area.
+ * visible corner and side handles, the invisible move collider covering the
+ * crop rect's body, and the larger invisible corner/edge colliders used for
+ * hit testing - each collider is its own Graphics so it can carry its own
+ * cursor and pointerdown listener (see CropCanvasEventHandler). Colliders
+ * are added move -> edge -> corner, so later (topmost in hit testing) wins
+ * ties in overlapping areas: corner drags beat edge drags beat whole-rect
+ * moves.
  */
 export class CropRectRenderer {
 	private readonly overlay = new Graphics()
@@ -55,9 +73,16 @@ export class CropRectRenderer {
 		'bottom-left': new Graphics(),
 		'bottom-right': new Graphics(),
 	}
+	public readonly edgeColliders: Record<CropEdge, Graphics> = {
+		top: new Graphics(),
+		right: new Graphics(),
+		bottom: new Graphics(),
+		left: new Graphics(),
+	}
 
 	public mount(stage: Container): void {
 		stage.addChild(this.overlay, this.border, this.handles, this.moveCollider)
+		for (const edge of EDGES) stage.addChild(this.edgeColliders[edge])
 		for (const corner of CORNERS) stage.addChild(this.colliders[corner])
 	}
 
@@ -67,6 +92,7 @@ export class CropRectRenderer {
 		this.handles.destroy()
 		this.moveCollider.destroy()
 		for (const corner of CORNERS) this.colliders[corner].destroy()
+		for (const edge of EDGES) this.edgeColliders[edge].destroy()
 	}
 
 	public redraw(rect: Rect, imageBounds: Rect): void {
@@ -113,7 +139,32 @@ export class CropRectRenderer {
 			collider.rect(x - COLLIDER_SIZE / 2, y - COLLIDER_SIZE / 2, COLLIDER_SIZE, COLLIDER_SIZE)
 			collider.fill({ color: 0x000000, alpha: 0 })
 		}
+		for (const edge of EDGES) {
+			const { x, y } = edgeMidpoint(rect, edge)
+			this.drawEdgeHandle(edge, x, y)
+
+			const collider = this.edgeColliders[edge]
+			const isHorizontal = edge === 'left' || edge === 'right'
+			const colliderWidth = isHorizontal ? EDGE_COLLIDER_THICKNESS : EDGE_COLLIDER_LENGTH
+			const colliderHeight = isHorizontal ? EDGE_COLLIDER_LENGTH : EDGE_COLLIDER_THICKNESS
+			collider.clear()
+			collider.rect(x - colliderWidth / 2, y - colliderHeight / 2, colliderWidth, colliderHeight)
+			collider.fill({ color: 0x000000, alpha: 0 })
+		}
 		this.handles.fill({ color: HANDLE_COLOR })
+	}
+
+	/** Draws a short bar centered on the edge's midpoint, inset a few pixels inside the frame. */
+	private drawEdgeHandle(edge: CropEdge, x: number, y: number): void {
+		if (edge === 'left' || edge === 'right') {
+			const signX = edge === 'left' ? 1 : -1
+			const centerX = x + HANDLE_INSET * signX
+			this.handles.rect(centerX - HANDLE_THICKNESS / 2, y - EDGE_HANDLE_LENGTH / 2, HANDLE_THICKNESS, EDGE_HANDLE_LENGTH)
+			return
+		}
+		const signY = edge === 'top' ? 1 : -1
+		const centerY = y + HANDLE_INSET * signY
+		this.handles.rect(x - EDGE_HANDLE_LENGTH / 2, centerY - HANDLE_THICKNESS / 2, EDGE_HANDLE_LENGTH, HANDLE_THICKNESS)
 	}
 
 	/** Draws an L-shaped bracket at `corner`, inset a few pixels inside the frame. */

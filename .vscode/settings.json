@@ -35,11 +35,10 @@
 	// Enable smart commit (stages all changes if no staged changes exist) (default: false)
 	"git.enableSmartCommit": true,
 	// Use non-relative import paths for JavaScript (matches global setting)
-	"javascript.preferences.importModuleSpecifier": "non-relative",
+	"js/ts.preferences.importModuleSpecifier": "non-relative",
 	// Respect ignore files (.gitignore, etc.) when searching (default: true)
 	"search.useIgnoreFiles": true,
 	// Use non-relative import paths for TypeScript (matches global setting)
-	"typescript.preferences.importModuleSpecifier": "non-relative",
 	// Workspace-specific window title
 	"window.title": "SHADOWCRYPT",
 	// Use custom title bar style (default: "native")
@@ -60,5 +59,6 @@
 		"**/.hg": true,
 		"**/.DS_Store": true,
 		"**/Thumbs.db": true
-	}
+	},
+	"js/ts.preferences.autoImportFileExcludePatterns": ["vue"]
 }

@@ -1,4 +1,4 @@
-import type { CropCorner, Point, Rect } from '~~/lib/imageCropper/types'
+import type { CropCorner, CropEdge, Point, Rect } from '~~/lib/imageCropper/types'
 
 const MIN_CROP_SIZE = 32
 
@@ -9,7 +9,18 @@ const OPPOSITE_CORNER: Record<CropCorner, CropCorner> = {
 	'bottom-right': 'top-left',
 }
 
-type DragState = { mode: 'resize'; corner: CropCorner; anchor: Point } | { mode: 'move'; pointerOffset: Point } | null
+const OPPOSITE_EDGE: Record<CropEdge, CropEdge> = {
+	top: 'bottom',
+	bottom: 'top',
+	left: 'right',
+	right: 'left',
+}
+
+type DragState =
+	| { mode: 'resize'; corner: CropCorner; anchor: Point }
+	| { mode: 'resize-edge'; edge: CropEdge; anchor: Point }
+	| { mode: 'move'; pointerOffset: Point }
+	| null
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value))
 
@@ -68,13 +79,23 @@ export class CropRectController {
 		this.drag = { mode: 'resize', corner, anchor: this.cornerPoint(OPPOSITE_CORNER[corner]) }
 	}
 
+	public beginEdgeDrag(edge: CropEdge): void {
+		this.drag = { mode: 'resize-edge', edge, anchor: this.edgePoint(OPPOSITE_EDGE[edge]) }
+	}
+
 	public beginMoveDrag(pointer: Point): void {
 		this.drag = { mode: 'move', pointerOffset: { x: pointer.x - this.rect.x, y: pointer.y - this.rect.y } }
 	}
 
 	public updateDrag(pointer: Point): void {
 		if (!this.drag) return
-		this.rect = this.drag.mode === 'resize' ? this.resizeFromAnchor(this.drag.anchor, pointer) : this.moveTo(pointer, this.drag.pointerOffset)
+		if (this.drag.mode === 'resize') {
+			this.rect = this.resizeFromAnchor(this.drag.anchor, pointer)
+		} else if (this.drag.mode === 'resize-edge') {
+			this.rect = this.resizeFromEdgeAnchor(this.drag.edge, this.drag.anchor, pointer)
+		} else {
+			this.rect = this.moveTo(pointer, this.drag.pointerOffset)
+		}
 		this.notify()
 	}
 
@@ -103,6 +124,62 @@ export class CropRectController {
 			case 'bottom-right':
 				return { x: x + width, y: y + height }
 		}
+	}
+
+	private edgePoint(edge: CropEdge): Point {
+		const { x, y, width, height } = this.rect
+		switch (edge) {
+			case 'top':
+				return { x: x + width / 2, y }
+			case 'bottom':
+				return { x: x + width / 2, y: y + height }
+			case 'left':
+				return { x, y: y + height / 2 }
+			case 'right':
+				return { x: x + width, y: y + height / 2 }
+		}
+	}
+
+	/**
+	 * Resizes by dragging a single side. Freeform crops change only the
+	 * dragged axis, anchored at the opposite side. Fixed-aspect crops must
+	 * keep both dimensions in ratio, so the other axis grows/shrinks to
+	 * match, centered on the anchor's cross-axis coordinate (captured at
+	 * drag start, not re-derived each frame - see resizeFromAnchor).
+	 */
+	private resizeFromEdgeAnchor(edge: CropEdge, anchor: Point, pointer: Point): Rect {
+		const bounds = this.imageBounds
+		const isHorizontal = edge === 'left' || edge === 'right'
+
+		if (isHorizontal) {
+			const clampedX = clamp(pointer.x, bounds.x, bounds.x + bounds.width)
+			const width = Math.max(Math.abs(clampedX - anchor.x), MIN_CROP_SIZE)
+			const signX = clampedX < anchor.x ? -1 : 1
+			const edgeX = clamp(anchor.x + signX * width, bounds.x, bounds.x + bounds.width)
+			const finalWidth = Math.abs(edgeX - anchor.x)
+			const x = Math.min(anchor.x, edgeX)
+
+			if (this.aspectRatio === null) {
+				return { x, y: this.rect.y, width: finalWidth, height: this.rect.height }
+			}
+			const height = Math.min(finalWidth / this.aspectRatio, bounds.height)
+			const y = clamp(anchor.y - height / 2, bounds.y, bounds.y + bounds.height - height)
+			return { x, y, width: height * this.aspectRatio, height }
+		}
+
+		const clampedY = clamp(pointer.y, bounds.y, bounds.y + bounds.height)
+		const height = Math.max(Math.abs(clampedY - anchor.y), MIN_CROP_SIZE)
+		const signY = clampedY < anchor.y ? -1 : 1
+		const edgeY = clamp(anchor.y + signY * height, bounds.y, bounds.y + bounds.height)
+		const finalHeight = Math.abs(edgeY - anchor.y)
+		const y = Math.min(anchor.y, edgeY)
+
+		if (this.aspectRatio === null) {
+			return { x: this.rect.x, y, width: this.rect.width, height: finalHeight }
+		}
+		const width = Math.min(finalHeight * this.aspectRatio, bounds.width)
+		const x = clamp(anchor.x - width / 2, bounds.x, bounds.x + bounds.width - width)
+		return { x, y, width, height: width / this.aspectRatio }
 	}
 
 	private resizeFromAnchor(anchor: Point, pointer: Point): Rect {

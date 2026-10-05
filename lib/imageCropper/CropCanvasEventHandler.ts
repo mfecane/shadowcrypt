@@ -1,5 +1,5 @@
 import { CropRectController } from '~~/lib/imageCropper/CropRectController'
-import type { CropCorner } from '~~/lib/imageCropper/types'
+import type { CropCorner, CropEdge } from '~~/lib/imageCropper/types'
 import { Container, FederatedPointerEvent, Graphics } from 'pixi.js'
 
 const CURSOR_BY_CORNER: Record<CropCorner, string> = {
@@ -9,10 +9,17 @@ const CURSOR_BY_CORNER: Record<CropCorner, string> = {
 	'bottom-right': 'nwse-resize',
 }
 
+const CURSOR_BY_EDGE: Record<CropEdge, string> = {
+	top: 'ns-resize',
+	bottom: 'ns-resize',
+	left: 'ew-resize',
+	right: 'ew-resize',
+}
+
 /**
- * Translates Pixi pointer events on the move collider, corner colliders, and
- * stage into CropRectController drag calls, and sets each collider's hover
- * cursor.
+ * Translates Pixi pointer events on the move collider, corner colliders,
+ * edge colliders, and stage into CropRectController drag calls, and sets
+ * each collider's hover cursor.
  */
 export class CropCanvasEventHandler {
 	private readonly onStagePointerMove = (event: FederatedPointerEvent): void => this.handlePointerMove(event)
@@ -22,7 +29,8 @@ export class CropCanvasEventHandler {
 		private readonly stage: Container,
 		private readonly controller: CropRectController,
 		moveCollider: Graphics,
-		colliders: Record<CropCorner, Graphics>
+		colliders: Record<CropCorner, Graphics>,
+		edgeColliders: Record<CropEdge, Graphics>
 	) {
 		this.stage.eventMode = 'static'
 		this.stage.on('pointermove', this.onStagePointerMove)
@@ -43,6 +51,15 @@ export class CropCanvasEventHandler {
 			collider.on('pointerdown', (event: FederatedPointerEvent) => {
 				event.stopPropagation()
 				this.controller.beginCornerDrag(corner)
+			})
+		}
+
+		for (const [edge, collider] of Object.entries(edgeColliders) as [CropEdge, Graphics][]) {
+			collider.eventMode = 'static'
+			collider.cursor = CURSOR_BY_EDGE[edge]
+			collider.on('pointerdown', (event: FederatedPointerEvent) => {
+				event.stopPropagation()
+				this.controller.beginEdgeDrag(edge)
 			})
 		}
 	}

@@ -1,5 +1,7 @@
 export type CropCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
+export type CropEdge = 'top' | 'right' | 'bottom' | 'left'
+
 export type Rect = {
 	x: number
 	y: number

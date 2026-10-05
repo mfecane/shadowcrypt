@@ -547,15 +547,11 @@ function onCollectionCreated(collection: { id: string }): void {
 <template>
 	<Teleport to="body">
 		<UModal v-model:open="open" :transition="false"
-			:title="boardIdFromRoute !== null ? 'Upload image to board' : 'Upload image to collection'" @close="close"
-			@dragover.prevent @drop.prevent="onPanelDrop" :modal="true" :ui="{ content: 'max-w-3xl' }">
+			:title="boardIdFromRoute !== null ? 'Upload image to board' : 'Upload image to collection'"
+			:description="boardIdFromRoute === null ? 'Drop, paste, pick or create a collection, then upload.' : 'Drop, paste or pick an image, then upload to this board.'"
+			@close="close" @dragover.prevent @drop.prevent="onPanelDrop" :modal="true" :ui="{ content: 'max-w-xl' }">
 			<template #body>
 				<UForm ref="formEl" id="image-upload-form" class="space-y-4" @submit.prevent="submitUpload">
-					<p v-if="boardIdFromRoute === null" class="text-muted mt-1 text-xs">Drop, paste, pick or create a
-						collection, then upload.</p>
-					<p v-else class="text-muted mt-1 text-xs">Drop, paste or pick an image, then upload to this board.
-					</p>
-
 					<UFormField v-if="boardIdFromRoute === null" label="Collection">
 						<p v-if="collectionsPending" class="text-muted flex items-center gap-2 text-sm">
 							<Icon name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
@@ -579,7 +575,7 @@ function onCollectionCreated(collection: { id: string }): void {
 					</UFormField>
 
 					<div
-						class="border-muted bg-neutral-900 flex h-[65vh] min-h-0 flex-col rounded-lg border border-dashed p-3">
+						class="border-muted bg-neutral-900 flex h-[calc(80vh-12rem)] min-h-0 flex-col rounded-lg border border-dashed p-3">
 						<div v-if="previewUrl !== null" class="relative min-h-0 flex-1 overflow-hidden rounded-md">
 							<UButton v-if="file !== null" type="button" data-id="image-upload-crop-toggle"
 								:variant="cropEnabled ? 'solid' : 'outline'"

@@ -17,6 +17,8 @@ const error = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
 const confirmDeleteOpen = ref(false)
+const pinnedSaving = ref(false)
+const archivedSaving = ref(false)
 
 const { data: collectionsData, isPending: foldersLoading } = useQuery({
 	queryKey: ['collections'],
@@ -84,8 +86,6 @@ async function save(): Promise<void> {
 			method: 'PATCH',
 			body: {
 				name: name.value,
-				pinned: pinned.value,
-				archived: archived.value,
 				folderId,
 			},
 		})
@@ -97,6 +97,56 @@ async function save(): Promise<void> {
 		error.value = fetchFormErrorMessage(e, 'Save failed')
 	} finally {
 		saving.value = false
+	}
+}
+
+async function togglePinned(): Promise<void> {
+	const t = target.value
+	if (t === null) {
+		return
+	}
+	const next = !pinned.value
+	pinnedSaving.value = true
+	error.value = null
+	try {
+		await $fetch(`/api/collections/${t.id}`, {
+			method: 'PATCH',
+			body: { pinned: next },
+		})
+		pinned.value = next
+		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: ['collection', t.id] })
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Could not update pin')
+	} finally {
+		pinnedSaving.value = false
+	}
+}
+
+async function toggleArchived(): Promise<void> {
+	const t = target.value
+	if (t === null) {
+		return
+	}
+	const next = !archived.value
+	archivedSaving.value = true
+	error.value = null
+	try {
+		await $fetch(`/api/collections/${t.id}`, {
+			method: 'PATCH',
+			body: { archived: next },
+		})
+		archived.value = next
+		// Archiving a collection unpins it server-side.
+		if (next) {
+			pinned.value = false
+		}
+		await queryClient.invalidateQueries({ queryKey: ['collections'] })
+		await queryClient.invalidateQueries({ queryKey: ['collection', t.id] })
+	} catch (e: unknown) {
+		error.value = fetchFormErrorMessage(e, 'Could not update archive state')
+	} finally {
+		archivedSaving.value = false
 	}
 }
 
@@ -189,11 +239,16 @@ async function performDelete(): Promise<void> {
 					</div>
 				</div>
 
-				<USwitch v-model="pinned" :label="pinned ? 'Pinned' : 'Unpinned'" />
+				<div class="flex gap-2">
+					<UButton :color="!pinned ? 'primary' : 'neutral'" :variant="!pinned ? 'solid' : 'soft'"
+						:label="!pinned ? 'Pin' : 'Unpin'" :icon="!pinned ? 'i-lucide-pin' : 'i-lucide-pin-off'"
+						:loading="pinnedSaving" :disabled="pinnedSaving || archived" @click="togglePinned" />
 
-				<UButton v-if="archived" variant="soft" label="Unarchive" icon="i-lucide-archive-restore"
-					@click="() => { archived = false }" />
-				<UButton v-else label="Archive" icon="i-lucide-archive" @click="() => { archived = true }" />
+					<UButton v-if="archived" variant="soft" label="Unarchive" icon="i-lucide-archive-restore"
+						:loading="archivedSaving" :disabled="archivedSaving" @click="toggleArchived" />
+					<UButton v-else label="Archive" icon="i-lucide-archive" :loading="archivedSaving"
+						:disabled="archivedSaving" @click="toggleArchived" />
+				</div>
 
 				<p v-if="error !== null && !confirmDeleteOpen" class="text-error text-sm">{{ error }}</p>
 			</div>

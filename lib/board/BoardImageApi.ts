@@ -1,6 +1,7 @@
 export interface BoardImageApi {
 	id: string
 	url: string
+	sourceUrl: string | null
 	width: number | null
 	height: number | null
 	layout: BoardImageLayoutApi

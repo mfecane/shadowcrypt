@@ -55,22 +55,24 @@ onMounted(() => {
 
 <template>
 	<div class="fixed inset-0 z-0 flex">
-		<CollectionToolbar />
+		<div class="flex-1 flex flex-col relative">
+			<CollectionToolbar />
 
-		<CollectionBottombar @open-image-upload-modal="openImageUploadModal" />
+			<CollectionBottombar @open-image-upload-modal="openImageUploadModal" />
 
-		<div class="absolute flex gap-2 items-center right-2 top-2 z-20">
-			<UserAvatarMenu class="hidden sm:block" />
-			<UTooltip text="View boards">
-				<UButton v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant="soft"
-					class="rounded-full" @click="() => { open = true }" />
-			</UTooltip>
+			<div class="absolute flex gap-2 items-center right-2 top-2 z-20">
+				<UserAvatarMenu class="hidden sm:block" />
+				<UTooltip text="View boards">
+					<UButton v-if="!open" icon="i-lucide-panel-right-open" size="md" color="neutral" variant="soft"
+						class="rounded-full" @click="() => { open = true }" />
+				</UTooltip>
+			</div>
+
+			<UButton class="hidden sm:inline-flex absolute right-2 bottom-2 z-20" icon="i-lucide-plus"
+				@click="openImageUploadModal">
+				Add to collection
+			</UButton>
 		</div>
-
-		<UButton class="hidden sm:inline-flex absolute right-2 bottom-2 z-20" icon="i-lucide-plus"
-			@click="openImageUploadModal">
-			Add to collection
-		</UButton>
 
 		<USidebar v-model:open="open" collapsible="offcanvas" rail side="right" close-icon="i-lucide-panel-right-close"
 			:ui="{

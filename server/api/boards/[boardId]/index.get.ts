@@ -73,6 +73,7 @@ export default defineEventHandler(async (event) => {
 					url: storageKeyFactory
 						.createCollectionImageKey(board.collectionId, ImageSizeVariant.ORIGINAL, img.hash)
 						.getPublicUrl(),
+					sourceUrl: img.sourceUrl,
 					width: img.width,
 					height: img.height,
 					layout: {

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
 import CollectionDeleteImageModal from '~/components/collection/CollectionDeleteImageModal.vue'
+import CollectionImageEditModal from '~/components/collection/CollectionImageEditModal.vue'
 import CollectionMoveImageModal from '~/components/collection/CollectionMoveImageModal.vue'
 import CollectionToolbarButton from '~/components/collection/CollectionToolbarButton.vue'
 import SaveWidget from '~/components/collection/SaveWidget.vue'
 import { collectionsQueryKey, useCollectionsListQuery } from '~/composables/useCollectionsListQuery'
 import { useCollectionViewerStore } from '~/stores/useCollectionViewerStore'
+import type { BoardDetail } from '~/types/boards'
 import type { CollectionListItem, CollectionsListResponse } from '~/types/collections'
 import { nn } from '~~/lib/collectionViewer/viewerUtils'
 import { fetchFormErrorMessage } from '~~/lib/fetchFormErrorMessage'
@@ -94,6 +96,13 @@ const moveTargetCollectionId = ref<string | null>(null)
 const moveError = ref<string | null>(null)
 const moving = ref(false)
 
+const imageEditOpen = ref(false)
+const imageEditSourceUrl = ref('')
+const imageEditError = ref<string | null>(null)
+const imageEditSaving = ref(false)
+
+const collectionEdit = useCollectionListEditModalState()
+
 const { data: collectionsData, isPending: collectionsListPending } = useCollectionsListQuery()
 
 const moveCollectionGroups = computed(() => {
@@ -130,10 +139,29 @@ const hasAnotherCollection = computed(() => {
 	return flattenCollectionsDeduped(collectionsData.value).some((c) => c.id !== cid)
 })
 
-function openEdit(): void {
+function openEditBoard(): void {
 	editName.value = boardName.value
 	editError.value = null
 	editOpen.value = true
+}
+
+function openEditCollection(): void {
+	const cid = collectionId.value
+	if (cid === null || collectionsData.value === undefined) {
+		return
+	}
+	const c = flattenCollectionsDeduped(collectionsData.value).find((item) => item.id === cid)
+	if (c === undefined) {
+		return
+	}
+	collectionEdit.value = {
+		id: c.id,
+		name: c.name,
+		pinned: c.pinned,
+		archived: c.archived,
+		folderId: c.folderId,
+		folder: c.folder,
+	}
 }
 
 async function saveEdit(): Promise<void> {
@@ -202,6 +230,51 @@ async function confirmMoveImage(): Promise<void> {
 	}
 }
 
+function openImageEdit(): void {
+	const imageId = selected.value
+	if (imageId === null) {
+		return
+	}
+	const board = queryClient.getQueryData<{ board: BoardDetail }>(['board', boardId.value])?.board
+	imageEditSourceUrl.value = board?.images.find((i) => i.id === imageId)?.sourceUrl ?? ''
+	imageEditError.value = null
+	imageEditOpen.value = true
+}
+
+async function saveImageEdit(): Promise<void> {
+	const imageId = selected.value
+	if (imageId === null) {
+		return
+	}
+	imageEditSaving.value = true
+	imageEditError.value = null
+	try {
+		const trimmed = imageEditSourceUrl.value.trim()
+		await $fetch(`/api/boards/${boardId.value}/images/${imageId}/source-url`, {
+			method: 'PATCH',
+			body: { sourceUrl: trimmed === '' ? null : trimmed },
+		})
+		queryClient.setQueryData<{ board: BoardDetail } | undefined>(['board', boardId.value], (prev) => {
+			if (prev === undefined) {
+				return prev
+			}
+			return {
+				board: {
+					...prev.board,
+					images: prev.board.images.map((i) =>
+						i.id === imageId ? { ...i, sourceUrl: trimmed === '' ? null : trimmed } : i
+					),
+				},
+			}
+		})
+		imageEditOpen.value = false
+	} catch (e: unknown) {
+		imageEditError.value = fetchFormErrorMessage(e, 'Save failed')
+	} finally {
+		imageEditSaving.value = false
+	}
+}
+
 async function confirmDeleteImage(): Promise<void> {
 	const imageId = nn(selected.value)
 	deleting.value = true
@@ -240,7 +313,7 @@ async function confirmDeleteImage(): Promise<void> {
 					<span class="text-dimmed text-xs leading-none">{{ boardName }}</span>
 				</div>
 
-				<CollectionDropdownMenu @open-edit="openEdit" />
+				<CollectionDropdownMenu @open-edit-board="openEditBoard" @open-edit-collection="openEditCollection" />
 			</div>
 
 			<USeparator orientation="vertical" class="hidden sm:flex" />
@@ -272,12 +345,18 @@ async function confirmDeleteImage(): Promise<void> {
 
 			<CollectionToolbarButton :icon="'i-lucide-trash'" tooltip="Delete image" :disabled="selected === null"
 				@click="openDeleteImage" />
+
+			<CollectionToolbarButton :icon="'i-lucide-pencil'" tooltip="Edit image" :disabled="selected === null"
+				@click="openImageEdit" />
 		</div>
 	</div>
 
 
 	<CollectionEditModal v-model:open="editOpen" v-model:name="editName" :saving="saving" :error="editError"
 		@save="saveEdit" />
+
+	<CollectionImageEditModal v-model:open="imageEditOpen" v-model:source-url="imageEditSourceUrl"
+		:saving="imageEditSaving" :error="imageEditError" @save="saveImageEdit" />
 
 	<CollectionDeleteImageModal v-model:open="deleteOpen" :deleting="deleting" :error="deleteError"
 		@confirm="confirmDeleteImage" />

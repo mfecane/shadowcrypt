@@ -139,6 +139,36 @@ interface InteractionHandlerResult {
 
 Tools describe current state of interaction. Treated like states of state machine. Tools switch hit testable objects. Tools switch state of individual InteractionHandler's. In general they adjust Interaction System to current state of the application.
 
+Use state machine pattern to switch tool state.
+
+```typescript
+// basic state machine
+
+export class EditorToolStateMachine {
+	private currentState: State
+
+	public constructor(private states: State[]) {}
+
+	public switchState(newStateID: string): void {
+		this.currentState.exitState()
+		this.currentState = this.getStateById(newStateID)
+		this.currentState.enterState()
+	}
+
+	public handle(payload: any): void {
+		this.currentState.handle(payload)
+	}
+}
+
+export abstract class State {
+	public abstract readonly id: string
+	public constructor(machine: EditorToolStateMachine) {}
+	public enterState(): void {}
+	public handle(): void {}
+	public exitState(): void {}
+}
+```
+
 ### InteractionInfo and hit testing
 
 InteractionInfo ia a part of synthetic event shape, based on which concrete InteractionHandler performs app state mutations (via commands).

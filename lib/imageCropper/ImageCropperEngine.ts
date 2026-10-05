@@ -97,7 +97,8 @@ export class ImageCropperEngine {
 			app.stage,
 			this.rectController,
 			this.renderer.moveCollider,
-			this.renderer.colliders
+			this.renderer.colliders,
+			this.renderer.edgeColliders
 		)
 		this.rectController.addOnChangeListener((rect) => {
 			this.renderer.redraw(rect, this.imageBounds)

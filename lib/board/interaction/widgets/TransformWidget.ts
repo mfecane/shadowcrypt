@@ -1,22 +1,22 @@
 import { Container, Graphics, Point, Sprite, type Texture } from 'pixi.js'
 import { WidgetCorner, type WidgetPart } from '~~/lib/board/interaction/widgets/WidgetPart'
 
-const FRAME_COLOR = 0x3b82f6
+const FRAME_COLOR = 0xbc9150
 
 /** Frame/handles sit slightly outside the image bounds. */
 const OUTSET = 6
 
 /** Visual handle size in screen pixels (zoom-independent). */
-const HANDLE_VISUAL_SIZE_PX = 12
+const HANDLE_VISUAL_SIZE_PX = 6
 
 /** Handle border thickness in screen pixels (zoom-independent). */
-const HANDLE_STROKE_PX = 2
+const HANDLE_STROKE_PX = 1
 
 /** Frame thickness in screen pixels (zoom-independent). */
-const FRAME_STROKE_PX = 2
+const FRAME_STROKE_PX = 1
 
 /** Corner collider size in screen pixels (zoom-independent). */
-const HANDLE_HIT_SIZE_PX = 56
+const HANDLE_HIT_SIZE_PX = 32
 
 /** Visual + hit-test overlay for the selected image: frame, corner scale handles, invisible body (drag). */
 export class TransformWidget extends Container {
@@ -83,7 +83,7 @@ export class TransformWidget extends Container {
 		const sx = Math.hypot(wt.a, wt.b)
 		const sy = Math.hypot(wt.c, wt.d)
 		const s = Math.max(1e-6, (sx + sy) / 2)
-		const handleHalf = (HANDLE_VISUAL_SIZE_PX / 2) / s
+		const handleHalf = HANDLE_VISUAL_SIZE_PX / 2 / s
 		const frameStroke = FRAME_STROKE_PX / s
 		const handleStroke = HANDLE_STROKE_PX / s
 
@@ -123,7 +123,8 @@ export class TransformWidget extends Container {
 
 	private drawHandleVisual(g: Graphics, x: number, y: number, half: number, stroke: number): void {
 		g.clear()
-		g.rect(x, y, half * 2, half * 2)
+		// g.rect(x, y, half * 2, half * 2)
+		g.circle(x + half, y + half, half)
 		g.fill({ color: FRAME_COLOR, alpha: 1 })
 		g.stroke({ width: stroke, color: 0xffffff, alpha: 1 })
 	}
@@ -143,23 +144,12 @@ export class TransformWidget extends Container {
 		const sx = Math.hypot(wt.a, wt.b)
 		const sy = Math.hypot(wt.c, wt.d)
 		const s = Math.max(1e-6, (sx + sy) / 2)
-		const hitHalf = (HANDLE_HIT_SIZE_PX / 2) / s
+		const hitHalf = HANDLE_HIT_SIZE_PX / 2 / s
 		const local = this.toLocal(global)
 		for (const corner of [WidgetCorner.nw, WidgetCorner.ne, WidgetCorner.se, WidgetCorner.sw] as const) {
-			const hx =
-				corner === WidgetCorner.nw || corner === WidgetCorner.sw
-					? -hitHalf
-					: w + OUTSET * 2 - hitHalf
-			const hy =
-				corner === WidgetCorner.nw || corner === WidgetCorner.ne
-					? -hitHalf
-					: h + OUTSET * 2 - hitHalf
-			if (
-				local.x >= hx &&
-				local.x <= hx + hitHalf * 2 &&
-				local.y >= hy &&
-				local.y <= hy + hitHalf * 2
-			) {
+			const hx = corner === WidgetCorner.nw || corner === WidgetCorner.sw ? -hitHalf : w + OUTSET * 2 - hitHalf
+			const hy = corner === WidgetCorner.nw || corner === WidgetCorner.ne ? -hitHalf : h + OUTSET * 2 - hitHalf
+			if (local.x >= hx && local.x <= hx + hitHalf * 2 && local.y >= hy && local.y <= hy + hitHalf * 2) {
 				return corner
 			}
 		}

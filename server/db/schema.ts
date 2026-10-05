@@ -76,6 +76,7 @@ export const images = pgTable('images', {
 		.references(() => boards.id, { onDelete: 'cascade' }),
 	userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
 	hash: text('hash').notNull(),
+	sourceUrl: text('source_url'),
 	width: integer('width'),
 	height: integer('height'),
 	layoutX: doublePrecision('layout_x'),

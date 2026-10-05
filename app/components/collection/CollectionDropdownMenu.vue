@@ -2,7 +2,8 @@
 import type { DropdownMenuItem } from '@nuxt/ui';
 
 const emit = defineEmits<{
-	'open-edit': []
+	'open-edit-board': []
+	'open-edit-collection': []
 }>()
 
 const items = ref<DropdownMenuItem[][]>([
@@ -10,12 +11,12 @@ const items = ref<DropdownMenuItem[][]>([
 		{
 			label: 'Edit board',
 			icon: 'i-lucide-pencil',
-			onSelect: () => emit('open-edit')
+			onSelect: () => emit('open-edit-board')
 		},
 		{
 			label: 'Edit collection',
 			icon: 'i-lucide-pencil',
-			onSelect: () => emit('open-edit')
+			onSelect: () => emit('open-edit-collection')
 		}
 	]]
 )
