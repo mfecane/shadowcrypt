@@ -14,9 +14,9 @@ Check `docs/index.md` for additional context.
 
 Use /mvp skill for this app.
 
-Use /code for any work on code in \*.ts, \*.tsx files.
+Use /code for any work on code in \*.ts, \*.vue files.
 
-Use /react for any work on \*.tsx files
+Use /vue for any work on \*.vue files
 
 Use /di for building common reusable services.
 

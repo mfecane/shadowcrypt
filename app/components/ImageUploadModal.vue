@@ -397,11 +397,16 @@ function onPaste(e: ClipboardEvent): void {
 	if (!isTargetRoute.value) {
 		return
 	}
-	const t = e.target
-	if (t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable)) {
+	if (document.querySelector('[role="dialog"], [role="alertdialog"]') !== null) {
 		return
 	}
-	if (t instanceof HTMLInputElement && ['text', 'password', 'search', 'email', 'tel', 'number'].includes(t.type)) {
+	const t = e.target
+	const isTextEntry =
+		t instanceof HTMLTextAreaElement ||
+		t instanceof HTMLSelectElement ||
+		(t instanceof HTMLElement && t.isContentEditable) ||
+		(t instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'file', 'range', 'color'].includes(t.type))
+	if (isTextEntry) {
 		return
 	}
 	const f = firstImageFromClipboard(e.clipboardData)
