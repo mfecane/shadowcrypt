@@ -12,6 +12,9 @@ const props = defineProps<{
 	deleteError: string | null
 	deleting: boolean
 	deleteDisabled: boolean
+	reordering: boolean
+	canMoveUp: boolean
+	canMoveDown: boolean
 	/** Drop-target state for a drag-out-of-canvas image currently hovering this card. */
 	dropHover?: 'none' | 'valid' | 'pending'
 }>()
@@ -26,6 +29,8 @@ const emit = defineEmits<{
 	'delete-ask': []
 	'delete-cancel': []
 	'delete-confirm': []
+	'move-up': []
+	'move-down': []
 }>()
 
 const mosaicImages = computed(() => props.board.previewImages.map((img) => ({ id: img.url, url: img.url })))
@@ -91,6 +96,15 @@ v-else-if="deleteConfirming" data-id="board-card-delete-confirm"
 
 			<div
 				class="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 to-transparent" />
+
+			<div v-if="reordering" data-id="board-card-sort-buttons" class="absolute right-2 top-2 flex flex-col gap-1">
+				<UButton
+icon="i-lucide-chevron-up" size="xs" color="neutral" variant="solid" square :disabled="!canMoveUp"
+					@click.stop="$emit('move-up')" />
+				<UButton
+icon="i-lucide-chevron-down" size="xs" color="neutral" variant="solid" square :disabled="!canMoveDown"
+					@click.stop="$emit('move-down')" />
+			</div>
 
 			<div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-1 p-2">
 				<div class="min-w-0">

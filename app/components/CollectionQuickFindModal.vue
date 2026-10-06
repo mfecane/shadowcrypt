@@ -70,7 +70,7 @@ const listboxId = useId()
 
 const isTargetRoute = computed(() => {
 	const p = route.path
-	return p === '/list' || /^\/list\/[^/]+$/.test(p) || /^\/collections\/[^/]+$/.test(p)
+	return p === '/list' || /^\/list\/[^/]+$/.test(p) || /^\/collections\/[^/]+(\/boards\/[^/]+)?$/.test(p)
 })
 
 watch(isTargetRoute, (ok) => {

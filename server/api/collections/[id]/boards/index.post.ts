@@ -47,6 +47,7 @@ export default defineEventHandler(async (event) => {
 		.values({
 			collectionId,
 			name,
+			sortOrder: Math.max(-1, ...existingBoards.map((b) => b.sortOrder)) + 1,
 			updatedAt: now,
 		})
 		.returning()

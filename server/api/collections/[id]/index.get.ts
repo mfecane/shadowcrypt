@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
 		.select()
 		.from(boards)
 		.where(eq(boards.collectionId, id))
-		.orderBy(asc(boards.createdAt))
+		.orderBy(asc(boards.sortOrder), asc(boards.createdAt))
 	const boardIds = boardRows.map((b) => b.id)
 	const imageRows =
 		boardIds.length > 0

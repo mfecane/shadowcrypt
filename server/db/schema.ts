@@ -60,6 +60,8 @@ export const boards = pgTable('boards', {
 		.notNull()
 		.references(() => collections.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
+	/** Position within the collection's board list; ascending. */
+	sortOrder: integer('sort_order').notNull().default(0),
 	/** World-space point at the viewport center (Pixi world container local space). */
 	viewportCenterX: doublePrecision('viewport_center_x'),
 	viewportCenterY: doublePrecision('viewport_center_y'),

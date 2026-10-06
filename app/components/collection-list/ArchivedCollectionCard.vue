@@ -32,18 +32,26 @@ async function unarchive(): Promise<void> {
 
 <template>
 	<div
-		class="border-muted bg-elevated flex h-[160px] min-h-0 flex-col overflow-hidden rounded-md border relative shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)]"
+		data-id="archived-collection-card"
+		class="border-muted bg-elevated flex flex-col gap-1 overflow-hidden rounded-md border p-1 shadow-[2px_2px_8px_0_rgba(0,0,0,0.3)]"
 	>
-		<ImageMosaicGrid :images="collection.images" size="smol" class="absolute inset-0 h-full w-full" />
+		<NuxtLink :to="`/collections/${collection.id}`" class="grid h-[90px] grid-cols-3 gap-1">
+			<div v-for="n in 3" :key="n" class="bg-muted/60 min-w-0 overflow-hidden rounded-sm">
+				<img
+					v-if="collection.images[n - 1]"
+					:src="collection.images[n - 1]?.url"
+					class="h-full w-full object-cover"
+					alt=""
+					@dragstart.prevent
+				/>
+			</div>
+		</NuxtLink>
 
-		<div
-			class="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 to-transparent"
-		/>
-
-		<div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-1 p-2">
+		<div class="flex items-center justify-between gap-2 px-0.5">
 			<div class="min-w-0">
-				<div class="truncate text-sm font-medium text-white drop-shadow">{{ collection.name }}</div>
-				<div class="text-xs font-medium text-white/80 drop-shadow">{{ collection.imageCount }} items</div>
+				<div class="text-highlighted truncate text-base font-medium">{{ collection.name }}</div>
+				<div class="text-primary text-xs font-medium">{{ collection.imageCount }} items</div>
+				<span v-if="error !== null" class="text-error text-xs">{{ error }}</span>
 			</div>
 			<UButton
 				variant="soft"
@@ -57,8 +65,5 @@ async function unarchive(): Promise<void> {
 				@click="unarchive"
 			/>
 		</div>
-		<span v-if="error !== null" class="absolute top-1 left-1 text-error text-xs bg-default/80 rounded px-1">{{
-			error
-		}}</span>
 	</div>
 </template>

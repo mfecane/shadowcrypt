@@ -45,13 +45,6 @@ function onKeydown(event: KeyboardEvent): void {
 	}
 }
 
-const wrapperClass = computed(() => {
-	return (
-		'absolute z-30 h-screen w-screen bg-black/60 overflow-hidden flex items-center justify-center p-5' +
-		(fullscreenImage.value ? '' : ' hidden')
-	)
-})
-
 const imageStyle = computed(() => {
 	const flipX = fullscreenImage.value?.layout.flipX === true ? -1 : 1
 	const flipY = fullscreenImage.value?.layout.flipY === true ? -1 : 1
@@ -64,8 +57,9 @@ const imageStyle = computed(() => {
 
 <template>
 	<div
+		v-if="fullscreenImage"
 		ref="wrapperEl"
-		:class="wrapperClass"
+		class="absolute z-30 h-screen w-screen bg-black/60 overflow-hidden flex items-center justify-center p-5"
 		tabindex="-1"
 		role="dialog"
 		aria-modal="true"
@@ -75,16 +69,12 @@ const imageStyle = computed(() => {
 		@pointermove="onPointerMove"
 		@touchmove="close"
 	>
-		<Transition>
-			<div class="w-full h-full flex items-center justify-center" v-if="fullscreenImage">
-				<img
-					:src="fullscreenImage.src"
-					:style="imageStyle"
-					class="max-w-full max-h-full object-contain rounded-md shadow-md"
-					alt=""
-				/>
-			</div>
-		</Transition>
+		<img
+			:src="fullscreenImage.src"
+			:style="imageStyle"
+			class="max-w-full max-h-full object-contain rounded-md shadow-md"
+			alt=""
+		/>
 	</div>
 </template>
 

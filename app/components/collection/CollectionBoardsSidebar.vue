@@ -12,6 +12,8 @@ const props = defineProps<{
 	activeBoardId: string
 }>()
 
+const reordering = defineModel<boolean>('reordering', { required: true })
+
 const router = useRouter()
 const queryClient = useQueryClient()
 
@@ -56,6 +58,24 @@ async function createBoard(): Promise<void> {
 		createError.value = fetchFormErrorMessage(e, 'Could not create board')
 	} finally {
 		creating.value = false
+	}
+}
+
+async function moveBoard(index: number, delta: -1 | 1): Promise<void> {
+	const target = index + delta
+	const ids = props.boards.map((b) => b.id)
+	const moved = ids[index]
+	const displaced = ids[target]
+	if (moved === undefined || displaced === undefined) {
+		throw new Error(`Board index out of range: ${index} -> ${target}`)
+	}
+	ids[index] = displaced
+	ids[target] = moved
+	try {
+		await $fetch(`/api/collections/${props.collectionId}/boards/reorder`, { method: 'POST', body: { boardIds: ids } })
+		await refreshCollection()
+	} catch (e: unknown) {
+		createError.value = fetchFormErrorMessage(e, 'Could not reorder boards')
 	}
 }
 
@@ -138,7 +158,9 @@ async function confirmDelete(boardId: string): Promise<void> {
 
 		<div data-id="boards-sidebar-list" class="flex flex-col gap-2">
 			<CollectionBoardCard
-v-for="board in boards" :key="board.id" :board="board"
+v-for="(board, index) in boards" :key="board.id" :board="board"
+				:reordering="reordering" :can-move-up="index > 0" :can-move-down="index < boards.length - 1"
+				@move-up="moveBoard(index, -1)" @move-down="moveBoard(index, 1)"
 				:active="board.id === activeBoardId" :renaming="renamingId === board.id"
 				v-model:rename-value="renameValue" :rename-error="renamingId === board.id ? renameError : null"
 				:rename-saving="renameSaving" :delete-confirming="deleteConfirmId === board.id"

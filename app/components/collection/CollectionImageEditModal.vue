@@ -18,14 +18,26 @@ const emit = defineEmits<{ save: [] }>()
 		<template #body>
 			<UForm :state="{ sourceUrl }" id="image-edit-form" class="space-y-4" @submit.prevent="emit('save')">
 				<UFormField label="URL">
-					<UInput
-						id="image-source-url-input"
-						v-model="sourceUrl"
-						type="url"
-						autocomplete="off"
-						placeholder="https://…"
-						class="w-full"
-					/>
+					<UFieldGroup class="w-full">
+						<UInput
+							id="image-source-url-input"
+							v-model="sourceUrl"
+							type="url"
+							autocomplete="off"
+							placeholder="https://…"
+							class="flex-1"
+						/>
+						<UButton
+							v-if="sourceUrl.trim()"
+							color="neutral"
+							variant="subtle"
+							icon="i-lucide-external-link"
+							aria-label="Open URL in new window"
+							:to="sourceUrl.trim()"
+							target="_blank"
+							rel="noopener noreferrer"
+						/>
+					</UFieldGroup>
 				</UFormField>
 				<UAlert v-if="error" color="error" variant="soft" :title="error" />
 			</UForm>

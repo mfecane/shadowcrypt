@@ -397,7 +397,13 @@ function onPaste(e: ClipboardEvent): void {
 	if (!isTargetRoute.value) {
 		return
 	}
-	if (document.querySelector('[role="dialog"], [role="alertdialog"]') !== null) {
+	if (createCollectionModal.value) {
+		return
+	}
+	// Foreign open modals own paste; the always-mounted fullscreen viewer has no data-state.
+	const foreignModalOpen =
+		!open.value && document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]') !== null
+	if (foreignModalOpen) {
 		return
 	}
 	const t = e.target

@@ -11,6 +11,7 @@ const { loading, autoLayoutPending, dragOut } = storeToRefs(store)
 const { openModal: openImageUploadModal } = useImageUploadModal()
 
 const open = useState('collectionSidebarOpen', () => false)
+const reorderingBoards = ref(false)
 
 watch(dragOut, (next, prev) => {
 	if (next !== null && prev === null) {
@@ -81,11 +82,20 @@ onMounted(() => {
 				body: 'py-0',
 			}">
 			<template #header>
-				<UButton icon="i-lucide-panel-right-close" size="md" color="neutral" variant="ghost"
-					@click="() => { open = false }" />
+				<div data-id="boards-sidebar-header" class="flex w-full items-center justify-between">
+					<UButton icon="i-lucide-panel-right-close" size="md" color="neutral" variant="ghost"
+						@click="() => { open = false }" />
+					<UTooltip :text="reorderingBoards ? 'Finish reordering boards' : 'Reorder boards'">
+						<UButton data-id="boards-reorder-toggle" icon="i-lucide-arrow-up-down" size="md"
+							:color="reorderingBoards ? 'primary' : 'neutral'"
+							:variant="reorderingBoards ? 'solid' : 'ghost'" :aria-pressed="reorderingBoards"
+							@click="() => { reorderingBoards = !reorderingBoards }" />
+					</UTooltip>
+				</div>
 			</template>
 			<CollectionBoardsSidebar :collection-id="collection.id" :collection-name="collection.name"
-				:boards="collection.boards" :active-board-id="board.id" />
+				:boards="collection.boards" :active-board-id="board.id"
+				v-model:reordering="reorderingBoards" />
 		</USidebar>
 
 		<CollectionViewerFullscreen />

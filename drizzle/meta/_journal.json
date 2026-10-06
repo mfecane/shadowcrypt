@@ -1,48 +1,55 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1775314070238,
-      "tag": "0000_puzzling_absorbing_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1775837774281,
-      "tag": "0001_bouncy_venom",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776400000000,
-      "tag": "0002_layout_flip_columns",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776500000000,
-      "tag": "0003_collection_boards",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1791035382580,
-      "tag": "0004_black_ronan",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1791900000000,
-      "tag": "0005_image_source_url",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1775314070238,
+			"tag": "0000_puzzling_absorbing_man",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1775837774281,
+			"tag": "0001_bouncy_venom",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1776400000000,
+			"tag": "0002_layout_flip_columns",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1776500000000,
+			"tag": "0003_collection_boards",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1791035382580,
+			"tag": "0004_black_ronan",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1791900000000,
+			"tag": "0005_image_source_url",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1791900000001,
+			"tag": "0006_board_sort_order",
+			"breakpoints": true
+		}
+	]
 }

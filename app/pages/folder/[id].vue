@@ -136,7 +136,7 @@ const archivedFolderSummary = computed(() => {
 						<h3 class="text-muted mb-3 text-xs font-semibold uppercase tracking-wider">
 							Archived in this folder
 						</h3>
-						<div class="grid grid-cols-3 gap-4">
+						<div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
 							<ArchivedCollectionCard
 								v-for="c in archivedInFolder"
 								:key="`ap-arch-${c.id}`"

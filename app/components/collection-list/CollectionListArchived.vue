@@ -31,7 +31,7 @@ const isEmpty = computed(
 			<template v-for="block in folderBlocks" :key="`afc-${block.id}`">
 				<section v-if="block.archivedCollections.length" class="mb-12">
 					<h2 class="text-muted mb-4 text-sm font-semibold uppercase tracking-wider">{{ block.name }}</h2>
-					<div class="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
+					<div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
 						<ArchivedCollectionCard
 							v-for="c in block.archivedCollections"
 							:key="`arch-${block.id}-${c.id}`"
@@ -41,7 +41,7 @@ const isEmpty = computed(
 				</section>
 			</template>
 
-			<section v-if="archivedUngrouped.length" class="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
+			<section v-if="archivedUngrouped.length" class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
 				<ArchivedCollectionCard v-for="c in archivedUngrouped" :key="`au-${c.id}`" :collection="c" />
 			</section>
 		</template>
