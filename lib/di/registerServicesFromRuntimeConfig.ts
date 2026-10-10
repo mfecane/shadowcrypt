@@ -2,6 +2,8 @@ import type { RuntimeConfig } from 'nuxt/schema'
 import { EmailNonceService } from '~~/lib/auth/emailNonce'
 import { ServiceAlias } from '~~/lib/di/ServiceAlias'
 import { registerServerServices } from '~~/lib/di/registerServerServices'
+import { OrphanFilesCleanupJob } from '~~/server/jobs/OrphanFilesCleanupJob'
+import { useDb } from '~~/server/utils/db'
 import { container } from './container'
 
 function requireString(value: unknown, label: string): string {
@@ -24,4 +26,13 @@ export function registerServicesFromRuntimeConfig(config: RuntimeConfig): void {
 	}
 
 	registerServerServices()
+
+	// Nitro-only: needs the runtime-config db, unavailable to the seed script
+	container.registerSingleton(ServiceAlias.OrphanFilesCleanupJob, (c) => {
+		return new OrphanFilesCleanupJob(
+			c.resolve(ServiceAlias.StorageClient),
+			c.resolve(ServiceAlias.StorageKeyFactory),
+			useDb()
+		)
+	})
 }

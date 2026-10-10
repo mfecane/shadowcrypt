@@ -71,6 +71,11 @@ export class StorageKeyFactory {
 		return key
 	}
 
+	/** Prefix covering every object of the current environment. */
+	public getEnvListPrefix(): string {
+		return `${this.envPrefix}/`
+	}
+
 	/** Prefix for listing/deleting all image objects under a collection (both variants). */
 	public getCollectionImageListPrefix(collectionId: string): string {
 		return `${this.envPrefix}/collections/${collectionId}/images`

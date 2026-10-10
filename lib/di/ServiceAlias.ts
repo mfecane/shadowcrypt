@@ -3,6 +3,7 @@ export const enum ServiceAlias {
 	StorageClientFactory = 'StorageClientFactory',
 	EnvironmentResolver = 'EnvironmentResolver',
 	StorageKeyFactory = 'StorageKeyFactory',
+	OrphanFilesCleanupJob = 'OrphanFilesCleanupJob',
 	EmailNonceService = 'EmailNonceService',
 	LogPanel = 'LogPanel',
 	LastUploadCollectionTracker = 'LastUploadCollectionTracker',

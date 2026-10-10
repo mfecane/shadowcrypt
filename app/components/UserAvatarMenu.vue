@@ -11,6 +11,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
 			icon: 'i-lucide-settings',
 			to: '/user',
 		},
+		...(user.value?.isAdmin ? [{ label: 'Admin', icon: 'i-lucide-shield', to: '/admin/jobs' }] : []),
 		{
 			label: 'Log out',
 			icon: 'i-lucide-log-out',

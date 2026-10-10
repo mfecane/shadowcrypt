@@ -6,6 +6,7 @@ export default defineNuxtConfig({
 	srcDir: 'app',
 	routeRules: {
 		'/landing': { redirect: '/' },
+		'/admin': { redirect: '/admin/jobs' },
 	},
 	css: ['~/assets/css/main.css'],
 	colorMode: {
@@ -20,6 +21,7 @@ export default defineNuxtConfig({
 		auth: {
 			emailNoncePepper: '',
 		},
+		jobSecret: process.env.JOB_SECRET ?? '',
 		demoUser: process.env.NUXT_DEMO_USER ?? '',
 		oauth: {
 			google: {

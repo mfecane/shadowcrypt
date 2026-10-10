@@ -1,6 +1,13 @@
 const std = @import("std");
 const relaxation = @import("relaxation.zig");
 
+/// Desired grid width / height.
+const target_aspect: f32 = 4.0 / 3.0;
+
+fn absLogRatio(value: f32, target: f32) f32 {
+    return relaxation.absf(@log(value / target));
+}
+
 pub const GridStats = struct {
     columns: u32 = 0,
     rows: u32 = 0,
@@ -8,9 +15,9 @@ pub const GridStats = struct {
     cell_h: f32 = 0,
 };
 
-/// Preprocess before relaxation: places rects into a square-ish grid.
+/// Preprocess before relaxation: places rects into a grid whose overall shape is close to 4:3.
 /// Cell width is the max rect width, cell height is the max rect height, so every rect fits
-/// its cell. Columns = ceil(sqrt(n)), rows = ceil(n / columns). Rects fill cells row by row in
+/// its cell. Columns are chosen so the grid's width/height ratio is nearest to 4:3, rows = ceil(n / columns). Rects fill cells row by row in
 /// input order and are centered in their cell. The grid keeps the center of the original
 /// bounding box. `original_x/y` are set to the placed position so relaxation anchors to the grid.
 pub fn placeOnGrid(rects: []relaxation.Rect) GridStats {
@@ -35,11 +42,23 @@ pub fn placeOnGrid(rects: []relaxation.Rect) GridStats {
     }
 
     const count: usize = rects.len;
-    const columns: usize = std.math.sqrt(count - 1) + 1; // ceil(sqrt(count)) for count >= 1
-    const rows: usize = (count + columns - 1) / columns;
-
     const pitch_x = cell_w + relaxation.target_gap;
     const pitch_y = cell_h + relaxation.target_gap;
+
+    var columns: usize = 1;
+    var best_score: f32 = std.math.floatMax(f32);
+    for (1..count + 1) |candidate| {
+        const candidate_rows = (count + candidate - 1) / candidate;
+        const w = pitch_x * @as(f32, @floatFromInt(candidate)) - relaxation.target_gap;
+        const h = pitch_y * @as(f32, @floatFromInt(candidate_rows)) - relaxation.target_gap;
+        const score = absLogRatio(w / h, target_aspect);
+        if (score < best_score) {
+            best_score = score;
+            columns = candidate;
+        }
+    }
+    const rows: usize = (count + columns - 1) / columns;
+
     const grid_w = pitch_x * @as(f32, @floatFromInt(columns)) - relaxation.target_gap;
     const grid_h = pitch_y * @as(f32, @floatFromInt(rows)) - relaxation.target_gap;
     const origin_x = (min_x + max_x) * 0.5 - grid_w * 0.5;
