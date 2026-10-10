@@ -28,8 +28,7 @@ function dropHoverFor(boardId: string): 'none' | 'valid' | 'pending' {
 	return d.pending ? 'pending' : 'valid'
 }
 
-const creating = ref(false)
-const createError = ref<string | null>(null)
+const reorderError = ref<string | null>(null)
 
 const renamingId = ref<string | null>(null)
 const renameValue = ref('')
@@ -42,23 +41,6 @@ const deleteError = ref<string | null>(null)
 
 async function refreshCollection(): Promise<void> {
 	await queryClient.invalidateQueries({ queryKey: ['collection', props.collectionId] })
-}
-
-async function createBoard(): Promise<void> {
-	creating.value = true
-	createError.value = null
-	try {
-		const res = await $fetch<{ board: CollectionBoardSummary }>(
-			`/api/collections/${props.collectionId}/boards`,
-			{ method: 'POST' }
-		)
-		await refreshCollection()
-		void router.push(`/collections/${props.collectionId}/boards/${res.board.id}`)
-	} catch (e: unknown) {
-		createError.value = fetchFormErrorMessage(e, 'Could not create board')
-	} finally {
-		creating.value = false
-	}
 }
 
 async function moveBoard(index: number, delta: -1 | 1): Promise<void> {
@@ -75,7 +57,7 @@ async function moveBoard(index: number, delta: -1 | 1): Promise<void> {
 		await $fetch(`/api/collections/${props.collectionId}/boards/reorder`, { method: 'POST', body: { boardIds: ids } })
 		await refreshCollection()
 	} catch (e: unknown) {
-		createError.value = fetchFormErrorMessage(e, 'Could not reorder boards')
+		reorderError.value = fetchFormErrorMessage(e, 'Could not reorder boards')
 	}
 }
 
@@ -171,12 +153,6 @@ v-for="(board, index) in boards" :key="board.id" :board="board"
 				@delete-cancel="cancelDelete" @delete-confirm="confirmDelete(board.id)" />
 		</div>
 
-		<p v-if="createError" class="px-1 text-xs text-error">{{ createError }}</p>
-
-		<UButton
-data-id="boards-sidebar-new" icon="i-lucide-plus" size="sm" color="neutral" variant="soft"
-			:loading="creating" @click="createBoard">
-			New board
-		</UButton>
+		<p v-if="reorderError" class="px-1 text-xs text-error">{{ reorderError }}</p>
 	</div>
 </template>

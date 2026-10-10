@@ -85,12 +85,15 @@ onMounted(() => {
 				<div data-id="boards-sidebar-header" class="flex w-full items-center justify-between">
 					<UButton icon="i-lucide-panel-right-close" size="md" color="neutral" variant="ghost"
 						@click="() => { open = false }" />
-					<UTooltip :text="reorderingBoards ? 'Finish reordering boards' : 'Reorder boards'">
-						<UButton data-id="boards-reorder-toggle" icon="i-lucide-arrow-up-down" size="md"
-							:color="reorderingBoards ? 'primary' : 'neutral'"
-							:variant="reorderingBoards ? 'solid' : 'ghost'" :aria-pressed="reorderingBoards"
-							@click="() => { reorderingBoards = !reorderingBoards }" />
-					</UTooltip>
+					<div class="flex items-center gap-1">
+						<CollectionNewBoardButton :collection-id="collection.id" />
+						<UTooltip :text="reorderingBoards ? 'Finish reordering boards' : 'Reorder boards'">
+							<UButton data-id="boards-reorder-toggle" icon="i-lucide-arrow-up-down" size="md"
+								:color="reorderingBoards ? 'primary' : 'neutral'"
+								:variant="reorderingBoards ? 'solid' : 'ghost'" :aria-pressed="reorderingBoards"
+								@click="() => { reorderingBoards = !reorderingBoards }" />
+						</UTooltip>
+					</div>
 				</div>
 			</template>
 			<CollectionBoardsSidebar :collection-id="collection.id" :collection-name="collection.name"
